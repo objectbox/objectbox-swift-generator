@@ -83,9 +83,9 @@ enum ObjectBoxFilters {
     class Entity: Codable {
         var id = IdUid()
         var name = ""
-        var lastPropertyId: IdUid?
-        var properties: Array<Property>?
-        var relations: Array<Relation>?
+        var lastPropertyId: IdUid!
+        var properties: Array<Property>!
+        var relations: Array<Relation>!
         
         private enum CodingKeys: String, CodingKey {
             case id
@@ -96,45 +96,45 @@ enum ObjectBoxFilters {
         }
     }
     
-    class IdSyncModel: Codable {
+    class IdSyncModel_: Codable {
     
         static let modelVersion: Int64 = 4 // !! When upgrading always check modelVersionParserMinimum !!
         static let modelVersionParserMinimum: Int64 = 4
         
         /** "Comments" in the JSON file */
-        var _note1: String? = "KEEP THIS FILE! Check it into a version control system (VCS) like git."
-        var _note2: String? = "ObjectBox manages crucial IDs for your object model. See docs for details."
-        var _note3: String? = "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs."
+        var _note1: String! = "KEEP THIS FILE! Check it into a version control system (VCS) like git."
+        var _note2: String! = "ObjectBox manages crucial IDs for your object model. See docs for details."
+        var _note3: String! = "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs."
         
         var version: Int64 = 0
         var modelVersion: Int64 = IdSyncModel.modelVersion
         /** Specify backward compatibility with older parsers.*/
         var modelVersionParserMinimum: Int64 = modelVersion
-        var lastEntityId: IdUid?
-        var lastIndexId: IdUid?
-        var lastRelationId: IdUid?
+        var lastEntityId: IdUid!
+        var lastIndexId: IdUid!
+        var lastRelationId: IdUid!
         // TODO use this once we support sequences
-        var lastSequenceId: IdUid?
+        var lastSequenceId: IdUid!
         
-        var entities: Array<Entity> = []
+        var entities: Array<Entity>! = []
         
         /**
          * Previously allocated UIDs (e.g. via "@Uid" without value) to use to provide UIDs for new entities,
          * properties, or relations.
          */
-        var newUidPool: Array<Int64>?
+        var newUidPool: Array<Int64>!
         
         /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredEntityUids: Array<Int64>?
+        var retiredEntityUids: Array<Int64>!
         
         /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredPropertyUids: Array<Int64>?
+        var retiredPropertyUids: Array<Int64>!
         
         /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredIndexUids: Array<Int64>?
+        var retiredIndexUids: Array<Int64>!
         
         /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredRelationUids: Array<Int64>?
+        var retiredRelationUids: Array<Int64>!
         
         private enum CodingKeys: String, CodingKey {
             case _note1
@@ -153,6 +153,18 @@ enum ObjectBoxFilters {
             case retiredPropertyUids
             case retiredIndexUids
             case retiredRelationUids
+        }
+    }
+    
+    class IdSyncModel: IdSyncModel_ {
+        required init(from decoder: Decoder) throws {
+            try super.init(from: decoder)
+            if entities == nil { entities = [] }
+            if newUidPool == nil { newUidPool = [] }
+            if retiredEntityUids == nil { newUidPool = [] }
+            if retiredPropertyUids == nil { newUidPool = [] }
+            if retiredIndexUids == nil { newUidPool = [] }
+            if retiredRelationUids == nil { retiredRelationUids = [] }
         }
     }
     
