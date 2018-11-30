@@ -104,7 +104,7 @@ func runCLI() {
         do {
             Log.level = verboseLogging ? .verbose : quiet ? .errors : .info
 
-            AnnotationsParser.annotationPrefix = ejsPath.string.isEmpty ? "sourcery" : annotationPrefix
+            AnnotationsParser.annotationPrefix = annotationPrefix.isEmpty ? "sourcery" : annotationPrefix
 
             // if ejsPath is not provided use default value or executable path
             EJSTemplate.ejsPath = ejsPath.string.isEmpty
