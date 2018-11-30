@@ -18,7 +18,9 @@ final class StencilTemplate: StencilSwiftKit.StencilSwiftTemplate, Template {
 
     func render(_ context: TemplateContext) throws -> String {
         do {
-            return try super.render(context.stencilContext)
+            var stencilContext = context.stencilContext
+            ObjectBoxFilters.exposeObjects(to: &stencilContext)
+            return try super.render(stencilContext)
         } catch {
             throw "\(sourcePath): \(error)"
         }

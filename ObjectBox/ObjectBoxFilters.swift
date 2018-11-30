@@ -11,6 +11,7 @@ import PathKit
 import Stencil
 import StencilSwiftKit
 import StencilSwiftKit.Swift
+import SourceryRuntime
 
 
 enum ObjectBoxFilters {
@@ -61,6 +62,24 @@ enum ObjectBoxFilters {
         throw Error.invalidInputType
     }
 
+    static func process(parsingResult result: inout Sourcery.ParsingResult) {
+        result.types.all.forEach { currClass in
+            print("\(currClass.name): \(currClass.annotations)");
+            currClass.variables.forEach { currVariable in
+                print("\(currVariable.name): \(currVariable.annotations)");
+            }
+        }
+        
+        var newTypes: [Type] = result.types.all
+        newTypes.append(Type(name: "InjectedType", annotations: ["Entity": NSNumber(value: 1)]))
+        
+        result = (types: Types(types: newTypes), inlineRanges: result.inlineRanges)
+    }
+    
+    static func exposeObjects(to objectsDictionary: inout [String:Any]) {
+        objectsDictionary["obxes"] = ["date": Date().description, "name": NSUserName()]
+    }
+    
     static func addExtensions(_ ext: Stencil.Extension) {
         ext.registerFilter("idForProperty", filter: ObjectBoxFilters.idForProperty)
     }

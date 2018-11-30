@@ -97,6 +97,8 @@ class Sourcery {
                 result = try self.parse(from: paths, modules: modules)
             }
 
+            ObjectBoxFilters.process(parsingResult: &result)
+
             try self.generate(source: source, templatePaths: templatesPaths, output: output, parsingResult: result)
             return result
         }
