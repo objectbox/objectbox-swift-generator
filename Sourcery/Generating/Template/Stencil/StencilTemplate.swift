@@ -96,6 +96,8 @@ final class StencilTemplate: StencilSwiftKit.StencilSwiftTemplate, Template {
 
         ext.registerBoolFilterWithArguments("annotated", filter: { (a: Annotated, annotation) in a.isAnnotated(with: annotation) })
 
+        ObjectBoxFilters.addExtensions(ext)
+
         var extensions = stencilSwiftEnvironment().extensions
         extensions.append(ext)
         let loader = templatePath.map({ FileSystemLoader(paths: [$0.parent()]) })

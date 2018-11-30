@@ -181,12 +181,14 @@ internal struct AnnotationsParser {
                 }
     }
 
+    static var annotationPrefix = "sourcery"
+
     private static func searchForAnnotations(commentLine: String) -> AnnotationType {
         let comment = commentLine.trimmingPrefix("///").trimmingPrefix("//").trimmingPrefix("/**").trimmingPrefix("/*").trimmingPrefix("*").stripped()
 
-        guard comment.hasPrefix("sourcery:") else { return .annotations([:]) }
+        guard comment.hasPrefix(AnnotationsParser.annotationPrefix + ":") else { return .annotations([:]) }
 
-        if comment.hasPrefix("sourcery:inline:") {
+        if comment.hasPrefix(AnnotationsParser.annotationPrefix + ":inline:") {
             return .inlineStart
         }
 
@@ -195,18 +197,18 @@ internal struct AnnotationsParser {
         var insideBlock: Bool = false
         var insideFileBlock: Bool = false
 
-        if comment.hasPrefix("sourcery:begin:") {
-            lowerBound = commentLine.range(of: "sourcery:begin:")?.upperBound
+        if comment.hasPrefix(AnnotationsParser.annotationPrefix + ":begin:") {
+            lowerBound = commentLine.range(of: AnnotationsParser.annotationPrefix + ":begin:")?.upperBound
             upperBound = commentLine.indices.endIndex
             insideBlock = true
-        } else if comment.hasPrefix("sourcery:end") {
+        } else if comment.hasPrefix(AnnotationsParser.annotationPrefix + ":end") {
             return .end
-        } else if comment.hasPrefix("sourcery:file") {
-            lowerBound = commentLine.range(of: "sourcery:file:")?.upperBound
+        } else if comment.hasPrefix(AnnotationsParser.annotationPrefix + ":file") {
+            lowerBound = commentLine.range(of: AnnotationsParser.annotationPrefix + ":file:")?.upperBound
             upperBound = commentLine.indices.endIndex
             insideFileBlock = true
         } else {
-            lowerBound = commentLine.range(of: "sourcery:")?.upperBound
+            lowerBound = commentLine.range(of: AnnotationsParser.annotationPrefix + ":")?.upperBound
             if commentLine.hasPrefix("//") || commentLine.hasPrefix("*") {
                 upperBound = commentLine.indices.endIndex
             } else {

@@ -107,26 +107,30 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--sources"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$SRCROOT/SourceryRuntime/Sources"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--templates"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$SRCROOT/Sourcery/Templates"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--output"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$SRCROOT/SourceryRuntime/Sources"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--sources /Users/uli/Downloads/SourceryTest/Test.swift --templates /Users/uli/Downloads/SourceryTest/example.stencil --output /Users/uli/Downloads/SourceryTest/example.generated.swift"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
