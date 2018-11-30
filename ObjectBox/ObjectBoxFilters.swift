@@ -55,59 +55,40 @@ extension IdUid {
     }
 }
 
+
 enum ObjectBoxFilters {
     
-    class HasIdUid: Codable {
-        var id: IdUid
-        
-        var uid: Int64 {
-            get {
-                return id.uid
-            }
-            set(new) {
-                id.uid = new
-            }
-        }
-        
-        var modelId: Int32 {
-            get {
-                return id.id
-            }
-            set(new) {
-                id.id = new
-            }
-        }
+    class Property: Codable {
+        var id = IdUid()
+        var name = ""
+        var indexId: IdUid?
         
         private enum CodingKeys: String, CodingKey {
             case id
-        }
-    }
-    
-    class Property: HasIdUid {
-        var name = ""
-        var indexId = IdUid()
-        
-        private enum CodingKeys: String, CodingKey {
             case name
             case indexId
         }
     }
     
-    class Relation: HasIdUid {
+    class Relation: Codable {
+        var id = IdUid()
         var name = ""
         
         private enum CodingKeys: String, CodingKey {
+            case id
             case name
         }
     }
     
-    class Entity: HasIdUid {
+    class Entity: Codable {
+        var id = IdUid()
         var name = ""
-        var lastPropertyId = IdUid()
-        var properties: Array<Property> = []
-        var relations: Array<Relation> = []
+        var lastPropertyId: IdUid?
+        var properties: Array<Property>?
+        var relations: Array<Relation>?
         
         private enum CodingKeys: String, CodingKey {
+            case id
             case name
             case lastPropertyId
             case properties
@@ -121,19 +102,19 @@ enum ObjectBoxFilters {
         static let modelVersionParserMinimum: Int64 = 4
         
         /** "Comments" in the JSON file */
-        var _note1: String = "KEEP THIS FILE! Check it into a version control system (VCS) like git."
-        var _note2: String = "ObjectBox manages crucial IDs for your object model. See docs for details."
-        var _note3: String = "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs."
+        var _note1: String? = "KEEP THIS FILE! Check it into a version control system (VCS) like git."
+        var _note2: String? = "ObjectBox manages crucial IDs for your object model. See docs for details."
+        var _note3: String? = "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs."
         
         var version: Int64 = 0
         var modelVersion: Int64 = IdSyncModel.modelVersion
         /** Specify backward compatibility with older parsers.*/
         var modelVersionParserMinimum: Int64 = modelVersion
-        var lastEntityId: IdUid
-        var lastIndexId: IdUid
-        var lastRelationId: IdUid
+        var lastEntityId: IdUid?
+        var lastIndexId: IdUid?
+        var lastRelationId: IdUid?
         // TODO use this once we support sequences
-        var lastSequenceId: IdUid
+        var lastSequenceId: IdUid?
         
         var entities: Array<Entity> = []
         
@@ -226,7 +207,13 @@ enum ObjectBoxFilters {
 
     /* Process the parsed syntax tree, possibly annotating or otherwise
         extending it. */
-    static func process(parsingResult result: inout Sourcery.ParsingResult) {
+    static func process(parsingResult result: inout Sourcery.ParsingResult) throws {
+        
+        let data = try Data(contentsOf: URL(fileURLWithPath: "/Users/uli/Downloads/SourceryTest/testmodel.json"))
+        let decoder = JSONDecoder()
+        let idModelSync = try decoder.decode(IdSyncModel.self, from: data)
+        print("\(idModelSync)")
+        
         result.types.all.forEach { currClass in
             print("\(currClass.name): \(currClass.annotations)");
             currClass.variables.forEach { currVariable in
