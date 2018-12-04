@@ -53,6 +53,12 @@ extension IdUid {
             self = "\(idStr):\(secondValue)"
         }
     }
+    
+    mutating func incId(uid: Int64) -> IdUid {
+        self.id = self.id + 1
+        self.uid = uid
+        return self
+    }
 }
 
 

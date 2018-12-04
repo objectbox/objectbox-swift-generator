@@ -27,6 +27,18 @@ enum IdSync {
         case DuplicateUID(Int64)
         case UIDOutOfRange(Int64)
         case OutOfUIDs
+        case SyncMayOnlyBeCalledOnce
+        case NonUniqueModelUID(uid: Int64, entity: String)
+        case NoSuchEntity(Int64)
+        case PrintUid(entity: String, found: Int64, unique: Int64)
+        case UIDTagNeedsValue(entity: String)
+        case CandidateUIDNotInPool(Int64)
+        case NonUniqueModelPropertyUID(uid: Int64, entity: String, property: String)
+        case NoSuchProperty(entity: String, id: Int64)
+        case MultiplePropertiesForUID(uids: [Int64], names: [String])
+        case PrintPropertyUid(entity: String, property: String, found: Int64, unique: Int64)
+        case PropertyUIDTagNeedsValue(entity: String, property: String)
+        case PropertyCollision(entity: String, new: String, old: String)
     }
     
     class Property: Codable {
@@ -38,6 +50,12 @@ enum IdSync {
             case id
             case name
             case indexId
+        }
+        
+        init(name: String, id: IdUid, indexId: IdUid?) {
+            self.id = id
+            self.name = name
+            self.indexId = indexId
         }
         
         func contains(uid: Int64) -> Bool {
@@ -67,7 +85,7 @@ enum IdSync {
     class Entity: Codable {
         var id = IdUid()
         var name = ""
-        var lastPropertyId: IdUid!
+        var lastPropertyId: IdUid?
         var properties: Array<Property>?
         var relations: Array<Relation>?
         
@@ -79,9 +97,17 @@ enum IdSync {
             case relations
         }
         
+        init(name: String, id: IdUid, properties: [Property], relations: [Relation], lastPropertyId: IdUid) {
+            self.name = name
+            self.id = id
+            self.properties = properties
+            self.relations = relations
+            self.lastPropertyId = lastPropertyId
+        }
+        
         func contains(uid: Int64) -> Bool {
             if id.uid == uid { return true }
-            if lastPropertyId.uid == uid { return true }
+            if lastPropertyId?.uid == uid { return true }
             
             if let properties = properties {
                 for currProperty in properties {
@@ -231,6 +257,63 @@ enum IdSync {
         }
     }
     
+    class SchemaIndex {
+        var properties = Array<SchemaProperty>()
+    }
+    
+    class Schema {
+        var entities: [SchemaEntity] = []
+        
+        var lastEntityId = IdUid()
+        var lastRelationId = IdUid()
+        var lastIndexId = IdUid()
+    }
+    
+    class SchemaEntity: Hashable, Equatable {
+        var modelId: Int32?
+        var modelUid: Int64?
+        var className: String = ""
+        var dbName: String?
+        var properties = Array<SchemaProperty>()
+        var indexes = Array<SchemaIndex>()
+        var lastPropertyId: IdUid?
+
+        public static func == (lhs: SchemaEntity, rhs: SchemaEntity) -> Bool {
+            return lhs.className == rhs.className
+        }
+        
+        public var hashValue: Int {
+            get {
+                return className.hashValue
+            }
+        }
+        
+        public func hash(into hasher: inout Hasher) {
+            className.hash(into: &hasher)
+        }
+    }
+    
+    class SchemaProperty: Hashable, Equatable {
+        var modelId: IdUid?
+        var propertyName: String = ""
+        var dbName: String?
+        var modelIndexId: IdUid?
+
+        public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {
+            return lhs.propertyName == rhs.propertyName
+        }
+        
+        public var hashValue: Int {
+            get {
+                return propertyName.hashValue
+            }
+        }
+        
+        public func hash(into hasher: inout Hasher) {
+            propertyName.hash(into: &hasher)
+        }
+    }
+    
     class IdSync {
         let modelRead: IdSyncModel
         
@@ -252,6 +335,9 @@ enum IdSync {
         private var entitiesReadByName = Dictionary<String, Entity>()
         private var parsedUids = Set<Int64>()
 
+        private var entitiesBySchemaEntity = Dictionary<SchemaEntity, Entity>()
+        private var propertiesBySchemaProperty = Dictionary<SchemaProperty, Property>()
+
         init(jsonFile: URL) throws {
             let data = try Data(contentsOf: jsonFile)
             let decoder = JSONDecoder()
@@ -272,7 +358,7 @@ enum IdSync {
             retiredPropertyUids = modelRead.retiredPropertyUids ?? []
             retiredIndexUids = modelRead.retiredIndexUids ?? []
             retiredRelationUids = modelRead.retiredRelationUids ?? []
-            
+
             newUidPool.formUnion(modelRead.newUidPool ?? [])
             
             try uidHelper.addExistingIds( modelRead.retiredEntityUids ?? [] )
@@ -336,6 +422,187 @@ enum IdSync {
                     }
                 }
             }
+        }
+        
+        func updateRetiredUids(_ entities: [Entity]) {
+            
+        }
+        
+        func writeModel(_ entities: [Entity]) {
+            
+        }
+        
+        func sync(schema: Schema) throws {
+            guard entitiesBySchemaEntity.isEmpty && propertiesBySchemaProperty.isEmpty else {
+                throw Error.SyncMayOnlyBeCalledOnce
+            }
+            
+            let entities = (try schema.entities.map { try syncEntity($0) }).sorted { $0.id.id < $1.id.id }
+            updateRetiredUids(entities)
+            writeModel(entities)
+            
+            schema.lastEntityId = lastEntityId
+            schema.lastIndexId = lastIndexId
+            schema.lastRelationId = lastRelationId
+        }
+        
+        func findEntity(name: String, uid: Int64?) throws -> Entity? {
+            if let uid = uid, uid != 0, uid != -1 {
+                if let foundEntity = entitiesReadByUid[uid] {
+                    return foundEntity
+                } else if newUidPool.contains(uid) {
+                    return nil
+                } else {
+                    throw Error.NoSuchEntity(uid)
+                }
+            } else {
+                return entitiesReadByName[name.lowercased()]
+            }
+        }
+        
+        func findProperty(entity: Entity, name: String, uid: Int64?) throws -> Property? {
+            if let uid = uid, uid != 0, uid != -1 {
+                let filtered = entity.properties?.filter { $0.id.uid == uid } ?? []
+                if filtered.isEmpty {
+                    if newUidPool.contains(uid) {
+                        return nil
+                    }
+                    throw Error.NoSuchProperty(entity: entity.name, id: uid)
+                }
+                if filtered.count != 1 {
+                    throw Error.MultiplePropertiesForUID(uids: [uid], names: filtered.map { $0.name })
+                }
+                return filtered.first
+            } else {
+                let nameLowercased = name.lowercased()
+                let filtered = entity.properties?.filter { $0.name.lowercased() == nameLowercased } ?? []
+                if filtered.count > 1 {
+                    throw Error.MultiplePropertiesForUID(uids: filtered.map { $0.id.uid }, names: [name])
+                }
+                return filtered.first
+            }
+        }
+        
+        func syncEntity(_ schemaEntity: SchemaEntity) throws -> Entity {
+            let entityName = schemaEntity.dbName ?? schemaEntity.className
+            let entityUid = schemaEntity.modelUid
+            let printUid = entityUid == -1
+            if let entityUid = entityUid, !printUid && !parsedUids.insert(entityUid).inserted {
+                throw Error.NonUniqueModelUID(uid: entityUid, entity: schemaEntity.className)
+            }
+            let existingEntity = try findEntity(name: entityName, uid: entityUid)
+            if printUid {
+                /* When renaming entities, we let users specify an empty UID
+                 annotation. That's this case. If this entity already existed
+                 in the model, we print it out as a convenience to our users,
+                 who can then write it in the empty spot before renaming the entity. */
+                if let existingEntity = existingEntity {
+                    throw Error.PrintUid(entity: entityName, found: existingEntity.id.uid, unique: try uidHelper.create())
+                } else {
+                    throw Error.UIDTagNeedsValue(entity: entityName)
+                }
+            }
+            
+            var lastPropertyId: IdUid
+            if let existingEntity = existingEntity, let lastExistingEntityPropertyId = existingEntity.lastPropertyId {
+                lastPropertyId = lastExistingEntityPropertyId
+            } else {
+                lastPropertyId = IdUid()
+            }
+            let properties = try syncProperties(schemaEntity: schemaEntity, entity: existingEntity, lastPropertyId: &lastPropertyId)
+            let relations = syncRelations(schemaEntity: schemaEntity, entity: existingEntity)
+            
+            var sourceId: IdUid
+            if let existingEntity = existingEntity {
+                sourceId = existingEntity.id
+            } else {
+                sourceId = lastEntityId.incId(uid: try newUid(entityUid)) // Create new id
+            }
+            
+            let entity = Entity(name: entityName, id: sourceId, properties: properties, relations: relations, lastPropertyId: lastPropertyId)
+            
+            schemaEntity.modelUid = entity.id.uid
+            schemaEntity.modelId = entity.id.id
+            schemaEntity.lastPropertyId = entity.lastPropertyId
+            
+            entitiesBySchemaEntity[schemaEntity] = entity
+            
+            return entity
+        }
+        
+        func syncProperties(schemaEntity: SchemaEntity, entity: Entity?, lastPropertyId: inout IdUid) throws -> [Property] {
+            
+            var properties = Array<Property>()
+            for parsedProperty in schemaEntity.properties {
+                let property = try syncProperty(existingEntity: entity, schemaEntity: schemaEntity, schemaProperty: parsedProperty, lastPropertyId: &lastPropertyId)
+                if property.id.id > lastPropertyId.id {
+                    lastPropertyId.id = property.id.id
+                }
+                properties.append(property)
+            }
+            properties.sort { $0.id.id < $1.id.id }
+            
+            return properties
+        }
+        
+        func syncProperty(existingEntity: Entity?, schemaEntity: SchemaEntity, schemaProperty: SchemaProperty, lastPropertyId: inout IdUid) throws -> Property {
+            let name = schemaProperty.dbName ?? schemaProperty.propertyName
+            let propertyUid = schemaProperty.modelId?.uid
+            let printUid = propertyUid == -1
+            var existingProperty: Property?
+            if let existingEntity = existingEntity {
+                if let propertyUid = propertyUid, !printUid, !parsedUids.insert(propertyUid).inserted {
+                    throw Error.NonUniqueModelPropertyUID(uid: propertyUid, entity: schemaEntity.className, property: schemaProperty.propertyName)
+                }
+                existingProperty = try findProperty(entity: existingEntity, name: name, uid: propertyUid)
+            }
+            
+            if printUid {
+                if let existingProperty = existingProperty {
+                    throw Error.PrintPropertyUid(entity: schemaEntity.className, property: schemaProperty.propertyName, found: existingProperty.id.uid, unique: try uidHelper.create())
+                } else {
+                    throw Error.PropertyUIDTagNeedsValue(entity: schemaEntity.className, property: schemaProperty.propertyName)
+                }
+            }
+            
+            var sourceIndexId: IdUid?
+            // check entity for index as Property.Index is only auto-set for to-ones
+            let index = schemaEntity.indexes.firstIndex { $0.properties.count == 1 && $0.properties.first == schemaProperty }
+            if index != nil {
+                sourceIndexId = try existingProperty?.indexId ?? lastIndexId.incId(uid: uidHelper.create())
+            }
+            
+            let sourceId: IdUid
+            if let existingPropertyId = existingProperty?.id {
+                sourceId = existingPropertyId
+            } else {
+                sourceId = try lastPropertyId.incId(uid: newUid(propertyUid))
+            }
+            
+            let property = Property(name: name, id: sourceId, indexId: sourceIndexId)
+            
+            schemaProperty.modelId = property.id
+            schemaProperty.modelIndexId = property.indexId
+            
+            let collision = propertiesBySchemaProperty.updateValue(property, forKey: schemaProperty)
+            if let collision = collision {
+                throw Error.PropertyCollision(entity: schemaEntity.className, new: property.name, old: collision.name)
+            }
+            
+            return property
+        }
+        
+        func syncRelations(schemaEntity: SchemaEntity, entity: Entity?) -> [Relation] {
+            return []
+        }
+        
+        func newUid(_ candidate: Int64?) throws -> Int64 {
+            if let candidate = candidate,
+                newUidPool.remove(candidate) == nil {
+                throw Error.CandidateUIDNotInPool(candidate)
+            }
+            
+            return try candidate ?? uidHelper.create()
         }
     }
 }
