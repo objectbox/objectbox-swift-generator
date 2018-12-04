@@ -57,118 +57,8 @@ extension IdUid {
 
 
 enum ObjectBoxFilters {
-    
-    class Property: Codable {
-        var id = IdUid()
-        var name = ""
-        var indexId: IdUid?
         
-        private enum CodingKeys: String, CodingKey {
-            case id
-            case name
-            case indexId
-        }
-    }
-    
-    class Relation: Codable {
-        var id = IdUid()
-        var name = ""
-        
-        private enum CodingKeys: String, CodingKey {
-            case id
-            case name
-        }
-    }
-    
-    class Entity: Codable {
-        var id = IdUid()
-        var name = ""
-        var lastPropertyId: IdUid!
-        var properties: Array<Property>!
-        var relations: Array<Relation>!
-        
-        private enum CodingKeys: String, CodingKey {
-            case id
-            case name
-            case lastPropertyId
-            case properties
-            case relations
-        }
-    }
-    
-    class IdSyncModel_: Codable {
-    
-        static let modelVersion: Int64 = 4 // !! When upgrading always check modelVersionParserMinimum !!
-        static let modelVersionParserMinimum: Int64 = 4
-        
-        /** "Comments" in the JSON file */
-        var _note1: String! = "KEEP THIS FILE! Check it into a version control system (VCS) like git."
-        var _note2: String! = "ObjectBox manages crucial IDs for your object model. See docs for details."
-        var _note3: String! = "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs."
-        
-        var version: Int64 = 0
-        var modelVersion: Int64 = IdSyncModel.modelVersion
-        /** Specify backward compatibility with older parsers.*/
-        var modelVersionParserMinimum: Int64 = modelVersion
-        var lastEntityId: IdUid!
-        var lastIndexId: IdUid!
-        var lastRelationId: IdUid!
-        // TODO use this once we support sequences
-        var lastSequenceId: IdUid!
-        
-        var entities: Array<Entity>! = []
-        
-        /**
-         * Previously allocated UIDs (e.g. via "@Uid" without value) to use to provide UIDs for new entities,
-         * properties, or relations.
-         */
-        var newUidPool: Array<Int64>!
-        
-        /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredEntityUids: Array<Int64>!
-        
-        /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredPropertyUids: Array<Int64>!
-        
-        /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredIndexUids: Array<Int64>!
-        
-        /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredRelationUids: Array<Int64>!
-        
-        private enum CodingKeys: String, CodingKey {
-            case _note1
-            case _note2
-            case _note3
-            case version
-            case modelVersion
-            case modelVersionParserMinimum
-            case lastEntityId
-            case lastIndexId
-            case lastRelationId
-            case lastSequenceId
-            case entities
-            case newUidPool
-            case retiredEntityUids
-            case retiredPropertyUids
-            case retiredIndexUids
-            case retiredRelationUids
-        }
-    }
-    
-    class IdSyncModel: IdSyncModel_ {
-        required init(from decoder: Decoder) throws {
-            try super.init(from: decoder)
-            if entities == nil { entities = [] }
-            if newUidPool == nil { newUidPool = [] }
-            if retiredEntityUids == nil { newUidPool = [] }
-            if retiredPropertyUids == nil { newUidPool = [] }
-            if retiredIndexUids == nil { newUidPool = [] }
-            if retiredRelationUids == nil { retiredRelationUids = [] }
-        }
-    }
-    
-    /* The following two functyions and this error type are copied from SourcerySwiftKit because that doesn't
+    /* The following two functions and this error type are copied from SourcerySwiftKit because that doesn't
         export them. */
     enum Error: Swift.Error {
         case invalidInputType
@@ -221,9 +111,7 @@ enum ObjectBoxFilters {
         extending it. */
     static func process(parsingResult result: inout Sourcery.ParsingResult) throws {
         
-        let data = try Data(contentsOf: URL(fileURLWithPath: "/Users/uli/Downloads/SourceryTest/testmodel.json"))
-        let decoder = JSONDecoder()
-        let idModelSync = try decoder.decode(IdSyncModel.self, from: data)
+        let idModelSync = try IdSync.IdSync(jsonFile: URL(fileURLWithPath: "/Users/uli/Downloads/SourceryTest/testmodel.json"))
         print("\(idModelSync)")
         
         result.types.all.forEach { currClass in
