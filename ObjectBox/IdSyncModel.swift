@@ -276,6 +276,7 @@ enum IdSync {
         var dbName: String?
         var properties = Array<SchemaProperty>()
         var indexes = Array<SchemaIndex>()
+        var toManyRelations = Array<ToManyStandalone>()
         var lastPropertyId: IdUid?
 
         public static func == (lhs: SchemaEntity, rhs: SchemaEntity) -> Bool {
@@ -312,6 +313,10 @@ enum IdSync {
         public func hash(into hasher: inout Hasher) {
             propertyName.hash(into: &hasher)
         }
+    }
+    
+    class ToManyStandalone {
+        var modelId: IdUid?
     }
     
     class IdSync {
@@ -509,8 +514,8 @@ enum IdSync {
             } else {
                 lastPropertyId = IdUid()
             }
-            let properties = try syncProperties(schemaEntity: schemaEntity, entity: existingEntity, lastPropertyId: &lastPropertyId)
-            let relations = syncRelations(schemaEntity: schemaEntity, entity: existingEntity)
+            let properties = try syncProperties(schemaEntity: schemaEntity, existingEntity: existingEntity, lastPropertyId: &lastPropertyId)
+            let relations = syncRelations(schemaEntity: schemaEntity, existingEntity: existingEntity)
             
             var sourceId: IdUid
             if let existingEntity = existingEntity {
@@ -530,11 +535,11 @@ enum IdSync {
             return entity
         }
         
-        func syncProperties(schemaEntity: SchemaEntity, entity: Entity?, lastPropertyId: inout IdUid) throws -> [Property] {
+        func syncProperties(schemaEntity: SchemaEntity, existingEntity: Entity?, lastPropertyId: inout IdUid) throws -> [Property] {
             
             var properties = Array<Property>()
             for parsedProperty in schemaEntity.properties {
-                let property = try syncProperty(existingEntity: entity, schemaEntity: schemaEntity, schemaProperty: parsedProperty, lastPropertyId: &lastPropertyId)
+                let property = try syncProperty(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaProperty: parsedProperty, lastPropertyId: &lastPropertyId)
                 if property.id.id > lastPropertyId.id {
                     lastPropertyId.id = property.id.id
                 }
@@ -592,8 +597,25 @@ enum IdSync {
             return property
         }
         
-        func syncRelations(schemaEntity: SchemaEntity, entity: Entity?) -> [Relation] {
-            return []
+        func syncRelations(schemaEntity: SchemaEntity, existingEntity: Entity?) -> [Relation] {
+            var relations = Array<Relation>()
+            let schemaRelations = schemaEntity.toManyRelations.compactMap { $0 as? ToManyStandalone }
+            
+            schemaRelations.forEach { schemaRelation in
+                let relation = syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
+                if relation.modelId > lastRelationId.id {
+                    lastRelationId.id = relation.id.id // TODO: is id.id = same as set()
+                }
+                
+                relations.append(relation)
+            }
+            relations.sort { $0.id.id < $1.id.id }
+
+            return relations
+        }
+
+        func syncRelation(existingEntity: Entity?, schemaEntity: SchemaEntity, schemaRelation: ToManyStandalone): Relation {
+            
         }
         
         func newUid(_ candidate: Int64?) throws -> Int64 {
