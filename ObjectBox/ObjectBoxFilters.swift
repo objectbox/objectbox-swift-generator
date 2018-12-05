@@ -131,6 +131,16 @@ enum ObjectBoxFilters {
         newTypes.append(Type(name: "InjectedType", annotations: ["Entity": NSNumber(value: 1)]))
         
         result = (types: Types(types: newTypes), inlineRanges: result.inlineRanges)
+        
+        let schemaData = IdSync.Schema()
+        
+        result.types.all.forEach { currType in
+            if currType.inheritedTypes.contains("Entity") || currType.annotations["Entity"] != nil {
+                let schemaEntity = IdSync.SchemaEntity()
+                schemaEntity.className = currType.localName
+                schemaData.entities.append(schemaEntity)
+            }
+        }
     }
     
     /* Modify the dictionary of global objects that Stencil sees. */
