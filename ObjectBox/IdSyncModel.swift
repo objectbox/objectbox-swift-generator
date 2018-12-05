@@ -34,11 +34,16 @@ enum IdSync {
         case UIDTagNeedsValue(entity: String)
         case CandidateUIDNotInPool(Int64)
         case NonUniqueModelPropertyUID(uid: Int64, entity: String, property: String)
-        case NoSuchProperty(entity: String, id: Int64)
+        case NoSuchProperty(entity: String, uid: Int64)
         case MultiplePropertiesForUID(uids: [Int64], names: [String])
         case PrintPropertyUid(entity: String, property: String, found: Int64, unique: Int64)
         case PropertyUIDTagNeedsValue(entity: String, property: String)
         case PropertyCollision(entity: String, new: String, old: String)
+        case NonUniqueModelRelationUID(uid: Int64, entity: String, relation: String)
+        case NoSuchRelation(entity: String, uid: Int64)
+        case MultipleRelationsForUID(uids: [Int64], names: [String])
+        case PrintRelationUid(entity: String, relation: String, found: Int64, unique: Int64)
+        case RelationUIDTagNeedsValue(entity: String, relation: String)
     }
     
     class Property: Codable {
@@ -75,6 +80,11 @@ enum IdSync {
             case name
         }
         
+        init(name: String, id: IdUid) {
+            self.name = name
+            self.id = id
+        }
+        
         func contains(uid: Int64) -> Bool {
             if id.uid == uid { return true }
             
@@ -82,7 +92,7 @@ enum IdSync {
         }
     }
     
-    class Entity: Codable {
+    class Entity: Codable, Hashable, Equatable {
         var id = IdUid()
         var name = ""
         var lastPropertyId: IdUid?
@@ -122,6 +132,20 @@ enum IdSync {
             }
 
             return false
+        }
+
+        public static func == (lhs: Entity, rhs: Entity) -> Bool {
+            return lhs.name == rhs.name
+        }
+        
+        public var hashValue: Int {
+            get {
+                return name.hashValue
+            }
+        }
+        
+        public func hash(into hasher: inout Hasher) {
+            name.hash(into: &hasher)
         }
     }
     
@@ -317,6 +341,8 @@ enum IdSync {
     
     class ToManyStandalone {
         var modelId: IdUid?
+        var name: String = ""
+        var dbName: String?
     }
     
     class IdSync {
@@ -430,7 +456,39 @@ enum IdSync {
         }
         
         func updateRetiredUids(_ entities: [Entity]) {
+            var oldEntityUids = Set<Int64>(entitiesReadByUid.keys)
+            oldEntityUids.subtract(entities.map { $0.id.uid })
+            retiredEntityUids.append(contentsOf: oldEntityUids)
             
+            var oldPropertyUids = collectPropertyUids(Array<Entity>(entitiesReadByUid.values))
+            let newPropertyUids = collectPropertyUids(entities)
+            
+            oldPropertyUids.propertyUids.subtract(newPropertyUids.propertyUids)
+            retiredPropertyUids.append(contentsOf: oldPropertyUids.propertyUids)
+
+            oldPropertyUids.indexUids.subtract(newPropertyUids.indexUids)
+            retiredPropertyUids.append(contentsOf: oldPropertyUids.indexUids)
+
+            oldPropertyUids.relationUids.subtract(newPropertyUids.relationUids)
+            retiredPropertyUids.append(contentsOf: oldPropertyUids.relationUids)
+        }
+        
+        func collectPropertyUids(_ entities: Array<Entity>) -> (propertyUids: Set<Int64>, indexUids: Set<Int64>, relationUids: Set<Int64>) {
+            var propertyUids = Set<Int64>()
+            var indexUids = Set<Int64>()
+            var relationUids = Set<Int64>()
+            
+            entities.forEach { currEntity in
+                currEntity.properties?.forEach { currProperty in
+                    propertyUids.insert(currProperty.id.uid)
+                    if let indexId = currProperty.indexId {
+                        indexUids.insert(indexId.uid)
+                    }
+                }
+                currEntity.relations?.forEach { relationUids.insert($0.id.uid) }
+            }
+            
+            return (propertyUids: propertyUids, indexUids: indexUids, relationUids: relationUids)
         }
         
         func writeModel(_ entities: [Entity]) {
@@ -472,7 +530,7 @@ enum IdSync {
                     if newUidPool.contains(uid) {
                         return nil
                     }
-                    throw Error.NoSuchProperty(entity: entity.name, id: uid)
+                    throw Error.NoSuchProperty(entity: entity.name, uid: uid)
                 }
                 if filtered.count != 1 {
                     throw Error.MultiplePropertiesForUID(uids: [uid], names: filtered.map { $0.name })
@@ -483,6 +541,31 @@ enum IdSync {
                 let filtered = entity.properties?.filter { $0.name.lowercased() == nameLowercased } ?? []
                 if filtered.count > 1 {
                     throw Error.MultiplePropertiesForUID(uids: filtered.map { $0.id.uid }, names: [name])
+                }
+                return filtered.first
+            }
+        }
+        
+        func findRelation(entity: Entity, name: String, uid: Int64?) throws -> Relation? {
+            guard entity.relations != nil else { return nil }
+            
+            if let uid = uid, uid != 0, uid != -1 {
+                let filtered = entity.relations?.filter { $0.id.uid == uid } ?? []
+                if filtered.isEmpty {
+                    if newUidPool.contains(uid) {
+                        return nil
+                    }
+                    throw Error.NoSuchRelation(entity: entity.name, uid: uid)
+                }
+                if filtered.count != 1 {
+                    throw Error.MultipleRelationsForUID(uids: [uid], names: filtered.map { $0.name })
+                }
+                return filtered.first
+            } else {
+                let nameLowercased = name.lowercased()
+                let filtered = entity.relations?.filter { $0.name.lowercased() == nameLowercased } ?? []
+                if filtered.count > 1 {
+                    throw Error.MultipleRelationsForUID(uids: filtered.map { $0.id.uid }, names: [name])
                 }
                 return filtered.first
             }
@@ -515,7 +598,7 @@ enum IdSync {
                 lastPropertyId = IdUid()
             }
             let properties = try syncProperties(schemaEntity: schemaEntity, existingEntity: existingEntity, lastPropertyId: &lastPropertyId)
-            let relations = syncRelations(schemaEntity: schemaEntity, existingEntity: existingEntity)
+            let relations = try syncRelations(schemaEntity: schemaEntity, existingEntity: existingEntity)
             
             var sourceId: IdUid
             if let existingEntity = existingEntity {
@@ -597,14 +680,14 @@ enum IdSync {
             return property
         }
         
-        func syncRelations(schemaEntity: SchemaEntity, existingEntity: Entity?) -> [Relation] {
+        func syncRelations(schemaEntity: SchemaEntity, existingEntity: Entity?) throws -> [Relation] {
             var relations = Array<Relation>()
             let schemaRelations = schemaEntity.toManyRelations.compactMap { $0 as? ToManyStandalone }
             
-            schemaRelations.forEach { schemaRelation in
-                let relation = syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
-                if relation.modelId > lastRelationId.id {
-                    lastRelationId.id = relation.id.id // TODO: is id.id = same as set()
+            try schemaRelations.forEach { schemaRelation in
+                let relation = try syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
+                if relation.id.id > lastRelationId.id {
+                    lastRelationId.id = relation.id.id
                 }
                 
                 relations.append(relation)
@@ -614,8 +697,37 @@ enum IdSync {
             return relations
         }
 
-        func syncRelation(existingEntity: Entity?, schemaEntity: SchemaEntity, schemaRelation: ToManyStandalone): Relation {
+        func syncRelation(existingEntity: Entity?, schemaEntity: SchemaEntity, schemaRelation: ToManyStandalone) throws -> Relation {
+            let name = schemaRelation.dbName ?? schemaRelation.name
+            let relationUid = schemaRelation.modelId?.uid
+            let printUid = relationUid == -1
+            var existingRelation: Relation?
+            if let existingEntity = existingEntity {
+                if let relationUid = relationUid, !printUid, !parsedUids.insert(relationUid).inserted {
+                    throw Error.NonUniqueModelRelationUID(uid: relationUid, entity: schemaEntity.className, relation: schemaRelation.name)
+                }
+                existingRelation = try findRelation(entity: existingEntity, name: name, uid: relationUid)
+            }
             
+            if printUid {
+                if let existingRelation = existingRelation {
+                    throw Error.PrintRelationUid(entity: schemaEntity.className, relation: schemaRelation.name, found: existingRelation.id.uid, unique: try uidHelper.create())
+                } else {
+                    throw Error.RelationUIDTagNeedsValue(entity: schemaEntity.className, relation: schemaRelation.name)
+                }
+            }
+            
+            let sourceId: IdUid
+            if let existingRelationId = existingRelation?.id {
+                sourceId = existingRelationId
+            } else {
+                sourceId = try lastRelationId.incId(uid: newUid(relationUid))
+            }
+            
+            let relation = Relation(name: name, id: sourceId)
+            
+            schemaRelation.modelId = relation.id
+            return relation
         }
         
         func newUid(_ candidate: Int64?) throws -> Int64 {
