@@ -138,9 +138,34 @@ enum ObjectBoxFilters {
             if currType.inheritedTypes.contains("Entity") || currType.annotations["Entity"] != nil {
                 let schemaEntity = IdSync.SchemaEntity()
                 schemaEntity.className = currType.localName
+                schemaEntity.modelUid = currType.annotations["objectId"] as? Int64
+                schemaEntity.dbName = currType.annotations["nameInDb"] as? String
+
+                var schemaProperties = Array<IdSync.SchemaProperty>()
+                currType.variables.forEach { currIVar in
+                    guard !currIVar.annotations.contains(reference: "transient") else { return } // Exits only the foreach block
+                    
+                    let schemaProperty = IdSync.SchemaProperty()
+                    schemaProperty.propertyName = currIVar.name
+                    schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String
+                    if let propertyUid = currIVar.annotations["uid"] as? Int64 {
+                        var propId = IdUid()
+                        propId.uid = propertyUid
+                        schemaProperty.modelId = propId
+                    }
+                    if let propertyIndexUid = currIVar.annotations["index"] as? Int64 {
+                        var indexId = IdUid()
+                        indexId.uid = propertyIndexUid
+                        schemaProperty.modelIndexId = indexId
+                    }
+                    schemaProperties.append(schemaProperty)
+                }
+                schemaEntity.properties = schemaProperties
                 schemaData.entities.append(schemaEntity)
             }
         }
+        
+        try idModelSync.sync(schema: schemaData)
     }
     
     /* Modify the dictionary of global objects that Stencil sees. */
