@@ -99,6 +99,7 @@ enum IdSync {
         var lastPropertyId: IdUid?
         var properties: Array<Property>?
         var relations: Array<Relation>?
+        var isEntitySubclass = false
         
         private enum CodingKeys: String, CodingKey {
             case id
@@ -108,12 +109,13 @@ enum IdSync {
             case relations
         }
         
-        init(name: String, id: IdUid, properties: [Property], relations: [Relation], lastPropertyId: IdUid) {
+        init(name: String, id: IdUid, properties: [Property], relations: [Relation], lastPropertyId: IdUid, isEntitySubclass: Bool) {
             self.name = name
             self.id = id
             self.properties = properties
             self.relations = relations
             self.lastPropertyId = lastPropertyId
+            self.isEntitySubclass = isEntitySubclass
         }
         
         func contains(uid: Int64) -> Bool {
@@ -316,6 +318,7 @@ enum IdSync {
         var indexes = Array<SchemaIndex>()
         var toManyRelations = Array<ToManyStandalone>()
         var lastPropertyId: IdUid?
+        var isEntitySubclass = false
 
         public static func == (lhs: SchemaEntity, rhs: SchemaEntity) -> Bool {
             return lhs.className == rhs.className
@@ -671,7 +674,7 @@ enum IdSync {
                 sourceId = lastEntityId.incId(uid: try newUid(entityUid)) // Create new id
             }
             
-            let entity = Entity(name: entityName, id: sourceId, properties: properties, relations: relations, lastPropertyId: lastPropertyId)
+            let entity = Entity(name: entityName, id: sourceId, properties: properties, relations: relations, lastPropertyId: lastPropertyId, isEntitySubclass: schemaEntity.isEntitySubclass)
             
             schemaEntity.modelUid = entity.id.uid
             schemaEntity.modelId = entity.id.id

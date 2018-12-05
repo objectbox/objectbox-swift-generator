@@ -1,0 +1,17 @@
+// swiftlint:disable all
+import ObjectBox
+
+// Entities:
+{% for entity in entities %}
+//      {{ entity.className }}
+{% endfor %}
+// end of entities.
+
+// MARK: - Entity metadata
+
+{% for entity in entities where not entity.isEntitySubclass %}
+extension {{ entity.className }}: Entity {} // {{ entity.isEntitySubclass }}
+{% endfor %}
+
+
+// swiftlint:enable all
