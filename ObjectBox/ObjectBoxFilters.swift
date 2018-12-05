@@ -165,7 +165,80 @@ enum ObjectBoxFilters {
             let idModelSync = try IdSync.IdSync(jsonFile: URL(fileURLWithPath: "/Users/uli/Downloads/SourceryTest/testmodel.json"))
             try idModelSync.sync(schema: schemaData)
         } catch {
-            print("Error: \(error)")
+            guard let obxError = error as? IdSync.Error else {
+                print("Error: \(error)")
+                return
+            }
+            switch(obxError) {
+            case .IncompatibleVersion(let found, let expected):
+                print("Error: Model version \(expected) expected, but \(found) found.")
+            case .DuplicateEntityName(let name):
+                print("Error: More than one entity with name \(name) found.")
+            case .DuplicateEntityID(let name, let id):
+                print("Error: More than one entity with ID \(id) found (\"\(name)\").")
+            case .MissingLastEntityID:
+                print("Error: No lastEntityId entry in model JSON file.")
+            case .LastEntityIdUIDMismatch(let name, let id, let found, let expected):
+                print("Error: lastEntityId UID \(found) in model JSON does not actually match the highest entity ID found, \(expected). (\(name)/\(id))")
+            case .EntityIdGreaterThanLast(let name, let found, let last):
+                print("Error: Entity \(name) has an ID of \(found), which is higher than the model JSON's entry for the lastEntityId, \(last)")
+            case .MissingLastPropertyID(let name):
+                print("Error: Entity \(name) has no lastPropertyId entry in the model JSON.")
+            case .DuplicatePropertyID(let entity, let name, let id):
+                print("Error: The ID \(id) of property \(name) in entity \(entity) is already in use for another property.")
+            case .LastPropertyIdUIDMismatch(let entity, let name, let id, let found, let expected):
+                print("Error: The ID \(id) of last property \(name) in entity \(entity) should have UID \(expected), but actually has \(found).")
+            case .PropertyIdGreaterThanLast(let entity, let name, let found, let last):
+                print("Error: Property \(name) of entity \(entity) has an ID of \(found), which is higher than the model JSON's entry for that class's lastPropertyId, \(last)")
+            case .DuplicateUID(let uid):
+                print("Error: UID \(uid) exists twice in this model. Possibly as a code annotation and in the model JSON on different classes.")
+            case .UIDOutOfRange(let uid):
+                print("Error: UID \(uid) is not within the valid range for UIDs (>= 0).")
+            case .OutOfUIDs:
+                print("Internal Error: Could not generate a unique UID in reasonable time.")
+            case .SyncMayOnlyBeCalledOnce:
+                print("Internal Error: sync() may only be called once.")
+            case .NonUniqueModelUID(let uid, let entity):
+                print("Error: UID \(uid) that entity \(entity) has is already in use for another entity.")
+            case .NoSuchEntity(let entity):
+                print("Error: No entity with UID \(entity) exists.")
+            case .PrintUid(let entity, let found, let unique):
+                print("error: No UID given for entity \(entity). You can do the following:\n",
+                    "error:\t[Rename] Apply the current UID using // objectbox: entityId \(found)\n",
+                    "error:\t[Change/Reset] Apply a new UID using // objectbox: entityId \(unique)")
+            case .UIDTagNeedsValue(let entity):
+                print("Error: No UID given for entity \(entity).")
+            case .CandidateUIDNotInPool(let uid):
+                print("Internal Error: Candidate UID \(uid) was not in new UID pool.")
+            case .NonUniqueModelPropertyUID(let uid, let entity, let property):
+                print("Error: UID \(uid) of property \(property) of entity \(entity) is already in use.")
+            case .NoSuchProperty(let entity, let uid):
+                print("Error: No property with UID \(uid) in entity \(entity).")
+            case .MultiplePropertiesForUID(let uids, let names):
+                print("Error: Multiple matches between UIDs: \(uids.map { String($0) }.joined(separator: ", ")) and properties: \(names.joined(separator: ", ")).")
+            case .PrintPropertyUid(let entity, let property, let found, let unique):
+                print("error: No UID given for property \(property) of entity \(entity). You can do the following:\n",
+                    "error:\t[Rename] Apply the current UID using // objectbox: uid \(found)\n",
+                    "error:\t[Change/Reset] Apply a new UID using // objectbox: uid \(unique)")
+            case .PropertyUIDTagNeedsValue(let entity, let property):
+                print("Error: Property \(property) of entity \(entity) has an \"// objectbox: uid n\" annotation missing the number n.")
+            case .PropertyCollision(let entity, let new, let old):
+                print("Error: Properties \(new) and \(old) of entity \(entity) both map to the same property of the same class.")
+            case .NonUniqueModelRelationUID(let uid, let entity, let relation):
+                print("Error: UID \(uid) of relation \(relation) of entity \(entity) is already being used by another relation.")
+            case .NoSuchRelation(let entity, let uid):
+                print("Error: No relation with UID \(uid) in entity \(entity).")
+            case .MultipleRelationsForUID(let uids, let names):
+                print("Error: Multiple matches between UIDs: \(uids.map { String($0) }.joined(separator: ", ")) and relations: \(names.joined(separator: ", ")).")
+            case .PrintRelationUid(let entity, let relation, let found, let unique):
+                print("error: No UID given for relation \(relation) of entity \(entity). You can do the following:\n",
+                    "error:\t[Rename] Apply the current UID using // objectbox: uid \(found)\n",
+                    "error:\t[Change/Reset] Apply a new UID using // objectbox: uid \(unique)")
+            case .RelationUIDTagNeedsValue(let entity, let relation):
+                print("Error: Relation \(relation) of entity \(entity) has an \"// objectbox: uid n\" annotation missing the number n.")
+            case .DuplicatePropertyName(let entity, let property):
+                print("Error: Property \(property) of entity \(entity) exists twice.")
+            }
         }
     }
     

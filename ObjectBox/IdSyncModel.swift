@@ -19,11 +19,11 @@ enum IdSync {
         case DuplicateEntityID(name: String, id: Int32)
         case MissingLastEntityID
         case LastEntityIdUIDMismatch(name: String, id: Int32, found: Int64, expected: Int64)
-        case EntityIdGreatherThanLast(name: String, found: Int32, last: Int32)
-        case MissingLastPropertyID
+        case EntityIdGreaterThanLast(name: String, found: Int32, last: Int32)
+        case MissingLastPropertyID(entity: String)
         case DuplicatePropertyID(entity: String, name: String, id: Int32)
         case LastPropertyIdUIDMismatch(entity: String, name: String, id: Int32, found: Int64, expected: Int64)
-        case PropertyIdGreatherThanLast(entity: String, name: String, found: Int32, last: Int32)
+        case PropertyIdGreaterThanLast(entity: String, name: String, found: Int32, last: Int32)
         case DuplicateUID(Int64)
         case UIDOutOfRange(Int64)
         case OutOfUIDs
@@ -453,7 +453,7 @@ enum IdSync {
                         throw Error.LastEntityIdUIDMismatch(name: entity.name, id: entity.id.id, found: entity.id.uid, expected: lastEntityId.uid)
                     }
                 } else if entity.id.id > lastEntityId.id {
-                    throw Error.EntityIdGreatherThanLast(name: entity.name, found:entity.id.id, last: lastEntityId.id)
+                    throw Error.EntityIdGreaterThanLast(name: entity.name, found:entity.id.id, last: lastEntityId.id)
                 }
                 
                 var propertyIds = Set<Int32>()
@@ -463,7 +463,7 @@ enum IdSync {
                     }
                     
                     guard let lastPropertyId = entity.lastPropertyId else {
-                        throw Error.MissingLastPropertyID
+                        throw Error.MissingLastPropertyID(entity: entity.name)
                     }
                     
                     if property.id.id == lastPropertyId.id {
@@ -471,7 +471,7 @@ enum IdSync {
                             throw Error.LastPropertyIdUIDMismatch(entity: entity.name, name: property.name, id: property.id.id, found: property.id.uid, expected: lastPropertyId.uid)
                         }
                     } else if property.id.id > lastPropertyId.id {
-                        throw Error.PropertyIdGreatherThanLast(entity: entity.name, name: property.name, found: property.id.id, last: lastPropertyId.id)
+                        throw Error.PropertyIdGreaterThanLast(entity: entity.name, name: property.name, found: property.id.id, last: lastPropertyId.id)
                     }
                 }
             }
