@@ -458,10 +458,9 @@ enum IdSync {
                 
                 var propertyIds = Set<Int32>()
                 try entity.properties?.forEach { property in
-                    guard !propertyIds.contains(property.id.id) else {
+                    guard propertyIds.insert(property.id.id).inserted else {
                         throw Error.DuplicatePropertyID(entity: entity.name, name: property.name, id: property.id.id)
                     }
-                    propertyIds.insert(entity.id.id)
                     
                     guard let lastPropertyId = entity.lastPropertyId else {
                         throw Error.MissingLastPropertyID
