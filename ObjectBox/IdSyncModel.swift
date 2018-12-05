@@ -448,11 +448,11 @@ enum IdSync {
                     throw Error.MissingLastEntityID
                 }
                 
-                if (entity.id.id == lastEntityId.id) {
-                    if (entity.id.uid != lastEntityId.uid) {
+                if entity.id.id == lastEntityId.id {
+                    if entity.id.uid != lastEntityId.uid {
                         throw Error.LastEntityIdUIDMismatch(name: entity.name, id: entity.id.id, found: entity.id.uid, expected: lastEntityId.uid)
                     }
-                } else if (entity.id.id > lastEntityId.id) {
+                } else if entity.id.id > lastEntityId.id {
                     throw Error.EntityIdGreatherThanLast(name: entity.name, found:entity.id.id, last: lastEntityId.id)
                 }
                 
@@ -466,11 +466,11 @@ enum IdSync {
                         throw Error.MissingLastPropertyID
                     }
                     
-                    if (property.id.id == lastPropertyId.id) {
-                        if (property.id.uid != lastPropertyId.uid) {
+                    if property.id.id == lastPropertyId.id {
+                        if property.id.uid != lastPropertyId.uid {
                             throw Error.LastPropertyIdUIDMismatch(entity: entity.name, name: property.name, id: property.id.id, found: property.id.uid, expected: lastPropertyId.uid)
                         }
-                    } else if (property.id.id > lastPropertyId.id) {
+                    } else if property.id.id > lastPropertyId.id {
                         throw Error.PropertyIdGreatherThanLast(entity: entity.name, name: property.name, found: property.id.id, last: lastPropertyId.id)
                     }
                 }
