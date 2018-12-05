@@ -44,6 +44,7 @@ enum IdSync {
         case MultipleRelationsForUID(uids: [Int64], names: [String])
         case PrintRelationUid(entity: String, relation: String, found: Int64, unique: Int64)
         case RelationUIDTagNeedsValue(entity: String, relation: String)
+        case DuplicatePropertyName(entity: String, property: String)
     }
     
     class Property: Codable {
@@ -149,6 +150,7 @@ enum IdSync {
         }
     }
     
+    // Our file format that gets serialized to JSON and back:
     class IdSyncModel: Codable {
         
         static let modelVersion: Int64 = 4 // !! When upgrading always check modelVersionParserMinimum !!
@@ -159,10 +161,10 @@ enum IdSync {
         var _note2: String? = "ObjectBox manages crucial IDs for your object model. See docs for details."
         var _note3: String? = "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs."
         
-        var version: Int64 = 0
+        var version: Int64 = 1
         var modelVersion: Int64 = IdSyncModel.modelVersion
         /** Specify backward compatibility with older parsers.*/
-        var modelVersionParserMinimum: Int64 = modelVersion
+        var modelVersionParserMinimum: Int64 = IdSyncModel.modelVersionParserMinimum
         var lastEntityId: IdUid?
         var lastIndexId: IdUid?
         var lastRelationId: IdUid?
@@ -206,6 +208,18 @@ enum IdSync {
             case retiredPropertyUids
             case retiredIndexUids
             case retiredRelationUids
+        }
+        
+        init(lastEntityId: IdUid?, lastIndexId: IdUid?, lastRelationId: IdUid?, lastSequenceId: IdUid?, entities: Array<Entity>?, retiredEntityUids: Array<Int64>?, retiredPropertyUids: Array<Int64>?, retiredIndexUids: Array<Int64>?, retiredRelationUids: Array<Int64>?) {
+            self.lastEntityId = lastEntityId
+            self.lastIndexId = lastIndexId
+            self.lastRelationId = lastRelationId
+            self.lastSequenceId = lastSequenceId
+            self.entities = entities
+            self.retiredEntityUids = retiredEntityUids
+            self.retiredPropertyUids = retiredPropertyUids
+            self.retiredIndexUids = retiredIndexUids
+            self.retiredRelationUids = retiredRelationUids
         }
         
         func contains(uid: Int64) -> Bool {
@@ -345,6 +359,7 @@ enum IdSync {
         var dbName: String?
     }
     
+    // Main class used for performing the sync between our JSON file and the AST:
     class IdSync {
         let modelRead: IdSyncModel
         
@@ -360,6 +375,8 @@ enum IdSync {
         
         var newUidPool = Set<Int64>()
         
+        var jsonFile: URL
+        
         let uidHelper = UidHelper()
         
         private var entitiesReadByUid = Dictionary<Int64, Entity>()
@@ -370,6 +387,8 @@ enum IdSync {
         private var propertiesBySchemaProperty = Dictionary<SchemaProperty, Property>()
 
         init(jsonFile: URL) throws {
+            self.jsonFile = jsonFile
+            
             let data = try Data(contentsOf: jsonFile)
             let decoder = JSONDecoder()
             modelRead = try decoder.decode(IdSyncModel.self, from: data)
@@ -397,7 +416,7 @@ enum IdSync {
             try uidHelper.addExistingIds( modelRead.retiredIndexUids ?? [] )
             try uidHelper.addExistingIds( modelRead.retiredRelationUids ?? [] )
 
-            try validateIds()
+            try validateIds(modelRead)
             
             uidHelper.model = modelRead
             
@@ -413,15 +432,15 @@ enum IdSync {
             }
         }
         
-        func validateIds() throws {
+        func validateIds(_ model: IdSyncModel) throws {
             var entityIds = Set<Int32>()
-            try modelRead.entities?.forEach { entity in
+            try model.entities?.forEach { entity in
                 guard !entityIds.contains(entity.id.id) else {
                     throw Error.DuplicateEntityID(name: entity.name, id: entity.id.id)
                 }
                 entityIds.insert(entity.id.id)
                 
-                guard let lastEntityId = modelRead.lastEntityId else {
+                guard let lastEntityId = model.lastEntityId else {
                     throw Error.MissingLastEntityID
                 }
                 
@@ -491,8 +510,48 @@ enum IdSync {
             return (propertyUids: propertyUids, indexUids: indexUids, relationUids: relationUids)
         }
         
-        func writeModel(_ entities: [Entity]) {
+        func writeModel(_ entities: [Entity]) throws {
+            let model = IdSyncModel(lastEntityId: lastEntityId, lastIndexId: lastIndexId, lastRelationId: lastRelationId, lastSequenceId: lastSequenceId, entities: entities, retiredEntityUids: retiredEntityUids, retiredPropertyUids: retiredPropertyUids, retiredIndexUids: retiredIndexUids, retiredRelationUids: retiredRelationUids)
+            try writeModel(model)
+            try validateIds(model)
+        }
+        
+        func writeModel(_ model: IdSyncModel) throws {
+            try validateBeforeWrite(model)
+            model.modelVersion = IdSyncModel.modelVersion
+            model.modelVersionParserMinimum = IdSyncModel.modelVersionParserMinimum
             
+            let jsonData = try JSONEncoder().encode(model)
+            if FileManager.default.fileExists(atPath: jsonFile.path) {
+                let backupData = try? Data(contentsOf: jsonFile)
+                if backupData == jsonData {
+                    print("note: ObjectBox ID Model file unchanged: \(FileManager.default.displayName(atPath: jsonFile.path)).")
+                    return
+                } else {
+                    let backupFile = jsonFile.appendingPathExtension("bak")
+                    print("note: ObjectBox ID Model file changed: \(FileManager.default.displayName(atPath: jsonFile.path)), creating backup file (.bak).")
+                    try backupData?.write(to: backupFile)
+                }
+            } else {
+                print("note: ObjectBox ID Model file created: \(FileManager.default.displayName(atPath: jsonFile.path)).")
+            }
+            try jsonData.write(to: jsonFile)
+        }
+        
+        func validateBeforeWrite(_ model: IdSyncModel) throws {
+            var entityNames = Set<String>()
+            try model.entities?.forEach { currEntity in
+                if !entityNames.insert(currEntity.name.lowercased()).inserted {
+                    throw Error.DuplicateEntityName(currEntity.name)
+                }
+                
+                var propertyNames = Set<String>()
+                try currEntity.properties?.forEach { currProperty in
+                    if !propertyNames.insert(currProperty.name.lowercased()).inserted {
+                        throw Error.DuplicatePropertyName(entity: currEntity.name, property:currProperty.name)
+                    }
+                }
+           }
         }
         
         func sync(schema: Schema) throws {
@@ -502,7 +561,7 @@ enum IdSync {
             
             let entities = (try schema.entities.map { try syncEntity($0) }).sorted { $0.id.id < $1.id.id }
             updateRetiredUids(entities)
-            writeModel(entities)
+            try writeModel(entities)
             
             schema.lastEntityId = lastEntityId
             schema.lastIndexId = lastIndexId
