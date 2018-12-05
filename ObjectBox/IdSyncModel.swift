@@ -210,7 +210,7 @@ enum IdSync {
             case retiredRelationUids
         }
         
-        init(lastEntityId: IdUid?, lastIndexId: IdUid?, lastRelationId: IdUid?, lastSequenceId: IdUid?, entities: Array<Entity>?, retiredEntityUids: Array<Int64>?, retiredPropertyUids: Array<Int64>?, retiredIndexUids: Array<Int64>?, retiredRelationUids: Array<Int64>?) {
+        init(lastEntityId: IdUid? = nil, lastIndexId: IdUid? = nil, lastRelationId: IdUid? = nil, lastSequenceId: IdUid? = nil, entities: Array<Entity>? = nil, retiredEntityUids: Array<Int64>? = nil, retiredPropertyUids: Array<Int64>? = nil, retiredIndexUids: Array<Int64>? = nil, retiredRelationUids: Array<Int64>? = nil) {
             self.lastEntityId = lastEntityId
             self.lastIndexId = lastIndexId
             self.lastRelationId = lastRelationId
@@ -389,9 +389,13 @@ enum IdSync {
         init(jsonFile: URL) throws {
             self.jsonFile = jsonFile
             
-            let data = try Data(contentsOf: jsonFile)
-            let decoder = JSONDecoder()
-            modelRead = try decoder.decode(IdSyncModel.self, from: data)
+            var model: IdSyncModel?
+            if let data = try? Data(contentsOf: jsonFile) {
+                let decoder = JSONDecoder()
+                model = try? decoder.decode(IdSyncModel.self, from: data)
+            }
+            
+            modelRead = model ?? IdSyncModel()
             
             if modelRead.modelVersion < IdSyncModel.modelVersionParserMinimum {
                 throw Error.IncompatibleVersion(found: modelRead.modelVersion, expected: IdSyncModel.modelVersionParserMinimum)
@@ -521,7 +525,9 @@ enum IdSync {
             model.modelVersion = IdSyncModel.modelVersion
             model.modelVersionParserMinimum = IdSyncModel.modelVersionParserMinimum
             
-            let jsonData = try JSONEncoder().encode(model)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let jsonData = try encoder.encode(model)
             if FileManager.default.fileExists(atPath: jsonFile.path) {
                 let backupData = try? Data(contentsOf: jsonFile)
                 if backupData == jsonData {

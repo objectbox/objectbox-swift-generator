@@ -116,10 +116,6 @@ enum ObjectBoxFilters {
     /* Process the parsed syntax tree, possibly annotating or otherwise
         extending it. */
     static func process(parsingResult result: inout Sourcery.ParsingResult) throws {
-        
-        let idModelSync = try IdSync.IdSync(jsonFile: URL(fileURLWithPath: "/Users/uli/Downloads/SourceryTest/testmodel.json"))
-        print("\(idModelSync)")
-        
         result.types.all.forEach { currClass in
             print("\(currClass.name): \(currClass.annotations)");
             currClass.variables.forEach { currVariable in
@@ -131,41 +127,46 @@ enum ObjectBoxFilters {
         newTypes.append(Type(name: "InjectedType", annotations: ["Entity": NSNumber(value: 1)]))
         
         result = (types: Types(types: newTypes), inlineRanges: result.inlineRanges)
-        
-        let schemaData = IdSync.Schema()
-        
-        result.types.all.forEach { currType in
-            if currType.inheritedTypes.contains("Entity") || currType.annotations["Entity"] != nil {
-                let schemaEntity = IdSync.SchemaEntity()
-                schemaEntity.className = currType.localName
-                schemaEntity.modelUid = currType.annotations["objectId"] as? Int64
-                schemaEntity.dbName = currType.annotations["nameInDb"] as? String
 
-                var schemaProperties = Array<IdSync.SchemaProperty>()
-                currType.variables.forEach { currIVar in
-                    guard !currIVar.annotations.contains(reference: "transient") else { return } // Exits only the foreach block
+        do {
+            let schemaData = IdSync.Schema()
+            
+            result.types.all.forEach { currType in
+                if currType.inheritedTypes.contains("Entity") || currType.annotations["Entity"] != nil {
+                    let schemaEntity = IdSync.SchemaEntity()
+                    schemaEntity.className = currType.localName
+                    schemaEntity.modelUid = currType.annotations["objectId"] as? Int64
+                    schemaEntity.dbName = currType.annotations["nameInDb"] as? String
                     
-                    let schemaProperty = IdSync.SchemaProperty()
-                    schemaProperty.propertyName = currIVar.name
-                    schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String
-                    if let propertyUid = currIVar.annotations["uid"] as? Int64 {
-                        var propId = IdUid()
-                        propId.uid = propertyUid
-                        schemaProperty.modelId = propId
+                    var schemaProperties = Array<IdSync.SchemaProperty>()
+                    currType.variables.forEach { currIVar in
+                        guard !currIVar.annotations.contains(reference: "transient") else { return } // Exits only the foreach block
+                        
+                        let schemaProperty = IdSync.SchemaProperty()
+                        schemaProperty.propertyName = currIVar.name
+                        schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String
+                        if let propertyUid = currIVar.annotations["uid"] as? Int64 {
+                            var propId = IdUid()
+                            propId.uid = propertyUid
+                            schemaProperty.modelId = propId
+                        }
+                        if let propertyIndexUid = currIVar.annotations["index"] as? Int64 {
+                            var indexId = IdUid()
+                            indexId.uid = propertyIndexUid
+                            schemaProperty.modelIndexId = indexId
+                        }
+                        schemaProperties.append(schemaProperty)
                     }
-                    if let propertyIndexUid = currIVar.annotations["index"] as? Int64 {
-                        var indexId = IdUid()
-                        indexId.uid = propertyIndexUid
-                        schemaProperty.modelIndexId = indexId
-                    }
-                    schemaProperties.append(schemaProperty)
+                    schemaEntity.properties = schemaProperties
+                    schemaData.entities.append(schemaEntity)
                 }
-                schemaEntity.properties = schemaProperties
-                schemaData.entities.append(schemaEntity)
             }
+            
+            let idModelSync = try IdSync.IdSync(jsonFile: URL(fileURLWithPath: "/Users/uli/Downloads/SourceryTest/testmodel.json"))
+            try idModelSync.sync(schema: schemaData)
+        } catch {
+            print("Error: \(error)")
         }
-        
-        try idModelSync.sync(schema: schemaData)
     }
     
     /* Modify the dictionary of global objects that Stencil sees. */
