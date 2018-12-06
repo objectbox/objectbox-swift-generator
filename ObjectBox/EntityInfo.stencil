@@ -37,17 +37,21 @@ extension {{ entity.className }}: EntityInspectable {
     }
 }
 
-/// Generated entity property information.
-///
-/// You may want to use this in queries to specify fetch conditions.
-///
-
 extension {{ entity.className }} {
     {% for prop in entity.properties %}
+    /// Generated entity property information.
+    ///
+    /// You may want to use this in queries to specify fetch conditions, for example:
+    ///
+    ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertyType == "Bool" %}{{ entity.className }}.{{ prop.propertyName }} == true{% else %}{{ entity.className }}.{{ prop.propertyName }} > 1234{% endif %} }
+    
     static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.uid }}, isPrimaryKey: {{ prop.isObjectId }}) }
+    
     {% endfor %}
+    
     {% for relation in entity.relations %}
     static var {{ relation.relationName }}: Property<{{entity.className}}, Id<{{ relation.targetType }}>> { return Property(propertyId: {{ relation.modelId.uid }}) }
+    
     {% endfor %}
 
     fileprivate {% if entity.isValueType %}mutating{% endif %} func __setId(identifier: EntityId) {
