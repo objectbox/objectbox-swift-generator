@@ -130,7 +130,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--sources /Users/uli/Downloads/SourceryTest/Test.swift --templates /Users/uli/Downloads/SourceryTest/example.stencil --output /Users/uli/Downloads/SourceryTest/example.generated.swift"
+            argument = "--sources /Users/uli/Downloads/SourceryTest/Test.swift --output /Users/uli/Downloads/SourceryTest/example.generated.swift --model-json /Users/uli/Downloads/SourceryTest/testmodel.json"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

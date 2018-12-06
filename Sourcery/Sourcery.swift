@@ -17,8 +17,8 @@ import SourcerySwift
 
 class Sourcery {
     public static let version: String = inUnitTests ? "Major.Minor.Patch" : Version.current.value
-    public static let generationMarker: String = "// Generated using Sourcery"
-    public static let generationHeader = "\(Sourcery.generationMarker) \(Sourcery.version) — https://github.com/krzysztofzablocki/Sourcery\n"
+    public static let generationMarker: String = "// Generated using the ObjectBox Swift Generator"
+    public static let generationHeader = "\(Sourcery.generationMarker) \(Sourcery.version) — https://objectbox.io\n"
         + "// DO NOT EDIT\n\n"
 
     enum Error: Swift.Error {

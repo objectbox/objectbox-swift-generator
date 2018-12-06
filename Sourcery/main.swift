@@ -100,12 +100,12 @@ func runCLI() {
         VariadicOption<String>("args", description: "Custom values to pass to templates."),
         Option<Path>("ejsPath", "", description: "Path to EJS file for JavaScript templates."),
         Option<Path>("model-json", "", description: "Path to JSON file containing model IDs."),
-        Option<String>("annotation-prefix", "", description: "Prefix to use for annotations. Defaults to \"sourcery\".")
+        Option<String>("annotation-prefix", "", description: "Prefix to use for annotations. Defaults to \"objectbox\".")
     ) { watcherEnabled, disableCache, verboseLogging, quiet, prune, sources, excludeSources, templates, excludeTemplates, output, configPath, forceParse, args, ejsPath, modelJsonPath, annotationPrefix in
         do {
             Log.level = verboseLogging ? .verbose : quiet ? .errors : .info
 
-            AnnotationsParser.annotationPrefix = annotationPrefix.isEmpty ? "sourcery" : annotationPrefix
+            AnnotationsParser.annotationPrefix = annotationPrefix.isEmpty ? "objectbox" : annotationPrefix
             ObjectBoxFilters.modelJsonFile = modelJsonPath.string.isEmpty ? nil : URL(fileURLWithPath: modelJsonPath.string)
 
             // if ejsPath is not provided use default value or executable path
@@ -113,15 +113,21 @@ func runCLI() {
                 ? (EJSTemplate.ejsPath ?? Path(ProcessInfo.processInfo.arguments[0]).parent() + "ejs.js")
                 : ejsPath
 
+            let actualTemplates: [Path]
+            if templates.isEmpty, let stencilPath = Bundle.main.path(forResource: "EntityInfo", ofType: "stencil") {
+                actualTemplates = [Path(stencilPath)]
+            } else {
+                actualTemplates = templates
+            }
+
             let configuration: Configuration
             let yamlPath: Path = configPath.isDirectory ? configPath + ".sourcery.yml" : configPath
 
-            if !yamlPath.exists {
-                Log.info("No config file provided or it does not exist. Using command line arguments.")
+            if templates.isEmpty || !yamlPath.exists {
                 let args = args.joined(separator: ",")
                 let arguments = AnnotationsParser.parse(line: args)
                 configuration = Configuration(sources: Paths(include: sources, exclude: excludeSources) ,
-                                              templates: Paths(include: templates, exclude: excludeTemplates),
+                                              templates: Paths(include: actualTemplates, exclude: excludeTemplates),
                                               output: output.string.isEmpty ? "." : output,
                                               cacheBasePath: Path.defaultBaseCachePath,
                                               forceParse: forceParse,

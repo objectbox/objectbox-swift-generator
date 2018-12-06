@@ -122,7 +122,7 @@ class SourcerySpecTests: QuickSpec {
 
                     it("removes code from within generated template") {
                         let expectedResult = """
-                            // Generated using Sourcery Major.Minor.Patch — https://github.com/krzysztofzablocki/Sourcery
+                            // Generated using the ObjectBox Swift Generator Major.Minor.Patch — https://objectbox.io
                             // DO NOT EDIT
 
                             // Line One
@@ -148,7 +148,7 @@ class SourcerySpecTests: QuickSpec {
                         expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
 
                         let expectedResult = """
-                            // Generated using Sourcery Major.Minor.Patch — https://github.com/krzysztofzablocki/Sourcery
+                            // Generated using the ObjectBox Swift Generator Major.Minor.Patch — https://objectbox.io
                             // DO NOT EDIT
 
                             // Line One
@@ -630,7 +630,7 @@ class SourcerySpecTests: QuickSpec {
 
                     it("replaces placeholder with generated code") {
                         let expectedResult = """
-                            // Generated using Sourcery Major.Minor.Patch — https://github.com/krzysztofzablocki/Sourcery
+                            // Generated using the ObjectBox Swift Generator Major.Minor.Patch — https://objectbox.io
                             // DO NOT EDIT
 
                             extension Foo {
@@ -648,7 +648,7 @@ class SourcerySpecTests: QuickSpec {
 
                     it("removes code from within generated template") {
                         let expectedResult = """
-                            // Generated using Sourcery Major.Minor.Patch — https://github.com/krzysztofzablocki/Sourcery
+                            // Generated using the ObjectBox Swift Generator Major.Minor.Patch — https://objectbox.io
                             // DO NOT EDIT
 
                             // Line One
@@ -693,7 +693,7 @@ class SourcerySpecTests: QuickSpec {
                             """, in: templatePath)
 
                         let expectedResult = """
-                            // Generated using Sourcery Major.Minor.Patch — https://github.com/krzysztofzablocki/Sourcery
+                            // Generated using the ObjectBox Swift Generator Major.Minor.Patch — https://objectbox.io
                             // DO NOT EDIT
 
                             extension Foo {
