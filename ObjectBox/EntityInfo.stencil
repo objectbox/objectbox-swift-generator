@@ -44,13 +44,10 @@ extension {{ entity.className }}: EntityInspectable {
 
 extension {{ entity.className }} {
     {% for prop in entity.properties %}
-    static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId }}, isPrimaryKey: {{ prop.isObjectId }}) }
-
+    static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.uid }}, isPrimaryKey: {{ prop.isObjectId }}) }
     {% endfor %}
-    
     {% for relation in entity.relations %}
-    static var {{ relation.relationName }}: Property<{{entity.className}}, Id<{{ relation.targetType }}>> { return Property(propertyId: {{ relation.modelId }}) }
-
+    static var {{ relation.relationName }}: Property<{{entity.className}}, Id<{{ relation.targetType }}>> { return Property(propertyId: {{ relation.modelId.uid }}) }
     {% endfor %}
 
     fileprivate {% if entity.isValueType %}mutating{% endif %} func __setId(identifier: EntityId) {
@@ -58,14 +55,103 @@ extension {{ entity.className }} {
     }
 }
 
+/// Generated service type to handle persisting and reading entity data. Exposed through `{{ entity.className }}.entityInfo`.
+class {{ entity.className }}Cursor: NSObject, CursorBase {
+    func setEntityId(of entity: Any, to entityId: EntityId) {
+        let entity = entity as! {{entity.className}}
+        entity.__setId(identifier: entityId)
+    }
+
+    func entityId(of entity: Any) -> EntityId {
+        let entity = entity as! {{entity.className}}
+        return entity.{{ entity.idProperty.propertyName }}.value
+    }
+
+    func collect(fromEntity entity: Any, propertyCollector: PropertyCollector, store: Store) -> ObjectBox.EntityId {
+        let entity = entity as! {{ entity.className }}
+
+        {# Avoid defining the `offsets` array when there are no fitting properties #}
+        {% if entity.hasStringProperties %}
+        var offsets: [(offset: OBXDataOffset, index: UInt16)] = []
+        {% for prop in entity.properties %}
+        {% if prop.isStringType %}
+        offsets.append((propertyCollector.prepare(string: entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}), 2 + 2 * {{ prop.modelId.id }}))
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+
+        {% for prop in entity.properties where not prop.isStringType %}
+        propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }})
+        {% endfor %}
+
+        {% for relation in entity.relations %}
+        propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
+        {% endfor %}
+
+        {% if entity.hasStringProperties %}
+        for value in offsets {
+            propertyCollector.collect(dataOffset: value.offset, at: value.index)
+        }
+        {% endif %}
+
+        return entity.{{ entity.idProperty.propertyName }}.value
+    }
+
+    func createEntity(entityReader: EntityReader, store: Store) -> Any {
+        let entity = {{ entity.className }}()
+
+        {% for prop in entity.properties %}
+            entity.{{ prop.propertyName }} = entityReader.read(at: 2 + 2 * {{ prop.modelId.id }})
+        {% endfor %}
+
+        {% for relation in entity.relations %}
+            entity.{{ relation.relationName }} = entityReader.read(at: 2 + 2 * {{ relation.modelId.id }}, store: store)
+        {% endfor %}
+
+        {% for tmRelation in entity.toManyRelations %}
+            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
+                    sourceBox: store.box(for: {{ tmRelation.relationType }}.Source.self),
+                    sourceProperty: {{  tmRelation.relationType }}.Source.{{ tmRelation.backlinkProperty }},
+                    targetId: entity.id)
+        {% endfor %}
+
+        return entity
+    }
+}
+
 {% endfor %}
 
+fileprivate func modelBytes() -> Data {
+    let modelBuilder = ModelBuilder()
+    {% for entity in entities %}
+    {{ entity.className }}.buildEntity(modelBuilder: modelBuilder)
+    {% endfor %}
+    return modelBuilder.finish()
+}
 
-
-
-
-
-
-
+extension ObjectBox.Store {
+    /// A store with a fully configured model. Created by the code generator with your model's metadata in place.
+    ///
+    /// - Parameters:
+    ///   - directoryPath: Directory path to store database files in.
+    ///   - maxDbSizeInKByte: Limit of on-disk space for the database files. Default is `1024 * 1024` (1 GiB).
+    ///   - fileMode: UNIX-style bit mask used for the database files; default is `0o755`.
+    ///   - maxReaders: Maximum amount of concurrent readers, tailored to your use case. Default is `0` (unlimited).
+    convenience init(directoryPath: String, maxDbSizeInKByte: UInt64 = 1024 * 1024, fileMode: UInt32 = 0o755, maxReaders: UInt32 = 0) throws {
+        try self.init(
+            modelBytes: modelBytes(),
+            directory: directoryPath,
+            maxDbSizeInKByte: maxDbSizeInKByte,
+            fileMode: fileMode,
+            maxReaders: maxReaders)
+        registerAllEntities()
+    }
+    
+    func registerAllEntities() {
+        {% for entity in entities %}
+        self.register(entity: {{ entity.className }}.self)
+        {% endfor %}
+    }
+}
 
 // swiftlint:enable all

@@ -321,6 +321,7 @@ enum IdSync {
         var lastPropertyId: IdUid?
         var isEntitySubclass = false
         var isValueType = false
+        var hasStringProperties = false // transient properties are ignored for this.
         var idProperty: SchemaProperty?
         var idCandidates = Array<SchemaProperty>()
 
@@ -349,6 +350,8 @@ enum IdSync {
         var backlinkName: String?
         var backlinkType: String?
         var isObjectId: Bool = false
+        var isBuiltInType: Bool = false
+        var isStringType: Bool = false
 
         public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {
             return lhs.propertyName == rhs.propertyName
@@ -372,7 +375,8 @@ enum IdSync {
         var relationTargetType: String = ""
         var relationOwnerType: String = ""
         var dbName: String?
-        
+        var backlinkProperty: String? = ""
+
         init(name: String, type: String, targetType: String, ownerType: String)
         {
             self.relationName = name

@@ -15,49 +15,36 @@ import SourceryRuntime
 
 
 /* Model classes that get populated from our model.json file using Codable protocol. */
-typealias IdUid = String
-
-extension IdUid {
-    init() {
-        self = "0:0"
+struct IdUid: Codable {
+    var id: Int32 = 0
+    var uid: Int64 = 0
+    
+    init() {}
+    
+    init(string: String) {
+        let parts = string.components(separatedBy: ":")
+        id = Int32(parts[0]) ?? 0
+        uid = Int64(parts[1]) ?? 0
     }
     
-    var uid: Int64 {
-        get {
-            if let uidStr = self.components(separatedBy: ":").last, let uid = Int64(uidStr) {
-                return uid
-            } else {
-                return 0
-            }
-        }
-        
-        set(new) {
-            let uidStr = String(new)
-            let firstValue = Int(self.components(separatedBy: ":").first ?? "0") ?? 0
-            self = "\(firstValue):\(uidStr)"
-        }
+    init(from decoder: Decoder) throws {
+        let string = try decoder.singleValueContainer().decode(String.self)
+        self.init(string: string)
     }
     
-    var id: Int32 {
-        get {
-            if let idStr = self.components(separatedBy: ":").first, let id = Int32(idStr) {
-                return id
-            } else {
-                return 0
-            }
-        }
-        
-        set(new) {
-            let idStr = String(new)
-            let secondValue = Int(self.components(separatedBy: ":").last ?? "0") ?? 0
-            self = "\(idStr):\(secondValue)"
-        }
+    func toString() -> String {
+        return "\(id):\(uid)"
     }
     
     mutating func incId(uid: Int64) -> IdUid {
         self.id = self.id + 1
         self.uid = uid
         return self
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(toString())
     }
 }
 
@@ -68,9 +55,11 @@ enum ObjectBoxFilters {
         case DuplicateIdAnnotation(entity: String, found: String, existing: String)
         case MissingIdOnEntity(entity: String)
         case AmbiguousIdOnEntity(entity: String, properties: [String])
+        case MissingBacklinkOnToManyRelation(entity: String, relation: String)
     }
 
     static var modelJsonFile: URL?
+    static var builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate", "TimeInterval", "NSTimeInterval"]
     private static var entities = Array<IdSync.SchemaEntity>()
     
     static func printError(_ error: Swift.Error) {
@@ -153,11 +142,38 @@ enum ObjectBoxFilters {
                 print("error: Entity \(entity) needs an ID property of type Id<\(entity)>.")
             case .AmbiguousIdOnEntity(let entity, let properties):
                 print("error: Entity \(entity) has several properties of type Id<\(entity)>, but no entity ID. Please designate one as this entity's ID using an '// objectbox: objectId' annotation. Candidates are: \(properties.joined(separator: ", "))")
+            case .MissingBacklinkOnToManyRelation(let entity, let relation):
+                print("error: Missing backlink on to-many relation \(relation) of entity \(entity)")
             }
         } else {
             print("error: \(error)")
             return
         }
+    }
+    
+    static func isBuiltInTypeOrAlias( _ typeName: TypeName? ) -> Bool {
+        var isBuiltIn: Bool = false
+        var currPropType = typeName
+        
+        while let currPropTypeReadOnly = currPropType, !isBuiltIn {
+            isBuiltIn = builtInTypes.firstIndex(of: currPropTypeReadOnly.name) != nil
+            currPropType = currPropTypeReadOnly.actualTypeName
+        }
+        
+        return isBuiltIn
+    }
+    
+    /* Is this a string ivar that we need to save separately from the fixed-size types? */
+    static func isStringTypeOrAlias( _ typeName: TypeName? ) -> Bool {
+        var isStringType: Bool = false
+        var currPropType = typeName
+        
+        while let currPropTypeReadOnly = currPropType, !isStringType {
+            isStringType = currPropTypeReadOnly.name == "String"
+            currPropType = currPropTypeReadOnly.actualTypeName
+        }
+        
+        return isStringType
     }
     
     /* Process the parsed syntax tree, possibly annotating or otherwise
@@ -187,7 +203,7 @@ enum ObjectBoxFilters {
                                 let templateTypes = templateTypesString.split(separator: ",")
                                 let destinationType = templateTypes[0]
                                 
-                                let relation = IdSync.ToOneRelation(name: currIVar.typeName.name, type: fullTypeName, targetType: String(destinationType))
+                                let relation = IdSync.ToOneRelation(name: currIVar.name, type: fullTypeName, targetType: String(destinationType))
                                 if let propertyUid = currIVar.annotations["uid"] as? Int64 {
                                     var propId = IdUid()
                                     propId.uid = propertyUid
@@ -202,11 +218,16 @@ enum ObjectBoxFilters {
                                 let destinationType = templateTypes[0]
                                 let myType = templateTypes[1]
 
-                                let relation = IdSync.ToManyStandalone(name: currIVar.typeName.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
+                                let relation = IdSync.ToManyStandalone(name: currIVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
                                 if let propertyUid = currIVar.annotations["uid"] as? Int64 {
                                     var propId = IdUid()
                                     propId.uid = propertyUid
                                     relation.modelId = propId
+                                }
+                                if let backlinkProperty = currIVar.annotations["backlink"] as? String {
+                                    relation.backlinkProperty = backlinkProperty
+                                } else {
+                                    throw Error.MissingBacklinkOnToManyRelation(entity: schemaEntity.className, relation: relation.relationName)
                                 }
                                 schemaEntity.toManyRelations.append(relation)
                             }
@@ -215,6 +236,11 @@ enum ObjectBoxFilters {
                         let schemaProperty = IdSync.SchemaProperty()
                         schemaProperty.propertyName = currIVar.name
                         schemaProperty.propertyType = fullTypeName
+                        schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
+                        schemaProperty.isStringType = isStringTypeOrAlias(currIVar.typeName)
+                        if schemaProperty.isStringType {
+                            schemaEntity.hasStringProperties = true
+                        }
                         schemaProperty.unwrappedPropertyType = currIVar.unwrappedTypeName
                         schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String
                         if let propertyUid = currIVar.annotations["uid"] as? Int64 {
