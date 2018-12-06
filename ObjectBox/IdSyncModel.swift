@@ -316,8 +316,9 @@ enum IdSync {
         var dbName: String?
         var properties = Array<SchemaProperty>()
         var indexes = Array<SchemaIndex>()
-        var toOneRelations = Array<ToOneRelation>()
-        var toManyRelations = Array<ToManyStandalone>()
+        var relations = Array<SchemaRelation>()
+        var toOneRelations = Array<SchemaToOneRelation>()
+        var toManyRelations = Array<SchemaToManyRelation>()
         var lastPropertyId: IdUid?
         var isEntitySubclass = false
         var isValueType = false
@@ -368,31 +369,13 @@ enum IdSync {
         }
     }
     
-    class ToManyStandalone {
+    class SchemaRelation {
         var modelId: IdUid?
         var relationName: String = ""
         var relationType: String = ""
         var relationTargetType: String = ""
-        var relationOwnerType: String = ""
         var dbName: String?
-        var backlinkProperty: String? = ""
 
-        init(name: String, type: String, targetType: String, ownerType: String)
-        {
-            self.relationName = name
-            self.relationType = type
-            self.relationTargetType = targetType
-            self.relationOwnerType = ownerType
-        }
-    }
-    
-    class ToOneRelation {
-        var modelId: IdUid?
-        var relationName: String = ""
-        var relationType: String = ""
-        var relationTargetType: String = ""
-        var dbName: String?
-        
         init(name: String, type: String, targetType: String)
         {
             self.relationName = name
@@ -401,6 +384,20 @@ enum IdSync {
         }
     }
     
+    class SchemaToManyRelation: SchemaRelation {
+        var relationOwnerType: String = ""
+        var backlinkProperty: String? = ""
+        
+        init(name: String, type: String, targetType: String, ownerType: String)
+        {
+            self.relationOwnerType = ownerType
+            super.init(name: name, type: type, targetType: targetType)
+        }
+    }
+    
+    class SchemaToOneRelation: SchemaRelation {
+    }
+
     // Main class used for performing the sync between our JSON file and the AST:
     class IdSync {
         let modelRead: IdSyncModel
@@ -788,9 +785,8 @@ enum IdSync {
         
         func syncRelations(schemaEntity: SchemaEntity, existingEntity: Entity?) throws -> [Relation] {
             var relations = Array<Relation>()
-            let schemaRelations = schemaEntity.toManyRelations.compactMap { $0 as? ToManyStandalone }
             
-            try schemaRelations.forEach { schemaRelation in
+            try schemaEntity.relations.forEach { schemaRelation in
                 let relation = try syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
                 if relation.id.id > lastRelationId.id {
                     lastRelationId.id = relation.id.id
@@ -803,7 +799,7 @@ enum IdSync {
             return relations
         }
 
-        func syncRelation(existingEntity: Entity?, schemaEntity: SchemaEntity, schemaRelation: ToManyStandalone) throws -> Relation {
+        func syncRelation(existingEntity: Entity?, schemaEntity: SchemaEntity, schemaRelation: SchemaRelation) throws -> Relation {
             let name = schemaRelation.dbName ?? schemaRelation.relationName
             let relationUid = schemaRelation.modelId?.uid
             let printUid = relationUid == -1

@@ -203,12 +203,13 @@ enum ObjectBoxFilters {
                                 let templateTypes = templateTypesString.split(separator: ",")
                                 let destinationType = templateTypes[0]
                                 
-                                let relation = IdSync.ToOneRelation(name: currIVar.name, type: fullTypeName, targetType: String(destinationType))
+                                let relation = IdSync.SchemaToOneRelation(name: currIVar.name, type: fullTypeName, targetType: String(destinationType))
                                 if let propertyUid = currIVar.annotations["uid"] as? Int64 {
                                     var propId = IdUid()
                                     propId.uid = propertyUid
                                     relation.modelId = propId
                                 }
+                                schemaEntity.relations.append(relation)
                                 schemaEntity.toOneRelations.append(relation)
                             }
                         } else if fullTypeName.hasPrefix("ToMany<") {
@@ -218,7 +219,7 @@ enum ObjectBoxFilters {
                                 let destinationType = templateTypes[0]
                                 let myType = templateTypes[1]
 
-                                let relation = IdSync.ToManyStandalone(name: currIVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
+                                let relation = IdSync.SchemaToManyRelation(name: currIVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
                                 if let propertyUid = currIVar.annotations["uid"] as? Int64 {
                                     var propId = IdUid()
                                     propId.uid = propertyUid
@@ -229,47 +230,48 @@ enum ObjectBoxFilters {
                                 } else {
                                     throw Error.MissingBacklinkOnToManyRelation(entity: schemaEntity.className, relation: relation.relationName)
                                 }
+                                schemaEntity.relations.append(relation)
                                 schemaEntity.toManyRelations.append(relation)
                             }
-                        }
-
-                        let schemaProperty = IdSync.SchemaProperty()
-                        schemaProperty.propertyName = currIVar.name
-                        schemaProperty.propertyType = fullTypeName
-                        schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
-                        schemaProperty.isStringType = isStringTypeOrAlias(currIVar.typeName)
-                        if schemaProperty.isStringType {
-                            schemaEntity.hasStringProperties = true
-                        }
-                        schemaProperty.unwrappedPropertyType = currIVar.unwrappedTypeName
-                        schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String
-                        if let propertyUid = currIVar.annotations["uid"] as? Int64 {
-                            var propId = IdUid()
-                            propId.uid = propertyUid
-                            schemaProperty.modelId = propId
-                        }
-                        if let propertyIndexUid = currIVar.annotations["index"] as? Int64 {
-                            var indexId = IdUid()
-                            indexId.uid = propertyIndexUid
-                            schemaProperty.modelIndexId = indexId
-                        }
-                        if currIVar.annotations["objectId"] != nil {
-                            if let existingIdProperty = schemaEntity.idProperty {
-                                throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: currIVar.name, existing: existingIdProperty.propertyName)
+                        } else {
+                            let schemaProperty = IdSync.SchemaProperty()
+                            schemaProperty.propertyName = currIVar.name
+                            schemaProperty.propertyType = fullTypeName
+                            schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
+                            schemaProperty.isStringType = isStringTypeOrAlias(currIVar.typeName)
+                            if schemaProperty.isStringType {
+                                schemaEntity.hasStringProperties = true
                             }
-                            schemaProperty.isObjectId = true
-                            schemaEntity.idProperty = schemaProperty
-                        } else if fullTypeName.hasPrefix("Id<") {
-                            if fullTypeName.hasSuffix(">") {
-                                let templateTypesString = fullTypeName.drop(first: "Id<".count, last: 1)
-                                let templateTypes = templateTypesString.split(separator: ",")
-                                let idType = templateTypes[0]
-                                if idType == currType.localName {
-                                    schemaEntity.idCandidates.append(schemaProperty)
+                            schemaProperty.unwrappedPropertyType = currIVar.unwrappedTypeName
+                            schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String
+                            if let propertyUid = currIVar.annotations["uid"] as? Int64 {
+                                var propId = IdUid()
+                                propId.uid = propertyUid
+                                schemaProperty.modelId = propId
+                            }
+                            if let propertyIndexUid = currIVar.annotations["index"] as? Int64 {
+                                var indexId = IdUid()
+                                indexId.uid = propertyIndexUid
+                                schemaProperty.modelIndexId = indexId
+                            }
+                            if currIVar.annotations["objectId"] != nil {
+                                if let existingIdProperty = schemaEntity.idProperty {
+                                    throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: currIVar.name, existing: existingIdProperty.propertyName)
+                                }
+                                schemaProperty.isObjectId = true
+                                schemaEntity.idProperty = schemaProperty
+                            } else if fullTypeName.hasPrefix("Id<") {
+                                if fullTypeName.hasSuffix(">") {
+                                    let templateTypesString = fullTypeName.drop(first: "Id<".count, last: 1)
+                                    let templateTypes = templateTypesString.split(separator: ",")
+                                    let idType = templateTypes[0]
+                                    if idType == currType.localName {
+                                        schemaEntity.idCandidates.append(schemaProperty)
+                                    }
                                 }
                             }
+                            schemaProperties.append(schemaProperty)
                         }
-                        schemaProperties.append(schemaProperty)
                     }
                     schemaEntity.properties = schemaProperties
                     

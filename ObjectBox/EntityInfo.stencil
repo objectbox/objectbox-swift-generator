@@ -49,8 +49,8 @@ extension {{ entity.className }} {
     
     {% endfor %}
     
-    {% for relation in entity.relations %}
-    static var {{ relation.relationName }}: Property<{{entity.className}}, Id<{{ relation.targetType }}>> { return Property(propertyId: {{ relation.modelId.uid }}) }
+    {% for relation in entity.toOneRelations %}
+    static var {{ relation.relationName }}: Property<{{entity.className}}, Id<{{ relation.relationTargetType }}>> { return Property(propertyId: {{ relation.modelId.uid }}) }
     
     {% endfor %}
 
@@ -88,8 +88,8 @@ class {{ entity.className }}Cursor: NSObject, CursorBase {
         propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endfor %}
 
-        {% for relation in entity.relations %}
-        propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
+        {% for relation in entity.toOneRelations %}
+        propertyCollector.collect(entity.{{ relation.relationName }}, at: 2 + 2 * {{ relation.modelId.id }}, store: store)
         {% endfor %}
 
         {% if entity.hasStringProperties %}
@@ -108,14 +108,14 @@ class {{ entity.className }}Cursor: NSObject, CursorBase {
             entity.{{ prop.propertyName }} = entityReader.read(at: 2 + 2 * {{ prop.modelId.id }})
         {% endfor %}
 
-        {% for relation in entity.relations %}
+        {% for relation in entity.toOneRelations %}
             entity.{{ relation.relationName }} = entityReader.read(at: 2 + 2 * {{ relation.modelId.id }}, store: store)
         {% endfor %}
 
         {% for tmRelation in entity.toManyRelations %}
             entity.{{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
                     sourceBox: store.box(for: {{ tmRelation.relationType }}.Source.self),
-                    sourceProperty: {{  tmRelation.relationType }}.Source.{{ tmRelation.backlinkProperty }},
+                    sourceProperty: {{ tmRelation.relationType }}.Source.{{ tmRelation.backlinkProperty }},
                     targetId: entity.id)
         {% endfor %}
 
