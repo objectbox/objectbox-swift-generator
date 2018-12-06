@@ -183,7 +183,7 @@ func runCLI() {
                 Log.info("Processing time \(CFAbsoluteTimeGetCurrent() - start) seconds")
             }
         } catch {
-            Log.error("\(error)")
+            ObjectBoxFilters.printError(error)
             exit(.other)
         }
         }.run(Sourcery.version)
