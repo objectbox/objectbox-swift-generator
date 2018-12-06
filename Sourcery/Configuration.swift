@@ -266,4 +266,12 @@ struct Configuration {
         self.args = args
     }
 
+    init(projects: [Project], templates: Paths, output: Path, cacheBasePath: Path, forceParse: [String], args: [String: NSObject]) {
+        self.source = .projects(projects)
+        self.templates = templates
+        self.output = Output(output, linkTo: nil)
+        self.cacheBasePath = cacheBasePath
+        self.forceParse = forceParse
+        self.args = args
+    }
 }
