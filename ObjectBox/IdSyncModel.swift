@@ -143,10 +143,12 @@ enum IdSync {
         
         public var hashValue: Int {
             get {
-                return name.hashValue
+                var hasher = Hasher()
+                self.hash(into: &hasher)
+                return hasher.finalize()
             }
         }
-        
+
         public func hash(into hasher: inout Hasher) {
             name.hash(into: &hasher)
         }
@@ -332,10 +334,12 @@ enum IdSync {
         
         public var hashValue: Int {
             get {
-                return className.hashValue
+                var hasher = Hasher()
+                self.hash(into: &hasher)
+                return hasher.finalize()
             }
         }
-        
+
         public func hash(into hasher: inout Hasher) {
             className.hash(into: &hasher)
         }
@@ -345,6 +349,7 @@ enum IdSync {
         var modelId: IdUid?
         var propertyName: String = ""
         var propertyType: String = ""
+        var entityName: String = ""
         var unwrappedPropertyType: String = ""
         var dbName: String?
         var modelIndexId: IdUid?
@@ -355,17 +360,21 @@ enum IdSync {
         var isStringType: Bool = false
 
         public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {
-            return lhs.propertyName == rhs.propertyName
+            return lhs.entityName == rhs.entityName && lhs.propertyName == rhs.propertyName && lhs.propertyType == rhs.propertyType
         }
         
         public var hashValue: Int {
             get {
-                return propertyName.hashValue
+                var hasher = Hasher()
+                self.hash(into: &hasher)
+                return hasher.finalize()
             }
         }
         
         public func hash(into hasher: inout Hasher) {
             propertyName.hash(into: &hasher)
+            propertyType.hash(into: &hasher)
+            entityName.hash(into: &hasher)
         }
     }
     
