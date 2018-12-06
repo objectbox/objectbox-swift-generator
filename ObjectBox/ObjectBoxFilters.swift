@@ -193,8 +193,10 @@ enum ObjectBoxFilters {
                 
                 var schemaProperties = Array<IdSync.SchemaProperty>()
                 try currType.variables.forEach { currIVar in
-                    guard !currIVar.annotations.contains(reference: "transient") else { return } // Exits only the foreach block
-                    
+                    guard !currIVar.annotations.contains(reference: "transient") else { return } // Exits only this iteration of the foreach block
+                    guard !currIVar.isStatic else { return } // Exits only this iteration of the foreach block
+                    guard !currIVar.isComputed else { return } // Exits only this iteration of the foreach block
+
                     let fullTypeName = currIVar.typeName.name;
                     if fullTypeName.hasPrefix("ToOne<") {
                         if fullTypeName.hasSuffix(">") {
@@ -234,6 +236,7 @@ enum ObjectBoxFilters {
                         }
                     } else {
                         let schemaProperty = IdSync.SchemaProperty()
+                        schemaProperty.entityName = currType.localName
                         schemaProperty.propertyName = currIVar.name
                         schemaProperty.propertyType = fullTypeName
                         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
