@@ -6,6 +6,7 @@ disabled_rules: # rule identifiers to exclude from running
   - nesting
   - conditional_binding_cascade
   - large_tuple
+  - todo
 
 opt_in_rules: # some rules are only opt-in
   - force_unwrapping
