@@ -1,17 +1,71 @@
 // swiftlint:disable all
 import ObjectBox
 
-// Entities:
-{% for entity in entities %}
-//      {{ entity.className }}
-{% endfor %}
-// end of entities.
-
 // MARK: - Entity metadata
 
 {% for entity in entities where not entity.isEntitySubclass %}
-extension {{ entity.className }}: Entity {} // {{ entity.isEntitySubclass }}
+extension {{ entity.className }}: Entity {}
 {% endfor %}
+
+{% for entity in entities %}
+extension {{ entity.className }}: __EntityRelatable {
+    typealias EntityType = {{ entity.className }}
+
+    var _id: Id<{{ entity.className }}> {
+        return self.{{ entity.idProperty.propertyName }}
+    }
+}
+
+extension {{ entity.className }}: EntityInspectable {
+    /// Generated metadata used by ObjectBox to persist the entity.
+    static var entityInfo: EntityInfo {
+        return EntityInfo(
+            name: "{{ entity.className }}",
+            cursorClass: {{ entity.className }}Cursor.self)
+    }
+
+    fileprivate static func buildEntity(modelBuilder: ModelBuilder) {
+        let entityBuilder = modelBuilder.entityBuilder(for: entityInfo)
+        {% for prop in entity.properties %}
+        {% set flagsParam %}{% if prop.isObjectId == true %}, flags: [.id]{% endif %}{% endset %}
+        entityBuilder.addProperty(name: "{{ prop.propertyName }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ flagsParam }})
+        {% endfor %}
+
+        {% for relation in entity.toOneRelations %}
+        entityBuilder.addRelation(name: "{{ relation.relationName }}", targetEntityInfo: {{ relation.relationTargetType }}.entityInfo)
+        {% endfor %}
+    }
+}
+
+/// Generated entity property information.
+///
+/// You may want to use this in queries to specify fetch conditions.
+///
+
+extension {{ entity.className }} {
+    {% for prop in entity.properties %}
+    static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId }}, isPrimaryKey: {{ prop.isObjectId }}) }
+
+    {% endfor %}
+    
+    {% for relation in entity.relations %}
+    static var {{ relation.relationName }}: Property<{{entity.className}}, Id<{{ relation.targetType }}>> { return Property(propertyId: {{ relation.modelId }}) }
+
+    {% endfor %}
+
+    fileprivate {% if entity.isValueType %}mutating{% endif %} func __setId(identifier: EntityId) {
+        self.{{ entity.idProperty.propertyName }} = Id(identifier)
+    }
+}
+
+{% endfor %}
+
+
+
+
+
+
+
 
 
 // swiftlint:enable all

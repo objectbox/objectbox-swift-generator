@@ -316,9 +316,13 @@ enum IdSync {
         var dbName: String?
         var properties = Array<SchemaProperty>()
         var indexes = Array<SchemaIndex>()
+        var toOneRelations = Array<ToOneRelation>()
         var toManyRelations = Array<ToManyStandalone>()
         var lastPropertyId: IdUid?
         var isEntitySubclass = false
+        var isValueType = false
+        var idProperty: SchemaProperty?
+        var idCandidates = Array<SchemaProperty>()
 
         public static func == (lhs: SchemaEntity, rhs: SchemaEntity) -> Bool {
             return lhs.className == rhs.className
@@ -338,8 +342,13 @@ enum IdSync {
     class SchemaProperty: Hashable, Equatable {
         var modelId: IdUid?
         var propertyName: String = ""
+        var propertyType: String = ""
+        var unwrappedPropertyType: String = ""
         var dbName: String?
         var modelIndexId: IdUid?
+        var backlinkName: String?
+        var backlinkType: String?
+        var isObjectId: Bool = false
 
         public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {
             return lhs.propertyName == rhs.propertyName
@@ -358,8 +367,34 @@ enum IdSync {
     
     class ToManyStandalone {
         var modelId: IdUid?
-        var name: String = ""
+        var relationName: String = ""
+        var relationType: String = ""
+        var relationTargetType: String = ""
+        var relationOwnerType: String = ""
         var dbName: String?
+        
+        init(name: String, type: String, targetType: String, ownerType: String)
+        {
+            self.relationName = name
+            self.relationType = type
+            self.relationTargetType = targetType
+            self.relationOwnerType = ownerType
+        }
+    }
+    
+    class ToOneRelation {
+        var modelId: IdUid?
+        var relationName: String = ""
+        var relationType: String = ""
+        var relationTargetType: String = ""
+        var dbName: String?
+        
+        init(name: String, type: String, targetType: String)
+        {
+            self.relationName = name
+            self.relationType = type
+            self.relationTargetType = targetType
+        }
     }
     
     // Main class used for performing the sync between our JSON file and the AST:
@@ -765,22 +800,22 @@ enum IdSync {
         }
 
         func syncRelation(existingEntity: Entity?, schemaEntity: SchemaEntity, schemaRelation: ToManyStandalone) throws -> Relation {
-            let name = schemaRelation.dbName ?? schemaRelation.name
+            let name = schemaRelation.dbName ?? schemaRelation.relationName
             let relationUid = schemaRelation.modelId?.uid
             let printUid = relationUid == -1
             var existingRelation: Relation?
             if let existingEntity = existingEntity {
                 if let relationUid = relationUid, !printUid, !parsedUids.insert(relationUid).inserted {
-                    throw Error.NonUniqueModelRelationUID(uid: relationUid, entity: schemaEntity.className, relation: schemaRelation.name)
+                    throw Error.NonUniqueModelRelationUID(uid: relationUid, entity: schemaEntity.className, relation: schemaRelation.relationName)
                 }
                 existingRelation = try findRelation(entity: existingEntity, name: name, uid: relationUid)
             }
             
             if printUid {
                 if let existingRelation = existingRelation {
-                    throw Error.PrintRelationUid(entity: schemaEntity.className, relation: schemaRelation.name, found: existingRelation.id.uid, unique: try uidHelper.create())
+                    throw Error.PrintRelationUid(entity: schemaEntity.className, relation: schemaRelation.relationName, found: existingRelation.id.uid, unique: try uidHelper.create())
                 } else {
-                    throw Error.RelationUIDTagNeedsValue(entity: schemaEntity.className, relation: schemaRelation.name)
+                    throw Error.RelationUIDTagNeedsValue(entity: schemaEntity.className, relation: schemaRelation.relationName)
                 }
             }
             
