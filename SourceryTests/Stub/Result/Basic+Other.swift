@@ -1,4 +1,4 @@
-// Generated using Sourcery Major.Minor.Patch — https://github.com/krzysztofzablocki/Sourcery
+// Generated using the ObjectBox Swift Generator Major.Minor.Patch — https://objectbox.io
 // DO NOT EDIT
 
 extension Bar: Equatable {}
