@@ -21,7 +21,7 @@ test_target_num () {
     ORIGINALMODELFILE="${PROJECT_DIR}/ObjectBoxToolTests/model${2}.json"
     cp "$ORIGINALMODELFILE" "$TESTMODELFILE"
 
-    $SOURCERY --xcode-project "$TESTPROJECT" --xcode-target "ToolTestProject${2}" --model-json "$TESTMODELFILE" --output "`dirname '$OUTPUTFILE'`"
+    $SOURCERY --xcode-project "$TESTPROJECT" --xcode-target "ToolTestProject${2}" --model-json "$TESTMODELFILE" --debug-parsetree --output "`dirname '$OUTPUTFILE'`"
 
     cmp --silent "$TESTMODELFILE" "$ORIGINALMODELFILE"
     if [ $? -eq 0 ]; then
@@ -52,8 +52,27 @@ test_target_num () {
         FAIL=1
     fi
 
-#rm "$TESTMODELFILE"
-#rm "$OUTPUTFILE"
+    ORIGINALDUMPFILE="${PROJECT_DIR}/ObjectBoxToolTests/schemaDump${2}.txt"
+    TESTDUMPFILE="schemaDump.txt"
+    cmp --silent "$TESTDUMPFILE" "$ORIGINALDUMPFILE"
+    if [ $? -eq 0 ]; then
+        echo "note: $1: Schema dumps match."
+    else
+        echo "error: $1: Schema dumps DIFFERENT!"
+
+        echo "===== test: ====="
+        cat "$TESTDUMPFILE"
+        echo "===== original: ====="
+        cat "$ORIGINALDUMPFILE"
+        echo "====="
+        FAIL=1
+    fi
+
+    if [ $FAIL == 0 ]; then
+        rm "$TESTMODELFILE"
+        rm "$OUTPUTFILE"
+        rm "$TESTDUMPFILE"
+    fi
 
     return $FAIL
 }

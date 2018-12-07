@@ -85,7 +85,7 @@ private func exit(_ code: ExitCode) -> Never {
 
 func runCLI() {
     command(
-        Flag("watch", flag: "w", description: "Watch template for changes and regenerate as needed."),
+        Flag("debug-parsetree", flag: "d", description: "Dump debug output useful in testing the code generator to schemaDump.txt in the current directory."),
         Flag("disableCache", description: "Don't use a cache."),
         Flag("verbose", flag: "v", description: "Turn on verbose logging"),
         Flag("quiet", flag: "q", description: "Turn off any logging, only emit errors."),
@@ -101,9 +101,13 @@ func runCLI() {
         VariadicOption<String>("args", description: "Custom values to pass to templates."),
         Option<Path>("model-json", "", description: "Path to JSON file containing model IDs."),
         Option<String>("annotation-prefix", "", description: "Prefix to use for annotations. Defaults to \"objectbox\".")
-    ) { watcherEnabled, disableCache, verboseLogging, quiet, prune, sources, excludeSources, templates, excludeTemplates, output, projectPath, targetName, forceParse, args, modelJsonPath, annotationPrefix in
+    ) { debugParseTree, disableCache, verboseLogging, quiet, prune, sources, excludeSources, templates, excludeTemplates, output, projectPath, targetName, forceParse, args, modelJsonPath, annotationPrefix in
         do {
             Log.level = verboseLogging ? .verbose : quiet ? .errors : .info
+
+            ObjectBoxFilters.debugDumpParseData = debugParseTree
+
+            let watcherEnabled = false
 
             AnnotationsParser.annotationPrefix = annotationPrefix.isEmpty ? "objectbox" : annotationPrefix
             ObjectBoxFilters.modelJsonFile = modelJsonPath.string.isEmpty ? nil : URL(fileURLWithPath: modelJsonPath.string)

@@ -12,7 +12,7 @@ import Foundation
 enum IdSync {
     
     /* Model classes that get populated from our model.json file using Codable protocol. */
-    struct IdUid: Codable {
+    struct IdUid: Codable, CustomDebugStringConvertible {
         var id: Int32 = 0
         var uid: Int64 = 0
         
@@ -42,6 +42,12 @@ enum IdSync {
         func encode(to encoder: Encoder) throws {
             var container = encoder.singleValueContainer()
             try container.encode(toString())
+        }
+        
+        public var debugDescription: String {
+            get {
+                return "IdUid(\(id):\(uid))"
+            }
         }
     }
     
@@ -337,16 +343,22 @@ enum IdSync {
         var properties = Array<SchemaProperty>()
     }
     
-    class Schema {
+    class Schema: CustomDebugStringConvertible {
         var entities: [SchemaEntity] = []
         var entitiesByName: [String: SchemaEntity] = [:]
         
         var lastEntityId = IdUid()
         var lastRelationId = IdUid()
         var lastIndexId = IdUid()
+        
+        public var debugDescription: String {
+            get {
+                return "Schema {\n\tentities = \(entities)\nlastEntityId = \(lastEntityId)\n\tlastRelationId = \(lastRelationId)\n\tlastIndexId = \(lastIndexId)\n}\n"
+            }
+        }
     }
     
-    class SchemaEntity: Hashable, Equatable {
+    class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
         var modelId: Int32?
         var modelUid: Int64?
         var className: String = ""
@@ -377,9 +389,15 @@ enum IdSync {
         public func hash(into hasher: inout Hasher) {
             className.hash(into: &hasher)
         }
+        
+        public var debugDescription: String {
+            get {
+                return "SchemaEntity {\n\t\tmodelId = \(String(describing: modelId))\n\t\tmodelUid = \(String(describing: modelUid))\n\t\tclassName = \(className)\n\t\tdbName = \(String(describing: dbName))\n\t\tproperties = \(properties)\n\t\tindexes = \(indexes)\n\t\trelations = \(relations)\n\t\ttoManyRelations = \(toManyRelations)\n\t\tlastPropertyId = \(String(describing: lastPropertyId))\n\t\tisEntitySubclass = \(isEntitySubclass)\n\t\tisValueType = \(isValueType)\n\t\thasStringProperties = \(hasStringProperties)\n\t\tidProperty = \(String(describing: idProperty))\n\t\tidCandidates = \(idCandidates)\n\t}\n"
+            }
+        }
     }
     
-    class SchemaProperty: Hashable, Equatable {
+    class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
         var modelId: IdUid?
         var propertyName: String = ""
         var propertyType: String = ""
@@ -411,9 +429,15 @@ enum IdSync {
             propertyType.hash(into: &hasher)
             entityName.hash(into: &hasher)
         }
+        
+        public var debugDescription: String {
+            get {
+                return "SchemaProperty {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\tmodelIndexId = \(String(describing: modelIndexId))\n\t\t\tbacklinkName = \(String(describing: backlinkName))\n\t\t\tbacklinkType = \(String(describing: backlinkType))\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\n\t\t}\n"
+            }
+        }
     }
     
-    class SchemaRelation {
+    class SchemaRelation: CustomDebugStringConvertible {
         var modelId: IdUid?
         var relationName: String = ""
         var relationType: String = ""
@@ -426,6 +450,12 @@ enum IdSync {
             self.relationType = type
             self.relationTargetType = targetType
         }
+        
+        public var debugDescription: String {
+            get {
+                return "SchemaRelation {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\trelationName = \(relationName)\n\t\t\trelationType = \(relationType)\n\t\t\trelationTargetType = \(relationTargetType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t}\n"
+            }
+        }
     }
     
     class SchemaToManyRelation: SchemaRelation {
@@ -436,6 +466,12 @@ enum IdSync {
         {
             self.relationOwnerType = ownerType
             super.init(name: name, type: type, targetType: targetType)
+        }
+        
+        override public var debugDescription: String {
+            get {
+                return "SchemaToManyRelation {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\trelationName = \(relationName)\n\t\t\trelationType = \(relationType)\n\t\t\trelationTargetType = \(relationTargetType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\trelationOwnerType = \(relationOwnerType)\n\t\t\tbacklinkProperty = \(String(describing: backlinkProperty))\n\t\t}\n"
+            }
         }
     }
     

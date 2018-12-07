@@ -25,6 +25,7 @@ enum ObjectBoxFilters {
 
     static var modelJsonFile: URL?
     static var builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate", "TimeInterval", "NSTimeInterval"]
+    static var debugDumpParseData = false
     private static var entities = Array<IdSync.SchemaEntity>()
     
     static func printError(_ error: Swift.Error) {
@@ -274,6 +275,11 @@ enum ObjectBoxFilters {
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
         
+        if ObjectBoxFilters.debugDumpParseData {
+            let debugDataURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("schemaDump.txt")
+            try "\(schemaData)".write(to: debugDataURL, atomically: true, encoding: .utf8)
+        }
+
         ObjectBoxFilters.entities = schemaData.entities
     }
     
