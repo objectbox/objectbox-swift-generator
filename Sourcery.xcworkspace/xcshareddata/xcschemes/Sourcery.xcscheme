@@ -131,6 +131,10 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--sources /Users/uli/Downloads/SourceryTest/Test.swift --output /Users/uli/Downloads/SourceryTest/example.generated.swift --model-json /Users/uli/Downloads/SourceryTest/testmodel.json"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--xcode-project /Users/uli/Programming/github-objectbox-swift/Example/NotesExample.xcodeproj --xcode-target NotesExample-iOS --output /Users/uli/Programming/github-objectbox-swift/Example/generated/EntityInfo.generated.swift --model-json /Users/uli/Downloads/SourceryTest/testmodel.json"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

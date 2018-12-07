@@ -198,22 +198,7 @@ enum ObjectBoxFilters {
                     guard !currIVar.isComputed else { return } // Exits only this iteration of the foreach block
 
                     let fullTypeName = currIVar.typeName.name;
-                    if fullTypeName.hasPrefix("ToOne<") {
-                        if fullTypeName.hasSuffix(">") {
-                            let templateTypesString = fullTypeName.drop(first: "ToOne<".count, last: 1)
-                            let templateTypes = templateTypesString.split(separator: ",")
-                            let destinationType = templateTypes[0]
-                            
-                            let relation = IdSync.SchemaToOneRelation(name: currIVar.name, type: fullTypeName, targetType: String(destinationType))
-                            if let propertyUid = currIVar.annotations["uid"] as? Int64 {
-                                var propId = IdUid()
-                                propId.uid = propertyUid
-                                relation.modelId = propId
-                            }
-                            schemaEntity.relations.append(relation)
-                            schemaEntity.toOneRelations.append(relation)
-                        }
-                    } else if fullTypeName.hasPrefix("ToMany<") {
+                    if fullTypeName.hasPrefix("ToMany<") {
                         if fullTypeName.hasSuffix(">") {
                             let templateTypesString = fullTypeName.drop(first: "ToMany<".count, last: 1)
                             let templateTypes = templateTypesString.split(separator: ",")
@@ -231,7 +216,6 @@ enum ObjectBoxFilters {
                             } else {
                                 throw Error.MissingBacklinkOnToManyRelation(entity: schemaEntity.className, relation: relation.relationName)
                             }
-                            schemaEntity.relations.append(relation)
                             schemaEntity.toManyRelations.append(relation)
                         }
                     } else {
@@ -241,6 +225,7 @@ enum ObjectBoxFilters {
                         schemaProperty.propertyType = fullTypeName
                         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
                         schemaProperty.isStringType = isStringTypeOrAlias(currIVar.typeName)
+                        schemaProperty.isRelation = fullTypeName.hasPrefix("ToOne<")
                         if schemaProperty.isStringType {
                             schemaEntity.hasStringProperties = true
                         }

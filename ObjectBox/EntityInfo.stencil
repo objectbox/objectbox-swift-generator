@@ -26,19 +26,19 @@ extension {{ entity.className }}: EntityInspectable {
 
     fileprivate static func buildEntity(modelBuilder: ModelBuilder) {
         let entityBuilder = modelBuilder.entityBuilder(for: entityInfo)
-        {% for prop in entity.properties %}
+        {% for prop in entity.properties where not prop.isRelation %}
         {% set flagsParam %}{% if prop.isObjectId == true %}, flags: [.id]{% endif %}{% endset %}
         entityBuilder.addProperty(name: "{{ prop.propertyName }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ flagsParam }})
         {% endfor %}
 
-        {% for relation in entity.toOneRelations %}
-        entityBuilder.addRelation(name: "{{ relation.relationName }}", targetEntityInfo: {{ relation.relationTargetType }}.entityInfo)
+        {% for prop in entity.properties where prop.isRelation %}
+        entityBuilder.addRelation(name: "{{ prop.propertyName }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo)
         {% endfor %}
     }
 }
 
 extension {{ entity.className }} {
-    {% for prop in entity.properties %}
+    {% for prop in entity.properties where not prop.isRelation %}
     /// Generated entity property information.
     ///
     /// You may want to use this in queries to specify fetch conditions, for example:
@@ -49,8 +49,8 @@ extension {{ entity.className }} {
     
     {% endfor %}
     
-    {% for relation in entity.toOneRelations %}
-    static var {{ relation.relationName }}: Property<{{entity.className}}, Id<{{ relation.relationTargetType }}>> { return Property(propertyId: {{ relation.modelId.uid }}) }
+    {% for prop in entity.properties where prop.isRelation %}
+    static var {{ prop.propertyName }}: Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>> { return Property(propertyId: {{ prop.modelId.uid }}) }
     
     {% endfor %}
 
@@ -84,12 +84,12 @@ class {{ entity.className }}Cursor: NSObject, CursorBase {
         {% endfor %}
         {% endif %}
 
-        {% for prop in entity.properties where not prop.isStringType and not prop.isObjectId %}
+        {% for prop in entity.properties where not prop.isStringType and not prop.isObjectId and not prop.isRelation %}
         propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endfor %}
 
-        {% for relation in entity.toOneRelations %}
-        propertyCollector.collect(entity.{{ relation.relationName }}, at: 2 + 2 * {{ relation.modelId.id }}, store: store)
+        {% for prop in entity.properties where prop.isRelation %}
+        propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
         {% endfor %}
 
         {% if entity.hasStringProperties %}
@@ -104,20 +104,20 @@ class {{ entity.className }}Cursor: NSObject, CursorBase {
     func createEntity(entityReader: EntityReader, store: Store) -> Any {
         let entity = {{ entity.className }}()
 
-        {% for prop in entity.properties %}
-            entity.{{ prop.propertyName }} = entityReader.read(at: 2 + 2 * {{ prop.modelId.id }})
-        {% endfor %}
+    {% for prop in entity.properties where not prop.isRelation %}
+        entity.{{ prop.propertyName }} = entityReader.read(at: 2 + 2 * {{ prop.modelId.id }})
+    {% endfor %}
 
-        {% for relation in entity.toOneRelations %}
-            entity.{{ relation.relationName }} = entityReader.read(at: 2 + 2 * {{ relation.modelId.id }}, store: store)
-        {% endfor %}
+    {% for prop in entity.properties where prop.isRelation %}
+        entity.{{ prop.propertyName }} = entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}, store: store)
+    {% endfor %}
 
-        {% for tmRelation in entity.toManyRelations %}
-            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
-                    sourceBox: store.box(for: {{ tmRelation.relationType }}.Source.self),
-                    sourceProperty: {{ tmRelation.relationType }}.Source.{{ tmRelation.backlinkProperty }},
-                    targetId: entity.id)
-        {% endfor %}
+    {% for tmRelation in entity.toManyRelations %}
+        entity.{{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
+                sourceBox: store.box(for: {{ tmRelation.relationType }}.Source.self),
+                sourceProperty: {{ tmRelation.relationType }}.Source.{{ tmRelation.backlinkProperty }},
+                targetId: entity.id)
+    {% endfor %}
 
         return entity
     }

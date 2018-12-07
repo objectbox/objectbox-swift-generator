@@ -319,7 +319,6 @@ enum IdSync {
         var properties = Array<SchemaProperty>()
         var indexes = Array<SchemaIndex>()
         var relations = Array<SchemaRelation>()
-        var toOneRelations = Array<SchemaToOneRelation>()
         var toManyRelations = Array<SchemaToManyRelation>()
         var lastPropertyId: IdUid?
         var isEntitySubclass = false
@@ -358,6 +357,7 @@ enum IdSync {
         var isObjectId: Bool = false
         var isBuiltInType: Bool = false
         var isStringType: Bool = false
+        var isRelation: Bool = false
 
         public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {
             return lhs.entityName == rhs.entityName && lhs.propertyName == rhs.propertyName && lhs.propertyType == rhs.propertyType
@@ -404,9 +404,6 @@ enum IdSync {
         }
     }
     
-    class SchemaToOneRelation: SchemaRelation {
-    }
-
     // Main class used for performing the sync between our JSON file and the AST:
     class IdSync {
         let modelRead: IdSyncModel
