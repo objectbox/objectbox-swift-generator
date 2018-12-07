@@ -123,8 +123,7 @@ class IdSyncTests: XCTestCase {
         }
     }
 
-    
-    func testMultiClassMultiPropertyClassFile() throws {
+    func multiPropertyClassSchema() -> IdSync.Schema {
         let schemaData = IdSync.Schema()
         let entity = IdSync.SchemaEntity()
         entity.className = "FirstEntity"
@@ -153,6 +152,12 @@ class IdSyncTests: XCTestCase {
         prop4.entityName = "SecondEntity"
         entity2.properties.append(prop4)
         schemaData.entities.append(entity2)
+        
+        return schemaData
+    }
+    
+    func testMultiClassMultiPropertyClassFile() throws {
+        let schemaData = multiPropertyClassSchema()
 
         let jsonFile = URL(fileURLWithPath: "/tmp").appendingPathComponent("model.json")
         try? FileManager.default.removeItem(at: jsonFile)
@@ -172,10 +177,15 @@ class IdSyncTests: XCTestCase {
         XCTAssertNotNil(jsonContents)
         if let jsonContents = jsonContents {
             XCTAssertEqual(jsonContents.entities?.count ?? 0, 2)
+
+            var entityUid = IdSync.IdUid()
+            var entityProp1Uid = IdSync.IdUid()
+            var entityProp2Uid = IdSync.IdUid()
             let entity = jsonContents.entities?.first
             XCTAssertNotNil(entity)
             if let entity = entity {
                 XCTAssertEqual(entity.name, "FirstEntity")
+                entityUid = entity.id
                 XCTAssertEqual(entity.id.id, 1)
                 XCTAssertGreaterThan(entity.id.uid & ~0xff, 0)
                 XCTAssertEqual(entity.properties?.count ?? 0, 2)
@@ -185,6 +195,7 @@ class IdSyncTests: XCTestCase {
                     XCTAssertEqual(firstProperty.name, "id")
                     XCTAssertEqual(firstProperty.id.id, 1)
                     XCTAssertGreaterThan(firstProperty.id.uid, 0)
+                    entityProp1Uid = firstProperty.id
                 }
                 let secondProperty = entity.properties?[1]
                 XCTAssertNotNil(secondProperty)
@@ -192,14 +203,19 @@ class IdSyncTests: XCTestCase {
                     XCTAssertEqual(secondProperty.name, "name")
                     XCTAssertEqual(secondProperty.id.id, 2)
                     XCTAssertGreaterThan(secondProperty.id.uid, 0)
+                    entityProp2Uid = secondProperty.id
                 }
                 XCTAssertEqual(entity.relations?.count ?? 0, 0)
             }
             
+            var entity2Uid = IdSync.IdUid()
+            var entity2Prop1Uid = IdSync.IdUid()
+            var entity2Prop2Uid = IdSync.IdUid()
             let entity2 = jsonContents.entities?[1]
             XCTAssertNotNil(entity2)
             if let entity2 = entity2 {
                 XCTAssertEqual(entity2.name, "SecondEntity")
+                entity2Uid = entity2.id
                 XCTAssertEqual(entity2.id.id, 2)
                 XCTAssertGreaterThan(entity2.id.uid & ~0xff, 0)
                 XCTAssertEqual(entity2.properties?.count ?? 0, 2)
@@ -209,6 +225,7 @@ class IdSyncTests: XCTestCase {
                     XCTAssertEqual(firstProperty.name, "id")
                     XCTAssertEqual(firstProperty.id.id, 1)
                     XCTAssertGreaterThan(firstProperty.id.uid, 0)
+                    entity2Prop1Uid = firstProperty.id
                 }
                 let secondProperty = entity2.properties?[1]
                 XCTAssertNotNil(secondProperty)
@@ -216,59 +233,61 @@ class IdSyncTests: XCTestCase {
                     XCTAssertEqual(secondProperty.name, "name")
                     XCTAssertEqual(secondProperty.id.id, 2)
                     XCTAssertGreaterThan(secondProperty.id.uid, 0)
+                    entity2Prop2Uid = secondProperty.id
                 }
                 XCTAssertEqual(entity2.relations?.count ?? 0, 0)
             }
+            
+            // Test synching a second time, are the UIDs still the same?
+            let schemaData2 = multiPropertyClassSchema()
+            let idSync2 = try IdSync.IdSync(jsonFile: jsonFile)
+            try idSync2.sync(schema: schemaData2)
+            
+            XCTAssertEqual(schemaData2.entities[0].modelUid, entityUid.uid)
+            XCTAssertEqual(schemaData2.entities[0].properties[0].modelId?.uid, entityProp1Uid.uid)
+            XCTAssertEqual(schemaData2.entities[0].properties[1].modelId?.uid, entityProp2Uid.uid)
+            XCTAssertEqual(schemaData2.entities[1].modelUid, entity2Uid.uid)
+            XCTAssertEqual(schemaData2.entities[1].properties[0].modelId?.uid, entity2Prop1Uid.uid)
+            XCTAssertEqual(schemaData2.entities[1].properties[1].modelId?.uid, entity2Prop2Uid.uid)
         }
     }
+    
+    func testPropertyIdOverrides() throws {
+        let schemaData = multiPropertyClassSchema()
+        
+        let jsonFile = URL(fileURLWithPath: "/tmp").appendingPathComponent("model.json")
+        try? FileManager.default.removeItem(at: jsonFile)
+        
+        let idSync = try IdSync.IdSync(jsonFile: jsonFile)
+        try idSync.sync(schema: schemaData)
+        
+        // Test synching a second time, are the UIDs still the same?
+        var didThrowAsExpected = false
+        let overrideId = IdSync.IdUid(string: "0:-1") // Simulate empty "uid" tag.
+        let schemaData2 = multiPropertyClassSchema()
+        var thrownEntity: String = ""
+        var thrownProperty: String = ""
+        var thrownFound: Int64 = 0
+        var thrownUnique: Int64 = 0
+        
+        schemaData2.entities[0].properties[1].modelId = overrideId
+        do {
+            let idSync2 = try IdSync.IdSync(jsonFile: jsonFile)
+            try idSync2.sync(schema: schemaData2)
+        } catch IdSync.Error.PrintPropertyUid(let entity, let property, let found, let unique) {
+            thrownEntity = entity
+            thrownProperty = property
+            thrownFound = found
+            thrownUnique = unique
+            didThrowAsExpected = true
+        } catch {
+            print("error: \(error)")
+        }
+        XCTAssertTrue(didThrowAsExpected)
+        XCTAssertEqual(thrownEntity, "FirstEntity")
+        XCTAssertEqual(thrownProperty, "name")
+        XCTAssertGreaterThan(thrownFound, 0)
+        XCTAssertGreaterThan(thrownUnique, 0)
+        XCTAssertNotEqual(thrownFound, thrownUnique)
+    }
 }
-
-
-//class ObjectBoxSpec: QuickSpec {
-//    override func spec() {
-//        func update(code: String, in path: Path) { guard (try? path.write(code)) != nil else { fatalError() } }
-//
-//        describe ("ObjectBox Generator") {
-//            var outputDir = Path("/tmp")
-//            var output: Output { return Output(outputDir) }
-//
-//            beforeEach {
-//                outputDir = Stubs.cleanTemporarySourceryDir()
-//            }
-//
-//            context("with already generated files") {
-//                let templatePath = Stubs.templateDirectory + Path("Other.stencil")
-//                let sourcePath = outputDir + Path("Source.swift")
-//                var generatedFileModificationDate: Date!
-//                var newGeneratedFileModificationDate: Date!
-//
-//                func fileModificationDate(url: URL) -> Date? {
-//                    guard let attr = try? FileManager.default.attributesOfItem(atPath: url.path) else {
-//                        return nil
-//                    }
-//                    return attr[FileAttributeKey.modificationDate] as? Date
-//                }
-//
-//                beforeEach {
-//                }
-//
-//                context("with a one-entity file") {
-//                    it("produces one entity ID") {
-//                        update(code: """
-//                        class Foo: Entity {
-//                        }
-//                        """, in: sourcePath)
-//
-//                        let generatedFilePath = outputDir + Sourcery().generatedPath(for: templatePath)
-//                        generatedFileModificationDate = fileModificationDate(url: generatedFilePath.url)
-//                        DispatchQueue.main.asyncAfter ( deadline: DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)) {
-//                            _ = try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output)
-//                            newGeneratedFileModificationDate = fileModificationDate(url: generatedFilePath.url)
-//                        }
-//                        expect(newGeneratedFileModificationDate).toEventually(beGreaterThan(generatedFileModificationDate))
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
