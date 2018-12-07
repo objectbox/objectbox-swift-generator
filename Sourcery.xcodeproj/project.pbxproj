@@ -48,6 +48,8 @@
 		47379D2B215962BF002C1DAA /* SourceryRuntime.content.generated.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4710194E2150509C00F50715 /* SourceryRuntime.content.generated.swift */; };
 		524A2EA71FFD3C40001CD8F9 /* BytesRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524A2EA61FFD3C40001CD8F9 /* BytesRange.swift */; };
 		52F79EA11EE9F017006D3546 /* ConfigurationSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F79EA01EE9F017006D3546 /* ConfigurationSpec.swift */; };
+		5509A54021BA839D00FBC0DC /* IdSyncModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5509A53F21BA839D00FBC0DC /* IdSyncModelTests.swift */; };
+		5509A54221BA881E00FBC0DC /* IdSyncModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */; };
 		55BE9BFC21B051D30017F77D /* ObjectBoxFilters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BE9BFB21B051D30017F77D /* ObjectBoxFilters.swift */; };
 		55BE9BFF21B527FE0017F77D /* IdSyncModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */; };
 		55BE9C0521B97EA40017F77D /* EntityInfo.stencil in Resources */ = {isa = PBXBuildFile; fileRef = 55BE9C0421B97EA40017F77D /* EntityInfo.stencil */; };
@@ -196,6 +198,7 @@
 		4BBF7447571BAF1EAB6585CD /* Pods-Sourcery.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Sourcery.release.xcconfig"; path = "Pods/Target Support Files/Pods-Sourcery/Pods-Sourcery.release.xcconfig"; sourceTree = "<group>"; };
 		524A2EA61FFD3C40001CD8F9 /* BytesRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BytesRange.swift; path = SourceryRuntime/Sources/BytesRange.swift; sourceTree = SOURCE_ROOT; };
 		52F79EA01EE9F017006D3546 /* ConfigurationSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConfigurationSpec.swift; sourceTree = "<group>"; };
+		5509A53F21BA839D00FBC0DC /* IdSyncModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdSyncModelTests.swift; sourceTree = "<group>"; };
 		55BE9BFB21B051D30017F77D /* ObjectBoxFilters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectBoxFilters.swift; sourceTree = "<group>"; };
 		55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdSyncModel.swift; sourceTree = "<group>"; };
 		55BE9C0021B5435C0017F77D /* Sourcery-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sourcery-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -229,7 +232,7 @@
 		CD475D6E1DE9B98B009AD8B0 /* Result */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Result; sourceTree = "<group>"; };
 		CD53EE651D897C1F00F5886C /* Source */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Source; sourceTree = "<group>"; };
 		CD53EE671D897D2900F5886C /* Templates */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Templates; sourceTree = "<group>"; };
-		CD754C8B1D853F000082B512 /* obxgenerator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = obxgenerator.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CD754C8B1D853F000082B512 /* obxgenerator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = obxgenerator.app; path = Sourcery.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD754C951D853F000082B512 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CD754C9A1D853F000082B512 /* SourceryTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SourceryTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD754CA01D853F000082B512 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -421,6 +424,7 @@
 			children = (
 				55BE9BFB21B051D30017F77D /* ObjectBoxFilters.swift */,
 				55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */,
+				5509A53F21BA839D00FBC0DC /* IdSyncModelTests.swift */,
 				55BE9C0021B5435C0017F77D /* Sourcery-Bridging-Header.h */,
 				55BE9C0421B97EA40017F77D /* EntityInfo.stencil */,
 			);
@@ -1235,6 +1239,7 @@
 				E291D8BB621560C275813B1F /* SourcerySpec.swift in Sources */,
 				09B1DD321E2147C4009228EE /* TypeNameSpec.swift in Sources */,
 				09346DC81E02195300D6358C /* StructSpec.swift in Sources */,
+				5509A54221BA881E00FBC0DC /* IdSyncModel.swift in Sources */,
 				E291D4E250805568DBC33F7E /* TypeSpec.swift in Sources */,
 				E291D48FD07450FD0A09D92E /* EnumSpec.swift in Sources */,
 				097E11F71E0EF63100FEB751 /* MethodSpec.swift in Sources */,
@@ -1247,6 +1252,7 @@
 				E291D1C26BD65C6E109966AF /* CustomMatchers.swift in Sources */,
 				E291DCD43D41B7F8D7AAF7B9 /* DiffableSpec.swift in Sources */,
 				E291D90EC943AC5CBA99899A /* ComposerSpec.swift in Sources */,
+				5509A54021BA839D00FBC0DC /* IdSyncModelTests.swift in Sources */,
 				E291D7114BA1479EC337A070 /* FileParserSpec.swift in Sources */,
 				E291DF22F03C87C646576942 /* AnnotationsParserSpec.swift in Sources */,
 				09B1DD3E1E21ADD2009228EE /* VariableSpec.swift in Sources */,
@@ -1583,8 +1589,8 @@
 				);
 				INFOPLIST_FILE = Sourcery/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				PRODUCT_BUNDLE_IDENTIFIER = io.objectbox.swift.generator;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "ObjectBox/Sourcery-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.2;
@@ -1607,8 +1613,8 @@
 				);
 				INFOPLIST_FILE = Sourcery/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				PRODUCT_BUNDLE_IDENTIFIER = io.objectbox.swift.generator;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "ObjectBox/Sourcery-Bridging-Header.h";
 				SWIFT_VERSION = 4.2;
 				SYMROOT = build;

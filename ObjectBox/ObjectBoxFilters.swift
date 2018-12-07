@@ -14,41 +14,6 @@ import StencilSwiftKit.Swift
 import SourceryRuntime
 
 
-/* Model classes that get populated from our model.json file using Codable protocol. */
-struct IdUid: Codable {
-    var id: Int32 = 0
-    var uid: Int64 = 0
-    
-    init() {}
-    
-    init(string: String) {
-        let parts = string.components(separatedBy: ":")
-        id = Int32(parts[0]) ?? 0
-        uid = Int64(parts[1]) ?? 0
-    }
-    
-    init(from decoder: Decoder) throws {
-        let string = try decoder.singleValueContainer().decode(String.self)
-        self.init(string: string)
-    }
-    
-    func toString() -> String {
-        return "\(id):\(uid)"
-    }
-    
-    mutating func incId(uid: Int64) -> IdUid {
-        self.id = self.id + 1
-        self.uid = uid
-        return self
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(toString())
-    }
-}
-
-
 enum ObjectBoxFilters {
         
     enum Error: Swift.Error {
@@ -207,7 +172,7 @@ enum ObjectBoxFilters {
                             
                             let relation = IdSync.SchemaToManyRelation(name: currIVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
                             if let propertyUid = currIVar.annotations["uid"] as? Int64 {
-                                var propId = IdUid()
+                                var propId = IdSync.IdUid()
                                 propId.uid = propertyUid
                                 relation.modelId = propId
                             }
@@ -230,12 +195,12 @@ enum ObjectBoxFilters {
                         schemaProperty.unwrappedPropertyType = currIVar.unwrappedTypeName
                         schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String
                         if let propertyUid = currIVar.annotations["uid"] as? Int64 {
-                            var propId = IdUid()
+                            var propId = IdSync.IdUid()
                             propId.uid = propertyUid
                             schemaProperty.modelId = propId
                         }
                         if let propertyIndexUid = currIVar.annotations["index"] as? Int64 {
-                            var indexId = IdUid()
+                            var indexId = IdSync.IdUid()
                             indexId.uid = propertyIndexUid
                             schemaProperty.modelIndexId = indexId
                         }
