@@ -305,6 +305,7 @@ enum IdSync {
     
     class Schema {
         var entities: [SchemaEntity] = []
+        var entitiesByName: [String: SchemaEntity] = [:]
         
         var lastEntityId = IdUid()
         var lastRelationId = IdUid()

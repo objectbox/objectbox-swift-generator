@@ -213,8 +213,6 @@ enum ObjectBoxFilters {
                             }
                             if let backlinkProperty = currIVar.annotations["backlink"] as? String {
                                 relation.backlinkProperty = backlinkProperty
-                            } else {
-                                throw Error.MissingBacklinkOnToManyRelation(entity: schemaEntity.className, relation: relation.relationName)
                             }
                             schemaEntity.toManyRelations.append(relation)
                         }
@@ -283,6 +281,23 @@ enum ObjectBoxFilters {
                 }
                 
                 schemaData.entities.append(schemaEntity)
+                schemaData.entitiesByName[schemaEntity.className] = schemaEntity
+            }
+        }
+        
+        // Find back links for to-many relations:
+        try schemaData.entities.forEach { currSchemaEntity in
+            try currSchemaEntity.toManyRelations.forEach { currRelation in
+                if currRelation.backlinkProperty == nil, let relatedEntity = schemaData.entitiesByName[currRelation.relationTargetType] {
+                    let backlinkCandidates = relatedEntity.properties.filter { $0.isRelation && $0.propertyType == currSchemaEntity.className }
+                    
+                    if backlinkCandidates.count == 1 {
+                        currRelation.backlinkProperty = backlinkCandidates[0].propertyName
+                    }
+                }
+                if currRelation.backlinkProperty == nil {
+                    throw Error.MissingBacklinkOnToManyRelation(entity: currSchemaEntity.className, relation: currRelation.relationName)
+                }
             }
         }
         
