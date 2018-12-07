@@ -84,7 +84,7 @@ class {{ entity.className }}Cursor: NSObject, CursorBase {
         {% endfor %}
         {% endif %}
 
-        {% for prop in entity.properties where not prop.isStringType %}
+        {% for prop in entity.properties where not prop.isStringType and not prop.isObjectId %}
         propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endfor %}
 
