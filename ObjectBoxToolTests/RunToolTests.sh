@@ -6,7 +6,8 @@
 #  Created by Uli Kusterer on 07.12.18.
 #  
 
-echo "note: Starting tests..."
+echo -n "note: Starting tests at "
+date
 cd ${BUILT_PRODUCTS_DIR}
 
 SOURCERY="${BUILT_PRODUCTS_DIR}/Sourcery.app/Contents/MacOS/Sourcery"
@@ -17,10 +18,10 @@ OUTPUTFILE="${BUILT_PRODUCTS_DIR}/EntityInfo.generated.swift"
 test_target_num () {
     FAIL=0
 
-    ORIGINALMODELFILE="${PROJECT_DIR}/ObjectBoxToolTests/model${3}.json"
+    ORIGINALMODELFILE="${PROJECT_DIR}/ObjectBoxToolTests/model${2}.json"
     cp "$ORIGINALMODELFILE" "$TESTMODELFILE"
 
-    $SOURCERY --xcode-project "$TESTPROJECT" --xcode-target "$2" --model-json "$TESTMODELFILE" --output "`dirname '$OUTPUTFILE'`"
+    $SOURCERY --xcode-project "$TESTPROJECT" --xcode-target "ToolTestProject${2}" --model-json "$TESTMODELFILE" --output "`dirname '$OUTPUTFILE'`"
 
     cmp --silent "$TESTMODELFILE" "$ORIGINALMODELFILE"
     if [ $? -eq 0 ]; then
@@ -36,7 +37,7 @@ test_target_num () {
         FAIL=1
     fi
 
-    ORIGINALSOURCEFILE="${PROJECT_DIR}/ObjectBoxToolTests/EntityInfo.generated${3}.swift"
+    ORIGINALSOURCEFILE="${PROJECT_DIR}/ObjectBoxToolTests/EntityInfo.generated${2}.swift"
     cmp --silent "$OUTPUTFILE" "$ORIGINALSOURCEFILE"
     if [ $? -eq 0 ]; then
         echo "note: $1: Output files match."
@@ -51,12 +52,17 @@ test_target_num () {
         FAIL=1
     fi
 
-    rm "$TESTMODELFILE"
-    rm "$OUTPUTFILE"
+#rm "$TESTMODELFILE"
+#rm "$OUTPUTFILE"
 
-    exit $FAIL
+    return $FAIL
 }
 
-test_target_num "Simple Model" ToolTestProject 1
+FAIL=0
+
+test_target_num "Simple Model" 1 || FAIL=1
+test_target_num "Subclassed Model" 2 || FAIL=1
 
 echo "note: Finished tests..."
+
+exit $FAIL

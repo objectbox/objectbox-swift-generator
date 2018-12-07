@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		5509A57E21BAB76900FBC0DC /* ToolTestProject1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5509A57D21BAB76900FBC0DC /* ToolTestProject1.swift */; };
+		5509A58821BAC50900FBC0DC /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5509A58721BAC50900FBC0DC /* main.swift */; };
+		5509A58C21BAC56900FBC0DC /* ToolTestProject2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5509A58021BAC4EA00FBC0DC /* ToolTestProject2.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -20,15 +22,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		5509A58321BAC50800FBC0DC /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		5509A56721BAB58600FBC0DC /* ToolTestProject */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ToolTestProject; sourceTree = BUILT_PRODUCTS_DIR; };
+		5509A56721BAB58600FBC0DC /* ToolTestProject1 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ToolTestProject1; sourceTree = BUILT_PRODUCTS_DIR; };
 		5509A57D21BAB76900FBC0DC /* ToolTestProject1.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ToolTestProject1.swift; sourceTree = "<group>"; };
+		5509A58021BAC4EA00FBC0DC /* ToolTestProject2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolTestProject2.swift; sourceTree = "<group>"; };
+		5509A58521BAC50800FBC0DC /* ToolTestProject2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ToolTestProject2; sourceTree = BUILT_PRODUCTS_DIR; };
+		5509A58721BAC50900FBC0DC /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		5509A56421BAB58600FBC0DC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5509A58221BAC50800FBC0DC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -42,6 +63,8 @@
 			isa = PBXGroup;
 			children = (
 				5509A57D21BAB76900FBC0DC /* ToolTestProject1.swift */,
+				5509A58021BAC4EA00FBC0DC /* ToolTestProject2.swift */,
+				5509A58621BAC50900FBC0DC /* ToolTestProject2 */,
 				5509A56821BAB58600FBC0DC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -49,17 +72,26 @@
 		5509A56821BAB58600FBC0DC /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				5509A56721BAB58600FBC0DC /* ToolTestProject */,
+				5509A56721BAB58600FBC0DC /* ToolTestProject1 */,
+				5509A58521BAC50800FBC0DC /* ToolTestProject2 */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		5509A58621BAC50900FBC0DC /* ToolTestProject2 */ = {
+			isa = PBXGroup;
+			children = (
+				5509A58721BAC50900FBC0DC /* main.swift */,
+			);
+			path = ToolTestProject2;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		5509A56621BAB58600FBC0DC /* ToolTestProject */ = {
+		5509A56621BAB58600FBC0DC /* ToolTestProject1 */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5509A56E21BAB58600FBC0DC /* Build configuration list for PBXNativeTarget "ToolTestProject" */;
+			buildConfigurationList = 5509A56E21BAB58600FBC0DC /* Build configuration list for PBXNativeTarget "ToolTestProject1" */;
 			buildPhases = (
 				5509A56321BAB58600FBC0DC /* Sources */,
 				5509A56421BAB58600FBC0DC /* Frameworks */,
@@ -69,9 +101,26 @@
 			);
 			dependencies = (
 			);
-			name = ToolTestProject;
+			name = ToolTestProject1;
 			productName = ToolTestProject;
-			productReference = 5509A56721BAB58600FBC0DC /* ToolTestProject */;
+			productReference = 5509A56721BAB58600FBC0DC /* ToolTestProject1 */;
+			productType = "com.apple.product-type.tool";
+		};
+		5509A58421BAC50800FBC0DC /* ToolTestProject2 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5509A58921BAC50900FBC0DC /* Build configuration list for PBXNativeTarget "ToolTestProject2" */;
+			buildPhases = (
+				5509A58121BAC50800FBC0DC /* Sources */,
+				5509A58221BAC50800FBC0DC /* Frameworks */,
+				5509A58321BAC50800FBC0DC /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ToolTestProject2;
+			productName = ToolTestProject2;
+			productReference = 5509A58521BAC50800FBC0DC /* ToolTestProject2 */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -88,6 +137,9 @@
 						CreatedOnToolsVersion = 10.1;
 						LastSwiftMigration = 1010;
 					};
+					5509A58421BAC50800FBC0DC = {
+						CreatedOnToolsVersion = 10.1;
+					};
 				};
 			};
 			buildConfigurationList = 5509A56221BAB58600FBC0DC /* Build configuration list for PBXProject "ToolTestProject" */;
@@ -102,7 +154,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				5509A56621BAB58600FBC0DC /* ToolTestProject */,
+				5509A56621BAB58600FBC0DC /* ToolTestProject1 */,
+				5509A58421BAC50800FBC0DC /* ToolTestProject2 */,
 			);
 		};
 /* End PBXProject section */
@@ -113,6 +166,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				5509A57E21BAB76900FBC0DC /* ToolTestProject1.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5509A58121BAC50800FBC0DC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5509A58C21BAC56900FBC0DC /* ToolTestProject2.swift in Sources */,
+				5509A58821BAC50900FBC0DC /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -265,6 +327,24 @@
 			};
 			name = Release;
 		};
+		5509A58A21BAC50900FBC0DC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+			};
+			name = Debug;
+		};
+		5509A58B21BAC50900FBC0DC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 4.2;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -277,11 +357,20 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5509A56E21BAB58600FBC0DC /* Build configuration list for PBXNativeTarget "ToolTestProject" */ = {
+		5509A56E21BAB58600FBC0DC /* Build configuration list for PBXNativeTarget "ToolTestProject1" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5509A56F21BAB58600FBC0DC /* Debug */,
 				5509A57021BAB58600FBC0DC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5509A58921BAC50900FBC0DC /* Build configuration list for PBXNativeTarget "ToolTestProject2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5509A58A21BAC50900FBC0DC /* Debug */,
+				5509A58B21BAC50900FBC0DC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
