@@ -255,7 +255,9 @@ internal struct AnnotationsParser {
                     return
                 }
 
-                if let number = Float(value) {
+                if let number = Int64(value) {
+                    append(key: name, value: NSNumber(value: number), to: &annotations)
+                } else if let number = Float(value) {
                     append(key: name, value: NSNumber(value: number), to: &annotations)
                 } else {
                     if (value.hasPrefix("'") && value.hasSuffix("'")) || (value.hasPrefix("\"") && value.hasSuffix("\"")) {
