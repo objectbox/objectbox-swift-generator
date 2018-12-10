@@ -65,8 +65,8 @@ enum ObjectBoxFilters {
                 Log.error("No entity with UID \(entity) exists.")
             case .PrintUid(let entity, let found, let unique):
                 Log.error("No UID given for entity \(entity). You can do the following:\n" +
-                    "\t[Rename] Apply the current UID using // objectbox: entityId \(found)\n" +
-                    "\t[Change/Reset] Apply a new UID using // objectbox: entityId \(unique)")
+                    "\t[Rename] Apply the current UID using // objectbox: entityId = \(found)\n" +
+                    "\t[Change/Reset] Apply a new UID using // objectbox: entityId = \(unique)")
             case .UIDTagNeedsValue(let entity):
                 Log.error("No UID given for entity \(entity).")
             case .CandidateUIDNotInPool(let uid):
@@ -79,8 +79,8 @@ enum ObjectBoxFilters {
                 Log.error("Multiple matches between UIDs: \(uids.map { String($0) }.joined(separator: ", ")) and properties: \(names.joined(separator: ", ")).")
             case .PrintPropertyUid(let entity, let property, let found, let unique):
                 Log.error("No UID given for property \(property) of entity \(entity). You can do the following:\n" +
-                    "\t[Rename] Apply the current UID using // objectbox: uid \(found)\n" +
-                    "\t[Change/Reset] Apply a new UID using // objectbox: uid \(unique)")
+                    "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n" +
+                    "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)")
             case .PropertyUIDTagNeedsValue(let entity, let property):
                 Log.error("Property \(property) of entity \(entity) has an \"// objectbox: uid n\" annotation missing the number n.")
             case .PropertyCollision(let entity, let new, let old):
@@ -93,8 +93,8 @@ enum ObjectBoxFilters {
                 Log.error("Multiple matches between UIDs: \(uids.map { String($0) }.joined(separator: ", ")) and relations: \(names.joined(separator: ", ")).")
             case .PrintRelationUid(let entity, let relation, let found, let unique):
                 Log.error("No UID given for relation \(relation) of entity \(entity). You can do the following:\n" +
-                    "\t[Rename] Apply the current UID using // objectbox: uid \(found)\n" +
-                    "\t[Change/Reset] Apply a new UID using // objectbox: uid \(unique)")
+                    "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n" +
+                    "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)")
             case .RelationUIDTagNeedsValue(let entity, let relation):
                 Log.error("Relation \(relation) of entity \(entity) has an \"// objectbox: uid n\" annotation missing the number n.")
             case .DuplicatePropertyName(let entity, let property):
