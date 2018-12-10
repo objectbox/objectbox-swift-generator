@@ -263,7 +263,7 @@ class IdSyncTests: XCTestCase {
         
         // Test synching a second time, are the UIDs still the same?
         var didThrowAsExpected = false
-        let overrideId = IdSync.IdUid(string: "0:-1") // Simulate empty "uid" tag.
+        let overrideId = IdSync.IdUid(string: "0:1") // Simulate empty "uid" tag.
         let schemaData2 = multiPropertyClassSchema()
         var thrownEntity: String = ""
         var thrownProperty: String = ""

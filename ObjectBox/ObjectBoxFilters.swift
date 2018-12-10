@@ -175,11 +175,7 @@ enum ObjectBoxFilters {
             }
             schemaProperty.unwrappedPropertyType = currIVar.unwrappedTypeName
             schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String
-            if currIVar.annotations["uid"] as? String == "uid" {
-                var propId = IdSync.IdUid()
-                propId.uid = -1
-                schemaProperty.modelId = propId
-            } else if let propertyUid = currIVar.annotations["uid"] as? Int64 {
+            if let propertyUidObject = currIVar.annotations["uid"], let propertyUid = (propertyUidObject as? NSNumber)?.int64Value {
                 var propId = IdSync.IdUid()
                 propId.uid = propertyUid
                 schemaProperty.modelId = propId

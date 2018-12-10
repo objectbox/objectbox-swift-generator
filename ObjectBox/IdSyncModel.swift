@@ -691,7 +691,7 @@ enum IdSync {
         }
         
         func findEntity(name: String, uid: Int64?) throws -> Entity? {
-            if let uid = uid, uid != 0, uid != -1 {
+            if let uid = uid, uid != 0, uid != 1 {
                 if let foundEntity = entitiesReadByUid[uid] {
                     return foundEntity
                 } else if newUidPool.contains(uid) {
@@ -705,7 +705,7 @@ enum IdSync {
         }
         
         func findProperty(entity: Entity, name: String, uid: Int64?) throws -> Property? {
-            if let uid = uid, uid != 0, uid != -1 {
+            if let uid = uid, uid != 0, uid != 1 {
                 let filtered = entity.properties?.filter { $0.id.uid == uid } ?? []
                 if filtered.isEmpty {
                     if newUidPool.contains(uid) {
@@ -730,7 +730,7 @@ enum IdSync {
         func findRelation(entity: Entity, name: String, uid: Int64?) throws -> Relation? {
             guard entity.relations != nil else { return nil }
             
-            if let uid = uid, uid != 0, uid != -1 {
+            if let uid = uid, uid != 0, uid != 1 {
                 let filtered = entity.relations?.filter { $0.id.uid == uid } ?? []
                 if filtered.isEmpty {
                     if newUidPool.contains(uid) {
@@ -755,7 +755,7 @@ enum IdSync {
         func syncEntity(_ schemaEntity: SchemaEntity) throws -> Entity {
             let entityName = schemaEntity.dbName ?? schemaEntity.className
             let entityUid = schemaEntity.modelUid
-            let printUid = entityUid == -1
+            let printUid = entityUid == 1
             if let entityUid = entityUid, !printUid && !parsedUids.insert(entityUid).inserted {
                 throw Error.NonUniqueModelUID(uid: entityUid, entity: schemaEntity.className)
             }
@@ -817,7 +817,7 @@ enum IdSync {
         func syncProperty(existingEntity: Entity?, schemaEntity: SchemaEntity, schemaProperty: SchemaProperty, lastPropertyId: inout IdUid) throws -> Property {
             let name = schemaProperty.dbName ?? schemaProperty.propertyName
             let propertyUid = schemaProperty.modelId?.uid
-            let printUid = propertyUid == -1
+            let printUid = propertyUid == 1
             var existingProperty: Property?
             if let existingEntity = existingEntity {
                 if let propertyUid = propertyUid, !printUid, !parsedUids.insert(propertyUid).inserted {
@@ -892,7 +892,7 @@ enum IdSync {
         func syncRelation(existingEntity: Entity?, schemaEntity: SchemaEntity, schemaRelation: SchemaRelation) throws -> Relation {
             let name = schemaRelation.dbName ?? schemaRelation.relationName
             let relationUid = schemaRelation.modelId?.uid
-            let printUid = relationUid == -1
+            let printUid = relationUid == 1
             var existingRelation: Relation?
             if let existingEntity = existingEntity {
                 if let relationUid = relationUid, !printUid, !parsedUids.insert(relationUid).inserted {
