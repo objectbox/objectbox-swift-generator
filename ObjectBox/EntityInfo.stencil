@@ -25,14 +25,14 @@ extension {{ entity.className }}: EntityInspectable {
     }
 
     fileprivate static func buildEntity(modelBuilder: ModelBuilder) {
-        let entityBuilder = modelBuilder.entityBuilder(for: entityInfo)
+        let entityBuilder = modelBuilder.entityBuilder(for: entityInfo, uid: {{ entity.modelUid }})
         {% for prop in entity.properties where not prop.isRelation %}
         {% set flagsParam %}{% if prop.isObjectId == true %}, flags: [.id]{% endif %}{% endset %}
-        entityBuilder.addProperty(name: "{{ prop.propertyName }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ flagsParam }})
+        entityBuilder.addProperty(name: "{{ prop.propertyName }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ flagsParam }}, uid:{{ prop.modelId.uid }})
         {% endfor %}
 
         {% for prop in entity.properties where prop.isRelation %}
-        entityBuilder.addRelation(name: "{{ prop.propertyName }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo)
+        entityBuilder.addRelation(name: "{{ prop.propertyName }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo, uid:{{ prop.modelId.uid }})
         {% endfor %}
     }
 }
