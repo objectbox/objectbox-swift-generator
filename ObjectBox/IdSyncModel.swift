@@ -340,6 +340,7 @@ enum IdSync {
     }
     
     class SchemaIndex {
+        var modelId = IdUid()
         var properties = Array<SchemaProperty>()
     }
     
@@ -833,11 +834,23 @@ enum IdSync {
                 }
             }
             
-            var sourceIndexId: IdUid?
+            var sourceIndexId: IdUid? = existingProperty?.indexId
             // check entity for index as Property.Index is only auto-set for to-ones
-            let index = schemaEntity.indexes.firstIndex { $0.properties.count == 1 && $0.properties.first == schemaProperty }
-            if index != nil {
+            let indexEntryIndex = schemaEntity.indexes.firstIndex { $0.properties.count == 1 && $0.properties.first == schemaProperty }
+            if let indexEntryIndex = indexEntryIndex {
+                if existingProperty?.indexId == nil {
+                    let foundIndex = schemaEntity.indexes[indexEntryIndex]
+                    existingProperty?.indexId = foundIndex.modelId
+                }
                 sourceIndexId = try existingProperty?.indexId ?? lastIndexId.incId(uid: uidHelper.create())
+            }
+            if schemaProperty.isRelation && sourceIndexId == nil {
+                let newId = try lastIndexId.incId(uid: uidHelper.create())
+                sourceIndexId = newId
+                let newIndex = SchemaIndex()
+                newIndex.modelId = newId
+                newIndex.properties = [schemaProperty]
+                schemaEntity.indexes.append(newIndex)
             }
             
             let sourceId: IdUid

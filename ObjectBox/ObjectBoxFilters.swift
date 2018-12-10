@@ -209,6 +209,14 @@ enum ObjectBoxFilters {
                             indexId.uid = propertyIndexUid
                             schemaProperty.modelIndexId = indexId
                         }
+                        
+                        if let indexId = schemaProperty.modelIndexId {
+                            let schemaIndex = IdSync.SchemaIndex()
+                            schemaIndex.modelId = indexId
+                            schemaIndex.properties = [schemaProperty]
+                            schemaEntity.indexes.append(schemaIndex)
+                        }
+                        
                         if currIVar.annotations["objectId"] != nil {
                             if let existingIdProperty = schemaEntity.idProperty {
                                 throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: currIVar.name, existing: existingIdProperty.propertyName)
