@@ -24,9 +24,9 @@ extension BusRoute: EntityInspectable {
     }
 
     fileprivate static func buildEntity(modelBuilder: ModelBuilder) {
-        let entityBuilder = modelBuilder.entityBuilder(for: entityInfo)
-        entityBuilder.addProperty(name: "id", type: Id<BusRoute>.entityPropertyType, flags: [.id])
-        entityBuilder.addProperty(name: "lineName", type: String.entityPropertyType)
+        let entityBuilder = modelBuilder.entityBuilder(for: entityInfo, uid: 5107964062888457216)
+        entityBuilder.addProperty(name: "id", type: Id<BusRoute>.entityPropertyType, flags: [.id], uid: 7895576389419683840)
+        entityBuilder.addProperty(name: "lineName", type: String.entityPropertyType, uid: 6687926154759915520)
 
     }
 }
