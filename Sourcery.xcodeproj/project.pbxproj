@@ -6,22 +6,6 @@
 	objectVersion = 46;
 	objects = {
 
-/* Begin PBXAggregateTarget section */
-		5509A55521BAB32B00FBC0DC /* ObjectBoxToolTests */ = {
-			isa = PBXAggregateTarget;
-			buildConfigurationList = 5509A55621BAB32B00FBC0DC /* Build configuration list for PBXAggregateTarget "ObjectBoxToolTests" */;
-			buildPhases = (
-				5509A55B21BAB34500FBC0DC /* CopyFiles */,
-				5509A55D21BAB36700FBC0DC /* ShellScript */,
-			);
-			dependencies = (
-				5509A55A21BAB33400FBC0DC /* PBXTargetDependency */,
-			);
-			name = ObjectBoxToolTests;
-			productName = ObjectBoxToolTests;
-		};
-/* End PBXAggregateTarget section */
-
 /* Begin PBXBuildFile section */
 		0906124D1E2BC43500BA0937 /* FileParser + MethodsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0906124C1E2BC43500BA0937 /* FileParser + MethodsSpec.swift */; };
 		09334E531EB914510092806F /* SourceryRuntime.h in Headers */ = {isa = PBXBuildFile; fileRef = 09334E511EB914510092806F /* SourceryRuntime.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -66,7 +50,6 @@
 		52F79EA11EE9F017006D3546 /* ConfigurationSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F79EA01EE9F017006D3546 /* ConfigurationSpec.swift */; };
 		5509A54021BA839D00FBC0DC /* IdSyncModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5509A53F21BA839D00FBC0DC /* IdSyncModelTests.swift */; };
 		5509A54221BA881E00FBC0DC /* IdSyncModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */; };
-		5509A55C21BAB35A00FBC0DC /* Sourcery.app in CopyFiles */ = {isa = PBXBuildFile; fileRef = CD754C8B1D853F000082B512 /* Sourcery.app */; };
 		55BE9BFC21B051D30017F77D /* ObjectBoxFilters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BE9BFB21B051D30017F77D /* ObjectBoxFilters.swift */; };
 		55BE9BFF21B527FE0017F77D /* IdSyncModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */; };
 		55BE9C0521B97EA40017F77D /* EntityInfo.stencil in Resources */ = {isa = PBXBuildFile; fileRef = 55BE9C0421B97EA40017F77D /* EntityInfo.stencil */; };
@@ -134,13 +117,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		5509A55921BAB33400FBC0DC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = CD754C831D853F000082B512 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = CD754C8A1D853F000082B512;
-			remoteInfo = Sourcery;
-		};
 		635AB26F201F2E5300342C13 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CD754C831D853F000082B512 /* Project object */;
@@ -180,16 +156,6 @@
 			files = (
 			);
 			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		5509A55B21BAB34500FBC0DC /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 16;
-			files = (
-				5509A55C21BAB35A00FBC0DC /* Sourcery.app in CopyFiles */,
-			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -246,7 +212,6 @@
 		524A2EA61FFD3C40001CD8F9 /* BytesRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BytesRange.swift; path = SourceryRuntime/Sources/BytesRange.swift; sourceTree = SOURCE_ROOT; };
 		52F79EA01EE9F017006D3546 /* ConfigurationSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConfigurationSpec.swift; sourceTree = "<group>"; };
 		5509A53F21BA839D00FBC0DC /* IdSyncModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdSyncModelTests.swift; sourceTree = "<group>"; };
-		5509A57F21BABA6900FBC0DC /* RunToolTests.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = RunToolTests.sh; sourceTree = "<group>"; };
 		55BE9BFB21B051D30017F77D /* ObjectBoxFilters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectBoxFilters.swift; sourceTree = "<group>"; };
 		55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdSyncModel.swift; sourceTree = "<group>"; };
 		55BE9C0021B5435C0017F77D /* Sourcery-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sourcery-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -467,14 +432,6 @@
 			name = Pods;
 			sourceTree = "<group>";
 		};
-		5509A54921BAB2F500FBC0DC /* ObjectBoxToolTests */ = {
-			isa = PBXGroup;
-			children = (
-				5509A57F21BABA6900FBC0DC /* RunToolTests.sh */,
-			);
-			path = ObjectBoxToolTests;
-			sourceTree = "<group>";
-		};
 		55BE9BFA21B051AB0017F77D /* ObjectBox */ = {
 			isa = PBXGroup;
 			children = (
@@ -559,7 +516,6 @@
 				64E201A41EAE8FBF00EAD8A2 /* SourceryRuntime */,
 				6393BC6A2019F58D0044E8CC /* SourceryJS */,
 				635AB26B201F2E5300342C13 /* SourcerySwift */,
-				5509A54921BAB2F500FBC0DC /* ObjectBoxToolTests */,
 				CD754C8C1D853F000082B512 /* Products */,
 				003958827841F12BBF99EB67 /* Frameworks */,
 				0D2647542B719EF133C15D87 /* Pods */,
@@ -908,10 +864,6 @@
 				LastUpgradeCheck = 0930;
 				ORGANIZATIONNAME = "";
 				TargetAttributes = {
-					5509A55521BAB32B00FBC0DC = {
-						CreatedOnToolsVersion = 10.1;
-						ProvisioningStyle = Automatic;
-					};
 					635AB269201F2E5300342C13 = {
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 0920;
@@ -955,7 +907,6 @@
 				64E201A21EAE8FBF00EAD8A2 /* SourceryRuntime */,
 				6393BC682019F58D0044E8CC /* SourceryJS */,
 				635AB269201F2E5300342C13 /* SourcerySwift */,
-				5509A55521BAB32B00FBC0DC /* ObjectBoxToolTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1023,23 +974,6 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${SRCROOT}/Scripts/package_content\" \"${SRCROOT}/SourceryRuntime/Sources/\" > \"${SRCROOT}/SourcerySwift/Sources/SourceryRuntime.content.generated.swift\"\n";
 			showEnvVarsInLog = 0;
-		};
-		5509A55D21BAB36700FBC0DC /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/bash;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n\nsource ${PROJECT_DIR}/ObjectBoxToolTests/RunToolTests.sh\n";
 		};
 		635AB27F201F3A8200342C13 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -1350,11 +1284,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		5509A55A21BAB33400FBC0DC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = CD754C8A1D853F000082B512 /* Sourcery */;
-			targetProxy = 5509A55921BAB33400FBC0DC /* PBXContainerItemProxy */;
-		};
 		635AB270201F2E5300342C13 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 635AB269201F2E5300342C13 /* SourcerySwift */;
@@ -1378,22 +1307,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		5509A55721BAB32B00FBC0DC /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		5509A55821BAB32B00FBC0DC /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
 		635AB273201F2E5300342C13 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 91145AD3E5C14508DB309D41 /* Pods-SourcerySwift.debug.xcconfig */;
@@ -1758,15 +1671,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		5509A55621BAB32B00FBC0DC /* Build configuration list for PBXAggregateTarget "ObjectBoxToolTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				5509A55721BAB32B00FBC0DC /* Debug */,
-				5509A55821BAB32B00FBC0DC /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		635AB275201F2E5400342C13 /* Build configuration list for PBXNativeTarget "SourcerySwift" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

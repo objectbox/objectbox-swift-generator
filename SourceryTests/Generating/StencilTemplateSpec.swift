@@ -209,7 +209,7 @@ class StencilTemplateSpec: QuickSpec {
                 outputDir = Stubs.cleanTemporarySourceryDir()
 
                 let templatePath = Stubs.templateDirectory + Path("Include.stencil")
-                let expectedResult = "// Generated using the ObjectBox Swift Generator Major.Minor.Patch — https://objectbox.io\n" +
+                let expectedResult = "// Generated using the ObjectBox Swift Generator — https://objectbox.io\n" +
                     "// DO NOT EDIT\n\n" +
                 "partial template content\n"
 

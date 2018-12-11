@@ -134,7 +134,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--xcode-project /Users/uli/Programming/github-objectbox-swift/Example/NotesExample.xcodeproj --xcode-target NotesExample-iOS"
+            argument = "--xcode-project /Users/uli/Programming/github-objectbox-swift/Example/NotesExample.xcodeproj --xcode-target NotesExample-iOS --disableCache"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
