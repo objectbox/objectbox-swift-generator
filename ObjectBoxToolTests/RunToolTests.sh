@@ -8,20 +8,25 @@
 
 echo -n "note: Starting tests at "
 date
-cd ${BUILT_PRODUCTS_DIR}
 
 SOURCERY="${BUILT_PRODUCTS_DIR}/Sourcery.app/Contents/MacOS/Sourcery"
 TESTPROJECT="${PROJECT_DIR}/ObjectBoxToolTests/ToolTestProject.xcodeproj"
-TESTMODELFILE="${BUILT_PRODUCTS_DIR}/model.json"
-OUTPUTFILE="${BUILT_PRODUCTS_DIR}/EntityInfo.generated.swift"
+MYOUTPUTDIR="${PROJECT_DIR}/ObjectBoxToolTests/generated/"
+MYOUTPUTFILE="${MYOUTPUTDIR}/EntityInfo.generated.swift"
+
+cd ${BUILT_PRODUCTS_DIR}
 
 test_target_num () {
     FAIL=0
 
     ORIGINALMODELFILE="${PROJECT_DIR}/ObjectBoxToolTests/model${2}.json"
+    TESTMODELFILE="${BUILT_PRODUCTS_DIR}/model${2}.json"
     cp "$ORIGINALMODELFILE" "$TESTMODELFILE"
 
-    $SOURCERY --xcode-project "$TESTPROJECT" --xcode-target "ToolTestProject${2}" --model-json "$TESTMODELFILE" --debug-parsetree --output "`dirname '$OUTPUTFILE'`"
+    echo "// Ensure there's no leftover code from previous tests." > "$MYOUTPUTFILE"
+
+    echo "$SOURCERY --xcode-project \"$TESTPROJECT\" --xcode-target \"ToolTestProject${2}\" --model-json \"$TESTMODELFILE\" --debug-parsetree --output \"$MYOUTPUTDIR\""
+    $SOURCERY --xcode-project "$TESTPROJECT" --xcode-target "ToolTestProject${2}" --model-json "$TESTMODELFILE" --debug-parsetree --output "$MYOUTPUTDIR"
 
     cmp --silent "$TESTMODELFILE" "$ORIGINALMODELFILE"
     if [ $? -eq 0 ]; then
@@ -38,14 +43,14 @@ test_target_num () {
     fi
 
     ORIGINALSOURCEFILE="${PROJECT_DIR}/ObjectBoxToolTests/EntityInfo.generated${2}.swift"
-    cmp --silent "$OUTPUTFILE" "$ORIGINALSOURCEFILE"
+    cmp --silent "$MYOUTPUTFILE" "$ORIGINALSOURCEFILE"
     if [ $? -eq 0 ]; then
         echo "note: $1: Output files match."
     else
         echo "error: $1: Output files DIFFERENT!"
 
         echo "===== test: ====="
-        cat "$OUTPUTFILE"
+        cat "$MYOUTPUTFILE"
         echo "===== original: ====="
         cat "$ORIGINALSOURCEFILE"
         echo "====="
@@ -68,9 +73,33 @@ test_target_num () {
         FAIL=1
     fi
 
+    if [ $FAIL -eq 0 ]; then
+        xcodebuild -project "$TESTPROJECT" -target "ToolTestProject${2}"
+        if [ $? -eq 0 ]; then
+            echo "note: $1: Built test target."
+        else
+            echo "error: $1: Build failed."
+            FAIL=1
+        fi
+    else
+        echo "error: $1: Skipping build."
+    fi
+
+    if [ $FAIL -eq 0 ]; then
+        "${BUILT_PRODUCTS_DIR}/ToolTestProject${2}" "${1}"
+        if [ $? -eq 0 ]; then
+            echo "error: $1: Running test failed."
+            FAIL=1
+        else
+            echo "note: $1: Ran test executable."
+        fi
+    else
+        echo "error: $1: Skipping execution, build already failed."
+    fi
+
     if [ $FAIL == 0 ]; then
         rm "$TESTMODELFILE"
-        rm "$OUTPUTFILE"
+        rm "$MYOUTPUTFILE"
         rm "$TESTDUMPFILE"
     fi
 

@@ -8,8 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		5509A57E21BAB76900FBC0DC /* ToolTestProject1.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5509A57D21BAB76900FBC0DC /* ToolTestProject1.swift */; };
-		5509A58821BAC50900FBC0DC /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5509A58721BAC50900FBC0DC /* main.swift */; };
 		5509A58C21BAC56900FBC0DC /* ToolTestProject2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5509A58021BAC4EA00FBC0DC /* ToolTestProject2.swift */; };
+		55C37BCA21BFB8010012BC0D /* EntityInfo.generated.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C37BC921BFB8010012BC0D /* EntityInfo.generated.swift */; };
+		55C37BCB21BFB8010012BC0D /* EntityInfo.generated.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C37BC921BFB8010012BC0D /* EntityInfo.generated.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -38,7 +39,7 @@
 		5509A57D21BAB76900FBC0DC /* ToolTestProject1.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ToolTestProject1.swift; sourceTree = "<group>"; };
 		5509A58021BAC4EA00FBC0DC /* ToolTestProject2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolTestProject2.swift; sourceTree = "<group>"; };
 		5509A58521BAC50800FBC0DC /* ToolTestProject2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ToolTestProject2; sourceTree = BUILT_PRODUCTS_DIR; };
-		5509A58721BAC50900FBC0DC /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		55C37BC921BFB8010012BC0D /* EntityInfo.generated.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EntityInfo.generated.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,7 +65,7 @@
 			children = (
 				5509A57D21BAB76900FBC0DC /* ToolTestProject1.swift */,
 				5509A58021BAC4EA00FBC0DC /* ToolTestProject2.swift */,
-				5509A58621BAC50900FBC0DC /* ToolTestProject2 */,
+				55C37BC821BFB8010012BC0D /* generated */,
 				5509A56821BAB58600FBC0DC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -78,12 +79,12 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		5509A58621BAC50900FBC0DC /* ToolTestProject2 */ = {
+		55C37BC821BFB8010012BC0D /* generated */ = {
 			isa = PBXGroup;
 			children = (
-				5509A58721BAC50900FBC0DC /* main.swift */,
+				55C37BC921BFB8010012BC0D /* EntityInfo.generated.swift */,
 			);
-			path = ToolTestProject2;
+			path = generated;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -166,6 +167,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5509A57E21BAB76900FBC0DC /* ToolTestProject1.swift in Sources */,
+				55C37BCA21BFB8010012BC0D /* EntityInfo.generated.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -174,7 +176,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5509A58C21BAC56900FBC0DC /* ToolTestProject2.swift in Sources */,
-				5509A58821BAC50900FBC0DC /* main.swift in Sources */,
+				55C37BCB21BFB8010012BC0D /* EntityInfo.generated.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
