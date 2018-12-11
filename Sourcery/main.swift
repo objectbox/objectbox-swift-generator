@@ -85,7 +85,7 @@ private func exit(_ code: ExitCode) -> Never {
 
 func runCLI() {
     command(
-        Flag("debug-parsetree", flag: "d", description: "Dump debug output useful in testing the code generator to schemaDump.txt in the current directory."),
+        Flag("debug-parsetree", flag: "d", description: "Dump debug output useful in testing the code generator to schemaDump.txt in the current directory. Also pins UIDs to a deterministic number sequence. (Only recommended for testing)"),
         Flag("disableCache", description: "Don't use a cache."),
         Flag("verbose", flag: "v", description: "Turn on verbose logging"),
         Flag("quiet", flag: "q", description: "Turn off any logging, only emit errors."),
@@ -106,6 +106,9 @@ func runCLI() {
             Log.level = verboseLogging ? .verbose : quiet ? .errors : .info
 
             ObjectBoxFilters.debugDumpParseData = debugParseTree
+            if debugParseTree {
+                srandom(13762) // Someone is inspecting our internals, make random UIDs deterministic so tests can compare them.
+            }
 
             let watcherEnabled = false
             let forceParse: [String] = []
