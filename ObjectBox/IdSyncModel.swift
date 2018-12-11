@@ -461,7 +461,7 @@ enum IdSync {
     
     class SchemaToManyRelation: SchemaRelation {
         var relationOwnerType: String = ""
-        var backlinkProperty: String? = ""
+        var backlinkProperty: String?
         
         init(name: String, type: String, targetType: String, ownerType: String)
         {

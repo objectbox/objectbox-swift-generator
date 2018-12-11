@@ -271,7 +271,7 @@ enum ObjectBoxFilters {
         try schemaData.entities.forEach { currSchemaEntity in
             try currSchemaEntity.toManyRelations.forEach { currRelation in
                 if currRelation.backlinkProperty == nil, let relatedEntity = schemaData.entitiesByName[currRelation.relationTargetType] {
-                    let backlinkCandidates = relatedEntity.properties.filter { $0.isRelation && $0.propertyType == currSchemaEntity.className }
+                    let backlinkCandidates = relatedEntity.properties.filter { $0.isRelation && $0.propertyType == "ToOne<\(currSchemaEntity.className)>" }
                     
                     if backlinkCandidates.count == 1 {
                         currRelation.backlinkProperty = backlinkCandidates[0].propertyName
