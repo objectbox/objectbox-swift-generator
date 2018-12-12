@@ -188,13 +188,6 @@ enum ObjectBoxFilters {
                 schemaProperty.modelIndexId = indexId
             }
             
-            if let indexId = schemaProperty.modelIndexId {
-                let schemaIndex = IdSync.SchemaIndex()
-                schemaIndex.modelId = indexId
-                schemaIndex.properties = [schemaProperty]
-                schemaEntity.indexes.append(schemaIndex)
-            }
-            
             if currIVar.annotations["objectId"] != nil {
                 if let existingIdProperty = schemaEntity.idProperty {
                     throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: currIVar.name, existing: existingIdProperty.propertyName)
@@ -286,7 +279,7 @@ enum ObjectBoxFilters {
                 }
             }
         }
-        
+                
         let jsonFile = ObjectBoxFilters.modelJsonFile ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("model.json")
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)

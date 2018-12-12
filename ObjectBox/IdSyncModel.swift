@@ -831,7 +831,6 @@ enum IdSync {
         }
         
         func syncProperty(existingEntity: Entity?, schemaEntity: SchemaEntity, schemaProperty: SchemaProperty, lastPropertyId: inout IdUid) throws -> Property {
-            let name = schemaProperty.dbName ?? schemaProperty.propertyName
             let propertyUid = schemaProperty.modelId?.uid
             let printUid = propertyUid == 1
             var existingProperty: Property?
@@ -839,7 +838,7 @@ enum IdSync {
                 if let propertyUid = propertyUid, !printUid, !parsedUids.insert(propertyUid).inserted {
                     throw Error.NonUniqueModelPropertyUID(uid: propertyUid, entity: schemaEntity.className, property: schemaProperty.propertyName)
                 }
-                existingProperty = try findProperty(entity: existingEntity, name: name, uid: propertyUid)
+                existingProperty = try findProperty(entity: existingEntity, name: schemaProperty.name, uid: propertyUid)
             }
             
             if printUid {
@@ -852,14 +851,24 @@ enum IdSync {
             
             var sourceIndexId: IdUid? = existingProperty?.indexId
             // check entity for index as Property.Index is only auto-set for to-ones
-            let indexEntryIndex = schemaEntity.indexes.firstIndex { $0.properties.count == 1 && $0.properties.first == schemaProperty }
-            if let indexEntryIndex = indexEntryIndex {
-                if existingProperty?.indexId == nil {
-                    let foundIndex = schemaEntity.indexes[indexEntryIndex]
-                    existingProperty?.indexId = foundIndex.modelId
-                }
+            let foundIndex = schemaEntity.indexes.filter({ $0.properties.count == 1 && $0.properties.first == schemaProperty }).first
+            if let foundIndex = foundIndex {
+                existingProperty?.indexId = foundIndex.modelId
+                sourceIndexId = try existingProperty?.indexId ?? lastIndexId.incId(uid: uidHelper.create())
+            } else if existingProperty?.indexId == nil && schemaProperty.modelIndexId?.uid == 1 {
                 sourceIndexId = try existingProperty?.indexId ?? lastIndexId.incId(uid: uidHelper.create())
             }
+            
+            // No entry for this index yet? Add one!
+            if let existingEntryIndexId = sourceIndexId,
+                foundIndex == nil {
+                let schemaIndex = SchemaIndex()
+                schemaIndex.modelId = existingEntryIndexId
+                schemaIndex.properties = [schemaProperty]
+                schemaEntity.indexes.append(schemaIndex)
+                sourceIndexId = existingEntryIndexId
+            }
+            
             if schemaProperty.isRelation && sourceIndexId == nil {
                 let newId = try lastIndexId.incId(uid: uidHelper.create())
                 sourceIndexId = newId
@@ -876,7 +885,7 @@ enum IdSync {
                 sourceId = try lastPropertyId.incId(uid: newUid(propertyUid))
             }
             
-            let property = Property(name: name, id: sourceId, indexId: sourceIndexId)
+            let property = Property(name: schemaProperty.name, id: sourceId, indexId: sourceIndexId)
             
             schemaProperty.modelId = property.id
             schemaProperty.modelIndexId = property.indexId

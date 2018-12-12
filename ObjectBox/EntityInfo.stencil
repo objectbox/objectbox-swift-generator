@@ -28,7 +28,8 @@ extension {{ entity.className }}: EntityInspectable {
         let entityBuilder = modelBuilder.entityBuilder(for: entityInfo, uid: {{ entity.modelUid }})
         {% for prop in entity.properties where not prop.isRelation %}
         {% set flagsParam %}{% if prop.isObjectId == true %}, flags: [.id]{% endif %}{% endset %}
-        entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ flagsParam }}, uid: {{ prop.modelId.uid }})
+        {% set indexParam %}{% if prop.modelIndexId %}, indexUid: {{ prop.modelIndexId.uid }}{% endif %}{% endset %}
+        entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ flagsParam }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
         {% endfor %}
 
         {% for prop in entity.properties where prop.isRelation %}
