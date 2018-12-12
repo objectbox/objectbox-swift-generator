@@ -65,8 +65,8 @@ enum ObjectBoxFilters {
                 Log.error("No entity with UID \(entity) exists.")
             case .PrintUid(let entity, let found, let unique):
                 Log.error("No UID given for entity \(entity). You can do the following:\n" +
-                    "\t[Rename] Apply the current UID using // objectbox: entityId = \(found)\n" +
-                    "\t[Change/Reset] Apply a new UID using // objectbox: entityId = \(unique)")
+                    "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n" +
+                    "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)")
             case .UIDTagNeedsValue(let entity):
                 Log.error("No UID given for entity \(entity).")
             case .CandidateUIDNotInPool(let uid):
@@ -210,7 +210,7 @@ enum ObjectBoxFilters {
         let schemaEntity = IdSync.SchemaEntity()
         schemaEntity.className = currType.localName
         schemaEntity.isValueType = currType.kind == "struct"
-        schemaEntity.modelUid = currType.annotations["objectId"] as? Int64
+        schemaEntity.modelUid = currType.annotations["uid"] as? Int64
         schemaEntity.dbName = currType.annotations["nameInDb"] as? String
         if let dbNameIsEmpty = schemaEntity.dbName?.isEmpty, dbNameIsEmpty { schemaEntity.dbName = nil }
         schemaEntity.name = schemaEntity.dbName ?? schemaEntity.className

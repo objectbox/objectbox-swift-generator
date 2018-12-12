@@ -776,7 +776,7 @@ enum IdSync {
             if let entityUid = entityUid, !printUid && !parsedUids.insert(entityUid).inserted {
                 throw Error.NonUniqueModelUID(uid: entityUid, entity: schemaEntity.className)
             }
-            let existingEntity = try findEntity(name: entityName, uid: entityUid)
+            let existingEntity = try findEntity(name: entityName, uid: printUid ? nil : entityUid)
             if printUid {
                 /* When renaming entities, we let users specify an empty UID
                  annotation. That's this case. If this entity already existed
