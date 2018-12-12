@@ -421,6 +421,7 @@ enum IdSync {
         var unwrappedPropertyType: String = ""
         var dbName: String?
         var modelIndexId: IdUid?
+        var shouldHaveIndex: Bool = false
         var backlinkName: String?
         var backlinkType: String?
         var isObjectId: Bool = false
@@ -849,18 +850,19 @@ enum IdSync {
                 }
             }
             
-            var sourceIndexId: IdUid? = existingProperty?.indexId
+            var sourceIndexId: IdUid? = schemaProperty.shouldHaveIndex ? existingProperty?.indexId : nil
             // check entity for index as Property.Index is only auto-set for to-ones
             let foundIndex = schemaEntity.indexes.filter({ $0.properties.count == 1 && $0.properties.first == schemaProperty }).first
             if let foundIndex = foundIndex {
                 existingProperty?.indexId = foundIndex.modelId
                 sourceIndexId = try existingProperty?.indexId ?? lastIndexId.incId(uid: uidHelper.create())
-            } else if existingProperty?.indexId == nil && schemaProperty.modelIndexId?.uid == 1 {
+            } else if existingProperty?.indexId == nil && schemaProperty.shouldHaveIndex {
                 sourceIndexId = try existingProperty?.indexId ?? lastIndexId.incId(uid: uidHelper.create())
             }
             
             // No entry for this index yet? Add one!
-            if let existingEntryIndexId = sourceIndexId,
+            if schemaProperty.shouldHaveIndex,
+                let existingEntryIndexId = sourceIndexId,
                 foundIndex == nil {
                 let schemaIndex = SchemaIndex()
                 schemaIndex.modelId = existingEntryIndexId

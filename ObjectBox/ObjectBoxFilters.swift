@@ -182,10 +182,8 @@ enum ObjectBoxFilters {
                 propId.uid = propertyUid
                 schemaProperty.modelId = propId
             }
-            if let propertyIndexUid = currIVar.annotations["index"] as? Int64 {
-                var indexId = IdSync.IdUid()
-                indexId.uid = propertyIndexUid
-                schemaProperty.modelIndexId = indexId
+            if currIVar.annotations["index"] as? Int64 == 1 {
+                schemaProperty.shouldHaveIndex = true
             }
             
             if currIVar.annotations["objectId"] != nil {
