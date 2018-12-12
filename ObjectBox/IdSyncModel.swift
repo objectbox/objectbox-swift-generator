@@ -623,10 +623,10 @@ enum IdSync {
             retiredPropertyUids.append(contentsOf: oldPropertyUids.propertyUids)
 
             oldPropertyUids.indexUids.subtract(newPropertyUids.indexUids)
-            retiredPropertyUids.append(contentsOf: oldPropertyUids.indexUids)
+            retiredIndexUids.append(contentsOf: oldPropertyUids.indexUids)
 
             oldPropertyUids.relationUids.subtract(newPropertyUids.relationUids)
-            retiredPropertyUids.append(contentsOf: oldPropertyUids.relationUids)
+            retiredRelationUids.append(contentsOf: oldPropertyUids.relationUids)
         }
         
         func collectPropertyUids(_ entities: Array<Entity>) -> (propertyUids: Set<Int64>, indexUids: Set<Int64>, relationUids: Set<Int64>) {
