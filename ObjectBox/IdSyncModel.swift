@@ -303,6 +303,8 @@ enum IdSync {
         weak var model: IdSyncModel? = nil
         var existingUids = Set<Int64>()
         
+        static var randomNumberStart: Int64 = 0
+        
         func addExistingIds(_ newIds: [Int64]) throws {
             try newIds.forEach { try addExistingId($0) }
         }
@@ -315,10 +317,22 @@ enum IdSync {
             existingUids.insert(inID)
         }
         
+        static func random_int64() -> Int64 {
+            if UidHelper.randomNumberStart > 0 {
+                UidHelper.randomNumberStart += 999
+                if UidHelper.randomNumberStart == 0 {
+                    UidHelper.randomNumberStart = 1
+                }
+                return UidHelper.randomNumberStart
+            } else {
+                return Int64.random(in: 1 ... Int64.max)
+            }
+        }
+        
         func create() throws -> Int64 {
             var newId: Int64
             for _ in 1 ... 1000 {
-                newId = Int64.random(in: 1 ... Int64.max) & 0x7FFFFFFFFFFFFF00
+                newId = UidHelper.random_int64() & 0x7FFFFFFFFFFFFF00
                 if !existingUids.contains(newId) {
                     existingUids.insert(newId)
                     return newId

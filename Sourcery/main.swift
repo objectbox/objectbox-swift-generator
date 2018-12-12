@@ -107,7 +107,7 @@ func runCLI() {
 
             ObjectBoxFilters.debugDumpParseData = debugParseTree
             if debugParseTree {
-                srandom(13762) // Someone is inspecting our internals, make random UIDs deterministic so tests can compare them.
+                IdSync.UidHelper.randomNumberStart = 13762 // Someone is inspecting our internals, make random UIDs deterministic so tests can compare them.
             }
 
             let watcherEnabled = false
