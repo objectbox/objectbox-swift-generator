@@ -20,7 +20,7 @@ extension {{ entity.className }}: EntityInspectable {
     /// Generated metadata used by ObjectBox to persist the entity.
     static var entityInfo: EntityInfo {
         return EntityInfo(
-            name: "{{ entity.className }}",
+            name: "{{ entity.name }}",
             cursorClass: {{ entity.className }}Cursor.self)
     }
 
@@ -28,11 +28,11 @@ extension {{ entity.className }}: EntityInspectable {
         let entityBuilder = modelBuilder.entityBuilder(for: entityInfo, uid: {{ entity.modelUid }})
         {% for prop in entity.properties where not prop.isRelation %}
         {% set flagsParam %}{% if prop.isObjectId == true %}, flags: [.id]{% endif %}{% endset %}
-        entityBuilder.addProperty(name: "{{ prop.propertyName }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ flagsParam }}, uid: {{ prop.modelId.uid }})
+        entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ flagsParam }}, uid: {{ prop.modelId.uid }})
         {% endfor %}
 
         {% for prop in entity.properties where prop.isRelation %}
-        entityBuilder.addRelation(name: "{{ prop.propertyName }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo, uid: {{ prop.modelId.uid }}, indexUid: {{ prop.modelIndexId.uid }})
+        entityBuilder.addRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo, uid: {{ prop.modelId.uid }}, indexUid: {{ prop.modelIndexId.uid }})
         {% endfor %}
     }
 }

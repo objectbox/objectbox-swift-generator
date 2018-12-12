@@ -175,6 +175,8 @@ enum ObjectBoxFilters {
             }
             schemaProperty.unwrappedPropertyType = currIVar.unwrappedTypeName
             schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String
+            if let dbNameIsEmpty = schemaProperty.dbName?.isEmpty, dbNameIsEmpty { schemaProperty.dbName = nil }
+            schemaProperty.name = schemaProperty.dbName ?? schemaProperty.propertyName
             if let propertyUidObject = currIVar.annotations["uid"], let propertyUid = (propertyUidObject as? NSNumber)?.int64Value {
                 var propId = IdSync.IdUid()
                 propId.uid = propertyUid
@@ -219,6 +221,8 @@ enum ObjectBoxFilters {
         schemaEntity.isValueType = currType.kind == "struct"
         schemaEntity.modelUid = currType.annotations["objectId"] as? Int64
         schemaEntity.dbName = currType.annotations["nameInDb"] as? String
+        if let dbNameIsEmpty = schemaEntity.dbName?.isEmpty, dbNameIsEmpty { schemaEntity.dbName = nil }
+        schemaEntity.name = schemaEntity.dbName ?? schemaEntity.className
         schemaEntity.isEntitySubclass = isEntityBased
         
         var schemaProperties = Array<IdSync.SchemaProperty>()

@@ -388,9 +388,10 @@ enum IdSync {
         var hasStringProperties = false // transient properties are ignored for this.
         var idProperty: SchemaProperty?
         var idCandidates = Array<SchemaProperty>()
-
+        var name: String = ""
+        
         public static func == (lhs: SchemaEntity, rhs: SchemaEntity) -> Bool {
-            return lhs.className == rhs.className
+            return lhs.name == rhs.name
         }
         
         public var hashValue: Int {
@@ -402,7 +403,7 @@ enum IdSync {
         }
 
         public func hash(into hasher: inout Hasher) {
-            className.hash(into: &hasher)
+            name.hash(into: &hasher)
         }
         
         public var debugDescription: String {
@@ -426,9 +427,10 @@ enum IdSync {
         var isBuiltInType: Bool = false
         var isStringType: Bool = false
         var isRelation: Bool = false
+        var name: String = ""
 
         public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {
-            return lhs.entityName == rhs.entityName && lhs.propertyName == rhs.propertyName && lhs.propertyType == rhs.propertyType
+            return lhs.entityName == rhs.entityName && lhs.name == rhs.name && lhs.propertyType == rhs.propertyType
         }
         
         public var hashValue: Int {
@@ -440,7 +442,7 @@ enum IdSync {
         }
         
         public func hash(into hasher: inout Hasher) {
-            propertyName.hash(into: &hasher)
+            name.hash(into: &hasher)
             propertyType.hash(into: &hasher)
             entityName.hash(into: &hasher)
         }
