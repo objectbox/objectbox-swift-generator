@@ -85,7 +85,7 @@ private func exit(_ code: ExitCode) -> Never {
 
 func runCLI() {
     command(
-        Flag("debug-parsetree", flag: "d", description: "Dump debug output useful in testing the code generator to schemaDump.txt in the current directory. Also pins UIDs to a deterministic number sequence. (Only recommended for testing)"),
+        Option<Path>("debug-parsetree", "", flag: "d", description: "Dump debug output useful in testing the code generator to the given file. Also pins UIDs to a deterministic number sequence. (Only recommended for testing)"),
         Flag("disableCache", description: "Don't use a cache."),
         Flag("verbose", flag: "v", description: "Turn on verbose logging"),
         Flag("quiet", flag: "q", description: "Turn off any logging, only emit errors."),
@@ -105,8 +105,8 @@ func runCLI() {
         do {
             Log.level = verboseLogging ? .verbose : quiet ? .errors : .info
 
-            ObjectBoxGenerator.debugDumpParseData = debugParseTree
-            if debugParseTree {
+            if debugParseTree.string != "" {
+                ObjectBoxGenerator.debugDataURL = URL(fileURLWithPath: debugParseTree.string)
                 IdSync.UidHelper.randomNumberStart = 13762 // Someone is inspecting our internals, make random UIDs deterministic so tests can compare them.
             }
 

@@ -24,9 +24,9 @@ enum ObjectBoxGenerator {
     }
 
     static var modelJsonFile: URL?
+    static var debugDataURL: URL?
     static var builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate", "TimeInterval", "NSTimeInterval"]
     static var builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
-    static var debugDumpParseData = false
     private static var entities = Array<IdSync.SchemaEntity>()
     
     static func printError(_ error: Swift.Error) {
@@ -296,8 +296,7 @@ enum ObjectBoxGenerator {
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
         
-        if ObjectBoxGenerator.debugDumpParseData {
-            let debugDataURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("schemaDump.txt")
+        if let debugDataURL = ObjectBoxGenerator.debugDataURL {
             try "\(schemaData)".write(to: debugDataURL, atomically: true, encoding: .utf8)
         }
 
