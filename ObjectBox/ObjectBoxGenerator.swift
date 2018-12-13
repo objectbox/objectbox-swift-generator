@@ -14,7 +14,7 @@ import StencilSwiftKit.Swift
 import SourceryRuntime
 
 
-enum ObjectBoxFilters {
+enum ObjectBoxGenerator {
         
     enum Error: Swift.Error {
         case DuplicateIdAnnotation(entity: String, found: String, existing: String)
@@ -101,7 +101,7 @@ enum ObjectBoxFilters {
             case .DuplicatePropertyName(let entity, let property):
                 Log.error("Property \(property) of entity \(entity) exists twice.")
             }
-        } else if let filterError = error as? ObjectBoxFilters.Error {
+        } else if let filterError = error as? ObjectBoxGenerator.Error {
             switch( filterError ) {
             case .DuplicateIdAnnotation(let entity, let found, let existing):
                 Log.error("Entity \(entity) has both \(found) and \(existing) annotated as 'objectId'. There can only be one.")
@@ -292,21 +292,21 @@ enum ObjectBoxFilters {
             }
         }
                 
-        let jsonFile = ObjectBoxFilters.modelJsonFile ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("model.json")
+        let jsonFile = ObjectBoxGenerator.modelJsonFile ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("model.json")
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
         
-        if ObjectBoxFilters.debugDumpParseData {
+        if ObjectBoxGenerator.debugDumpParseData {
             let debugDataURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("schemaDump.txt")
             try "\(schemaData)".write(to: debugDataURL, atomically: true, encoding: .utf8)
         }
 
-        ObjectBoxFilters.entities = schemaData.entities
+        ObjectBoxGenerator.entities = schemaData.entities
     }
     
     /* Modify the dictionary of global objects that Stencil sees. */
     static func exposeObjects(to objectsDictionary: inout [String:Any]) {
-        objectsDictionary["entities"] = ObjectBoxFilters.entities
+        objectsDictionary["entities"] = ObjectBoxGenerator.entities
     }
     
     /* Add any filters we define (think function call that receives input data): */

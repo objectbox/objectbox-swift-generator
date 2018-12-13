@@ -105,7 +105,7 @@ func runCLI() {
         do {
             Log.level = verboseLogging ? .verbose : quiet ? .errors : .info
 
-            ObjectBoxFilters.debugDumpParseData = debugParseTree
+            ObjectBoxGenerator.debugDumpParseData = debugParseTree
             if debugParseTree {
                 IdSync.UidHelper.randomNumberStart = 13762 // Someone is inspecting our internals, make random UIDs deterministic so tests can compare them.
             }
@@ -114,7 +114,7 @@ func runCLI() {
             let forceParse: [String] = []
 
             AnnotationsParser.annotationPrefix = annotationPrefix.isEmpty ? "objectbox" : annotationPrefix
-            ObjectBoxFilters.modelJsonFile = modelJsonPath.string.isEmpty ? nil : URL(fileURLWithPath: modelJsonPath.string)
+            ObjectBoxGenerator.modelJsonFile = modelJsonPath.string.isEmpty ? nil : URL(fileURLWithPath: modelJsonPath.string)
 
             EJSTemplate.ejsPath = Path(ProcessInfo.processInfo.arguments[0]).parent() + "ejs.js"
 
@@ -128,8 +128,8 @@ func runCLI() {
             let configuration: Configuration
 
             if projectPath.exists {
-                if ObjectBoxFilters.modelJsonFile == nil {
-                    ObjectBoxFilters.modelJsonFile = projectPath.parent().absolute().url.appendingPathComponent("model.json")
+                if ObjectBoxGenerator.modelJsonFile == nil {
+                    ObjectBoxGenerator.modelJsonFile = projectPath.parent().absolute().url.appendingPathComponent("model.json")
                 }
 
                 let args = args.joined(separator: ",")
@@ -172,7 +172,7 @@ func runCLI() {
                 Log.info("Processing time \(CFAbsoluteTimeGetCurrent() - start) seconds")
             }
         } catch {
-            ObjectBoxFilters.printError(error)
+            ObjectBoxGenerator.printError(error)
             exit(.other)
         }
         }.run(Sourcery.version)
