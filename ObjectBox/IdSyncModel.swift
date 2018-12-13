@@ -355,7 +355,7 @@ enum IdSync {
     
     class SchemaIndex {
         var modelId = IdUid()
-        var properties = Array<SchemaProperty>()
+        var properties = Array<String>()
     }
     
     class Schema: CustomDebugStringConvertible {
@@ -778,6 +778,17 @@ enum IdSync {
                 throw Error.NonUniqueModelUID(uid: entityUid, entity: schemaEntity.className)
             }
             let existingEntity = try findEntity(name: entityName, uid: printUid ? nil : entityUid)
+            if let existingEntity = existingEntity, let properties = existingEntity.properties {
+                schemaEntity.indexes = properties.compactMap { prop in
+                    if let indexId = prop.indexId {
+                        let idx = SchemaIndex()
+                        idx.modelId = indexId
+                        idx.properties = [prop.name]
+                        return idx
+                    }
+                    return nil
+                }
+            }
             if printUid {
                 /* When renaming entities, we let users specify an empty UID
                  annotation. That's this case. If this entity already existed
@@ -853,7 +864,7 @@ enum IdSync {
             
             var sourceIndexId: IdUid? = schemaProperty.shouldHaveIndex ? existingProperty?.indexId : nil
             // check entity for index as Property.Index is only auto-set for to-ones
-            let foundIndex = schemaEntity.indexes.filter({ $0.properties.count == 1 && $0.properties.first == schemaProperty }).first
+            let foundIndex = schemaEntity.indexes.filter({ $0.properties.count == 1 && $0.properties.first == schemaProperty.name }).first
             if let foundIndex = foundIndex {
                 existingProperty?.indexId = foundIndex.modelId
                 sourceIndexId = try existingProperty?.indexId ?? lastIndexId.incId(uid: uidHelper.create())
@@ -867,7 +878,7 @@ enum IdSync {
                 foundIndex == nil {
                 let schemaIndex = SchemaIndex()
                 schemaIndex.modelId = existingEntryIndexId
-                schemaIndex.properties = [schemaProperty]
+                schemaIndex.properties = [schemaProperty.name]
                 schemaEntity.indexes.append(schemaIndex)
                 sourceIndexId = existingEntryIndexId
             }
@@ -877,7 +888,7 @@ enum IdSync {
                 sourceIndexId = newId
                 let newIndex = SchemaIndex()
                 newIndex.modelId = newId
-                newIndex.properties = [schemaProperty]
+                newIndex.properties = [schemaProperty.name]
                 schemaEntity.indexes.append(newIndex)
             }
             
