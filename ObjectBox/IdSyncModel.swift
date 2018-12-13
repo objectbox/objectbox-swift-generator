@@ -353,9 +353,15 @@ enum IdSync {
         }
     }
     
-    class SchemaIndex {
+    class SchemaIndex: CustomDebugStringConvertible {
         var modelId = IdUid()
         var properties = Array<String>()
+        
+        public var debugDescription: String {
+            get {
+                return "SchemaIndex {\n\t\t\tmodelId = \(modelId)\n\t\t\tproperties = \(properties)\n\t\t}\n"
+            }
+        }
     }
     
     class Schema: CustomDebugStringConvertible {
@@ -862,18 +868,19 @@ enum IdSync {
                 }
             }
             
-            var sourceIndexId: IdUid? = schemaProperty.shouldHaveIndex ? existingProperty?.indexId : nil
+            let shouldHaveIndex = schemaProperty.shouldHaveIndex || schemaProperty.isRelation
+            var sourceIndexId: IdUid? = shouldHaveIndex ? existingProperty?.indexId : nil
             // check entity for index as Property.Index is only auto-set for to-ones
             let foundIndex = schemaEntity.indexes.filter({ $0.properties.count == 1 && $0.properties.first == schemaProperty.name }).first
-            if let foundIndex = foundIndex {
+            if let foundIndex = foundIndex, shouldHaveIndex {
                 existingProperty?.indexId = foundIndex.modelId
                 sourceIndexId = try existingProperty?.indexId ?? lastIndexId.incId(uid: uidHelper.create())
-            } else if existingProperty?.indexId == nil && schemaProperty.shouldHaveIndex {
+            } else if existingProperty?.indexId == nil && shouldHaveIndex {
                 sourceIndexId = try existingProperty?.indexId ?? lastIndexId.incId(uid: uidHelper.create())
             }
             
             // No entry for this index yet? Add one!
-            if schemaProperty.shouldHaveIndex,
+            if shouldHaveIndex,
                 let existingEntryIndexId = sourceIndexId,
                 foundIndex == nil {
                 let schemaIndex = SchemaIndex()
