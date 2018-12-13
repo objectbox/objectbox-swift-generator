@@ -428,6 +428,7 @@ enum IdSync {
         var isBuiltInType: Bool = false
         var isStringType: Bool = false
         var isRelation: Bool = false
+        var isUnsignedType: Bool = false
         var name: String = ""
 
         public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {

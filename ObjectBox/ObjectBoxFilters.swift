@@ -25,6 +25,7 @@ enum ObjectBoxFilters {
 
     static var modelJsonFile: URL?
     static var builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate", "TimeInterval", "NSTimeInterval"]
+    static var builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
     static var debugDumpParseData = false
     private static var entities = Array<IdSync.SchemaEntity>()
     
@@ -122,11 +123,23 @@ enum ObjectBoxFilters {
         var currPropType = typeName
         
         while let currPropTypeReadOnly = currPropType, !isBuiltIn {
-            isBuiltIn = builtInTypes.firstIndex(of: currPropTypeReadOnly.name) != nil
+            isBuiltIn = (builtInTypes + builtInUnsignedTypes).firstIndex(of: currPropTypeReadOnly.name) != nil
             currPropType = currPropTypeReadOnly.actualTypeName
         }
         
         return isBuiltIn
+    }
+    
+    static func isUnsignedTypeOrAlias( _ typeName: TypeName? ) -> Bool {
+        var isUnsigned: Bool = false
+        var currPropType = typeName
+        
+        while let currPropTypeReadOnly = currPropType, !isUnsigned {
+            isUnsigned = builtInUnsignedTypes.firstIndex(of: currPropTypeReadOnly.name) != nil
+            currPropType = currPropTypeReadOnly.actualTypeName
+        }
+        
+        return isUnsigned
     }
     
     /* Is this a string ivar that we need to save separately from the fixed-size types? */
@@ -168,6 +181,7 @@ enum ObjectBoxFilters {
             schemaProperty.propertyName = currIVar.name
             schemaProperty.propertyType = fullTypeName
             schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
+            schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(currIVar.typeName)
             schemaProperty.isStringType = isStringTypeOrAlias(currIVar.typeName)
             schemaProperty.isRelation = fullTypeName.hasPrefix("ToOne<")
             if schemaProperty.isStringType {
