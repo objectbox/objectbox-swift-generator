@@ -801,7 +801,11 @@ enum IdSync {
                  in the model, we print it out as a convenience to our users,
                  who can then write it in the empty spot before renaming the entity. */
                 if let existingEntity = existingEntity {
-                    throw Error.PrintUid(entity: entityName, found: existingEntity.id.uid, unique: try uidHelper.create())
+                    let uniqueUID = try uidHelper.create()
+                    if modelRead.newUidPool == nil { modelRead.newUidPool = [] }
+                    modelRead.newUidPool?.append(uniqueUID)
+                    try writeModel(modelRead)
+                    throw Error.PrintUid(entity: entityName, found: existingEntity.id.uid, unique: uniqueUID)
                 } else {
                     throw Error.UIDTagNeedsValue(entity: entityName)
                 }
@@ -862,7 +866,11 @@ enum IdSync {
             
             if printUid {
                 if let existingProperty = existingProperty {
-                    throw Error.PrintPropertyUid(entity: schemaEntity.className, property: schemaProperty.propertyName, found: existingProperty.id.uid, unique: try uidHelper.create())
+                    let uniqueUID = try uidHelper.create()
+                    if modelRead.newUidPool == nil { modelRead.newUidPool = [] }
+                    modelRead.newUidPool?.append(uniqueUID)
+                    try writeModel(modelRead)
+                    throw Error.PrintPropertyUid(entity: schemaEntity.className, property: schemaProperty.propertyName, found: existingProperty.id.uid, unique: uniqueUID)
                 } else {
                     throw Error.PropertyUIDTagNeedsValue(entity: schemaEntity.className, property: schemaProperty.propertyName)
                 }
@@ -949,7 +957,11 @@ enum IdSync {
             
             if printUid {
                 if let existingRelation = existingRelation {
-                    throw Error.PrintRelationUid(entity: schemaEntity.className, relation: schemaRelation.relationName, found: existingRelation.id.uid, unique: try uidHelper.create())
+                    let uniqueUID = try uidHelper.create()
+                    if modelRead.newUidPool == nil { modelRead.newUidPool = [] }
+                    modelRead.newUidPool?.append(uniqueUID)
+                    try writeModel(modelRead)
+                    throw Error.PrintRelationUid(entity: schemaEntity.className, relation: schemaRelation.relationName, found: existingRelation.id.uid, unique: uniqueUID)
                 } else {
                     throw Error.RelationUIDTagNeedsValue(entity: schemaEntity.className, relation: schemaRelation.relationName)
                 }
