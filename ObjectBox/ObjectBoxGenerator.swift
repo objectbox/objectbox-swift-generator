@@ -199,7 +199,10 @@ enum ObjectBoxGenerator {
             if currIVar.annotations["index"] as? Int64 == 1 {
                 schemaProperty.shouldHaveIndex = true
             }
-            
+            if currIVar.annotations["unique"] as? Int64 == 1 {
+                schemaProperty.isUniqueIndex = true
+            }
+
             if currIVar.annotations["objectId"] != nil {
                 if let existingIdProperty = schemaEntity.idProperty {
                     throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: currIVar.name, existing: existingIdProperty.propertyName)
@@ -216,6 +219,7 @@ enum ObjectBoxGenerator {
                     }
                 }
             }
+            
             schemaProperties.append(schemaProperty)
         }
     }
@@ -258,6 +262,16 @@ enum ObjectBoxGenerator {
                 }
             }
             schemaEntity.idProperty?.isObjectId = true
+        }
+        
+        schemaProperties.forEach { schemaProperty in
+            var flagsList: [String] = []
+            if schemaProperty.isObjectId { flagsList.append(".id") }
+            if schemaProperty.isUnsignedType { flagsList.append(".unsigned") }
+            if schemaProperty.isUniqueIndex { flagsList.append(".unique") }
+            if flagsList.count > 0 {
+                schemaProperty.flagsList = ", flags: [\(flagsList.joined(separator: ", "))]"
+            }
         }
         
         schemaData.entities.append(schemaEntity)
