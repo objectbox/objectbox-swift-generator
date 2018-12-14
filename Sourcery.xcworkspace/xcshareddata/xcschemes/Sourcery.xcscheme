@@ -107,27 +107,39 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--sources"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$SRCROOT/SourceryRuntime/Sources"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--templates"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$SRCROOT/Sourcery/Templates"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--output"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$SRCROOT/SourceryRuntime/Sources"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--sources /Users/uli/Downloads/SourceryTest/Test.swift --output /Users/uli/Downloads/SourceryTest/example.generated.swift --model-json /Users/uli/Downloads/SourceryTest/testmodel.json"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--xcode-project /Users/uli/Programming/github-objectbox-swift/Example/NotesExample.xcodeproj --xcode-target NotesExample-iOS --disableCache --model-json /Users/uli/Programming/github-objectbox-swift/Example/model.json"
             isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--xcode-project /Users/uli/Programming/objectbox-swift/ios-framework/CodeGenTests/ToolTestProject.xcodeproj --xcode-target ToolTestProject25 --disableCache --debug-parsetree"
+            isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>

@@ -18,7 +18,9 @@ final class StencilTemplate: StencilSwiftKit.StencilSwiftTemplate, Template {
 
     func render(_ context: TemplateContext) throws -> String {
         do {
-            return try super.render(context.stencilContext)
+            var stencilContext = context.stencilContext
+            ObjectBoxGenerator.exposeObjects(to: &stencilContext)
+            return try super.render(stencilContext)
         } catch {
             throw "\(sourcePath): \(error)"
         }
@@ -95,6 +97,8 @@ final class StencilTemplate: StencilSwiftKit.StencilSwiftTemplate, Template {
                                  other: { (m: SourceryMethod) in !(m.isStatic || m.isClass) })
 
         ext.registerBoolFilterWithArguments("annotated", filter: { (a: Annotated, annotation) in a.isAnnotated(with: annotation) })
+
+        ObjectBoxGenerator.addExtensions(ext)
 
         var extensions = stencilSwiftEnvironment().extensions
         extensions.append(ext)

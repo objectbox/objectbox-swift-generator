@@ -15,6 +15,7 @@
 build/
 bin/Sourcery.app
 DerivedData/
+ObjectBoxToolTests/generated
 
 ## Various settings
 *.pbxuser
