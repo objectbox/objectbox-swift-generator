@@ -197,11 +197,21 @@ enum ObjectBoxGenerator {
                 schemaProperty.modelId = propId
             }
             if currIVar.annotations["index"] as? Int64 == 1 {
-                schemaProperty.shouldHaveIndex = true
+                schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
+            } else if let indexType = currIVar.annotations["index"] as? String {
+                if (indexType == "hash") {
+                    schemaProperty.indexType = .hashIndex
+                } else if (indexType == "hash64") {
+                    schemaProperty.indexType = .hash64Index
+                } else if (indexType == "value") {
+                    schemaProperty.indexType = .valueIndex
+                }
             }
             if currIVar.annotations["unique"] as? Int64 == 1 {
                 schemaProperty.isUniqueIndex = true
-                schemaProperty.shouldHaveIndex = true
+                if (schemaProperty.indexType == .none) {
+                    schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
+                }
             }
 
             if currIVar.annotations["objectId"] != nil {
@@ -270,6 +280,8 @@ enum ObjectBoxGenerator {
             if schemaProperty.isObjectId { flagsList.append(".id") }
             if schemaProperty.isUnsignedType { flagsList.append(".unsigned") }
             if schemaProperty.isUniqueIndex { flagsList.append(".unique") }
+            if schemaProperty.indexType == .hashIndex { flagsList.append(".indexHash") }
+            if schemaProperty.indexType == .hash64Index { flagsList.append(".indexHash64") }
             if flagsList.count > 0 {
                 schemaProperty.flagsList = ", flags: [\(flagsList.joined(separator: ", "))]"
             }
