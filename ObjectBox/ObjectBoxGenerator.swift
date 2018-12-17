@@ -201,6 +201,7 @@ enum ObjectBoxGenerator {
             }
             if currIVar.annotations["unique"] as? Int64 == 1 {
                 schemaProperty.isUniqueIndex = true
+                schemaProperty.shouldHaveIndex = true
             }
 
             if currIVar.annotations["objectId"] != nil {
