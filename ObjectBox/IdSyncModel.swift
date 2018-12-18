@@ -419,6 +419,13 @@ enum IdSync {
         }
     }
     
+    enum SchemaIndexType {
+        case none
+        case valueIndex
+        case hashIndex
+        case hash64Index
+    }
+    
     class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
         var modelId: IdUid?
         var propertyName: String = ""
@@ -427,15 +434,17 @@ enum IdSync {
         var unwrappedPropertyType: String = ""
         var dbName: String?
         var modelIndexId: IdUid?
-        var shouldHaveIndex: Bool = false
+        var indexType: SchemaIndexType = .none
         var backlinkName: String?
         var backlinkType: String?
         var isObjectId: Bool = false
         var isBuiltInType: Bool = false
         var isStringType: Bool = false
         var isRelation: Bool = false
+        var isUniqueIndex: Bool = false
         var isUnsignedType: Bool = false
         var name: String = ""
+        var flagsList: String = ""
 
         public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {
             return lhs.entityName == rhs.entityName && lhs.name == rhs.name && lhs.propertyType == rhs.propertyType
@@ -457,7 +466,11 @@ enum IdSync {
         
         public var debugDescription: String {
             get {
-                return "SchemaProperty {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\tmodelIndexId = \(String(describing: modelIndexId))\n\t\t\tbacklinkName = \(String(describing: backlinkName))\n\t\t\tbacklinkType = \(String(describing: backlinkType))\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\n\t\t}\n"
+                var moreData = ""
+                if (isUniqueIndex) { moreData += "\n\t\t\tisUniqueIndex = \(isUniqueIndex)" }
+                if (isUnsignedType) { moreData += "\n\t\t\tisUnsignedType = \(isUnsignedType)" }
+                if (indexType != .none) { moreData += "\n\t\t\tindexType = \(indexType)" }
+                return "SchemaProperty {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\tmodelIndexId = \(String(describing: modelIndexId))\n\t\t\tbacklinkName = \(String(describing: backlinkName))\n\t\t\tbacklinkType = \(String(describing: backlinkType))\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
             }
         }
     }
@@ -876,7 +889,7 @@ enum IdSync {
                 }
             }
             
-            let shouldHaveIndex = schemaProperty.shouldHaveIndex || schemaProperty.isRelation
+            let shouldHaveIndex = schemaProperty.indexType != .none || schemaProperty.isRelation
             var sourceIndexId: IdUid? = shouldHaveIndex ? existingProperty?.indexId : nil
             // check entity for index as Property.Index is only auto-set for to-ones
             let foundIndex = schemaEntity.indexes.filter({ $0.properties.count == 1 && $0.properties.first == schemaProperty.name }).first

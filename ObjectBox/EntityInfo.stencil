@@ -25,15 +25,14 @@ extension {{ entity.className }}: EntityInspectable {
     }
 
     fileprivate static func buildEntity(modelBuilder: ModelBuilder) {
-        let entityBuilder = modelBuilder.entityBuilder(for: entityInfo, uid: {{ entity.modelUid }})
+        let entityBuilder = modelBuilder.entityBuilder(for: entityInfo, id: {{ entity.modelId }}, uid: {{ entity.modelUid }})
         {% for prop in entity.properties where not prop.isRelation %}
-        {% set flagsParam %}{% if prop.isObjectId or prop.isUnsignedType %}, flags: [{% if prop.isObjectId %}.id{% endif %}{% if prop.isObjectId and prop.isUnsignedType %}, {% endif %}{% if prop.isUnsignedType %}.unsigned{% endif %}]{% endif %}{% endset %}
-        {% set indexParam %}{% if prop.modelIndexId %}, indexUid: {{ prop.modelIndexId.uid }}{% endif %}{% endset %}
-        entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ flagsParam }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
+        {% set indexParam %}{% if prop.modelIndexId %}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }}{% endif %}{% endset %}
+        entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
         {% endfor %}
 
         {% for prop in entity.properties where prop.isRelation %}
-        entityBuilder.addRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo, uid: {{ prop.modelId.uid }}, indexUid: {{ prop.modelIndexId.uid }})
+        entityBuilder.addRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }})
         {% endfor %}
     }
 }
