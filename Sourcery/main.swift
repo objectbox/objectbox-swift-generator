@@ -89,7 +89,7 @@ func runCLI() {
         Flag("disableCache", description: "Don't use a cache."),
         Flag("verbose", flag: "v", description: "Turn on verbose logging"),
         Flag("quiet", flag: "q", description: "Turn off any logging, only emit errors."),
-        Flag("prune", flag: "p", description: "Remove empty generated files"),
+        Option<String>("visibility", "", description: "The visibility to give the classes in generated Swift code. Defaults to 'internal'."),
         VariadicOption<Path>("sources", description: "Path to swift source files. File or Directory."),
         VariadicOption<Path>("exclude-sources", description: "Path to swift source files to exclude. File or Directory."),
         VariadicOption<Path>("templates", description: "Path to templates. File or Directory."),
@@ -101,7 +101,7 @@ func runCLI() {
         VariadicOption<String>("args", description: "Custom values to pass to templates."),
         Option<Path>("model-json", "", description: "Path to JSON file containing model IDs."),
         Option<String>("annotation-prefix", "", description: "Prefix to use for annotations. Defaults to \"objectbox\".")
-    ) { debugParseTree, disableCache, verboseLogging, quiet, prune, sources, excludeSources, templates, excludeTemplates, output, projectPath, targetName, moduleName, args, modelJsonPath, annotationPrefix in
+    ) { debugParseTree, disableCache, verboseLogging, quiet, visibility, sources, excludeSources, templates, excludeTemplates, output, projectPath, targetName, moduleName, args, modelJsonPath, annotationPrefix in
         do {
             Log.level = verboseLogging ? .verbose : quiet ? .errors : .info
 
@@ -115,6 +115,9 @@ func runCLI() {
 
             AnnotationsParser.annotationPrefix = annotationPrefix.isEmpty ? "objectbox" : annotationPrefix
             ObjectBoxGenerator.modelJsonFile = modelJsonPath.string.isEmpty ? nil : URL(fileURLWithPath: modelJsonPath.string)
+            if !visibility.isEmpty {
+                ObjectBoxGenerator.classVisibility = visibility
+            }
 
             EJSTemplate.ejsPath = Path(ProcessInfo.processInfo.arguments[0]).parent() + "ejs.js"
 
@@ -159,7 +162,7 @@ func runCLI() {
                                     watcherEnabled: watcherEnabled,
                                     cacheDisabled: disableCache,
                                     cacheBasePath: configuration.cacheBasePath,
-                                    prune: prune,
+                                    prune: false,
                                     arguments: configuration.args)
             if let keepAlive = try sourcery.processFiles(
                 configuration.source,

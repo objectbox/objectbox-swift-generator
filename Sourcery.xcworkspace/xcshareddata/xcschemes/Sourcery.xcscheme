@@ -126,6 +126,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "--visibility public"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "$SRCROOT/SourceryRuntime/Sources"
             isEnabled = "NO">
          </CommandLineArgument>

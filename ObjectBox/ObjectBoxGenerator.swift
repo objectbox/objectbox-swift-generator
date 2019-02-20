@@ -24,6 +24,7 @@ enum ObjectBoxGenerator {
     }
 
     static var modelJsonFile: URL?
+    static var classVisibility = "internal"
     static var debugDataURL: URL?
     static var builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate", "TimeInterval", "NSTimeInterval"]
     static var builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
@@ -333,6 +334,7 @@ enum ObjectBoxGenerator {
     /* Modify the dictionary of global objects that Stencil sees. */
     static func exposeObjects(to objectsDictionary: inout [String:Any]) {
         objectsDictionary["entities"] = ObjectBoxGenerator.entities
+        objectsDictionary["visibility"] = ObjectBoxGenerator.classVisibility;
     }
     
     /* Add any filters we define (think function call that receives input data): */
