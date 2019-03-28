@@ -47,7 +47,7 @@ Will the following values, in this priority: module name, target name, scheme na
 */
 internal func moduleName(fromArguments arguments: [String]) -> String? {
     for flag in ["-module-name", "-target", "-scheme"] {
-        if let flagIndex = arguments.index(of: flag), flagIndex + 1 < arguments.count {
+        if let flagIndex = arguments.firstIndex(of: flag), flagIndex + 1 < arguments.count {
             return arguments[flagIndex + 1]
         }
     }
@@ -63,7 +63,7 @@ Partially filters compiler arguments from `xcodebuild` to something that SourceK
           more flags to remove in `.1`.
 */
 private func partiallyFilter(arguments args: [String]) -> ([String], Bool) {
-    guard let indexOfFlagToRemove = args.index(of: "-output-file-map") else {
+    guard let indexOfFlagToRemove = args.firstIndex(of: "-output-file-map") else {
         return (args, false)
     }
     var args = args

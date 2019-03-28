@@ -184,7 +184,7 @@ extension Node.Mapping {
 
     /// Get the index of the specified `Node`, if it exists in the mapping.
     public func index(forKey key: Node) -> Index? {
-        return pairs.reversed().index(where: { $0.key == key }).map({ pairs.index(before: $0.base) })
+        return pairs.reversed().firstIndex(where: { $0.key == key }).map({ pairs.index(before: $0.base) })
     }
 }
 

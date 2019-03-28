@@ -39,7 +39,7 @@ class SourcerySpecTests: QuickSpec {
                         }
                         """, in: sourcePath)
 
-                    _ = try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output)
+                    _ = ((try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output)) as [FolderWatcher.Local]??)
                 }
 
                 context("without changes") {
@@ -47,7 +47,7 @@ class SourcerySpecTests: QuickSpec {
                         let generatedFilePath = outputDir + Sourcery().generatedPath(for: templatePath)
                         generatedFileModificationDate = fileModificationDate(url: generatedFilePath.url)
                         DispatchQueue.main.asyncAfter ( deadline: DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)) {
-                            _ = try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output)
+                            _ = ((try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output)) as [FolderWatcher.Local]??)
                             newGeneratedFileModificationDate = fileModificationDate(url: generatedFilePath.url)
                         }
                         expect(newGeneratedFileModificationDate).toEventually(equal(generatedFileModificationDate))
@@ -68,7 +68,7 @@ class SourcerySpecTests: QuickSpec {
                         let generatedFilePath = outputDir + Sourcery().generatedPath(for: templatePath)
                         generatedFileModificationDate = fileModificationDate(url: generatedFilePath.url)
                         DispatchQueue.main.asyncAfter ( deadline: DispatchTime.now() + Double(Int64(1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)) {
-                            _ = try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath, anotherSourcePath])), usingTemplates: Paths(include: [templatePath]), output: output)
+                            _ = ((try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath, anotherSourcePath])), usingTemplates: Paths(include: [templatePath]), output: output)) as [FolderWatcher.Local]??)
                             newGeneratedFileModificationDate = fileModificationDate(url: generatedFilePath.url)
                         }
                         expect(newGeneratedFileModificationDate).toNotEventually(equal(generatedFileModificationDate))
@@ -579,7 +579,7 @@ class SourcerySpecTests: QuickSpec {
                                 // sourcery:end
                                 """, in: templatePath)
 
-                            _ = try? Sourcery(watcherEnabled: false, cacheDisabled: false).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: Output(outputDir, linkTo: nil))
+                            _ = ((try? Sourcery(watcherEnabled: false, cacheDisabled: false).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: Output(outputDir, linkTo: nil))) as [FolderWatcher.Local]??)
                         }
 
                         it("inserts the generated code if it was deleted") {
