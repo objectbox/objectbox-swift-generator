@@ -91,17 +91,23 @@ enum IdSync {
         var id = IdUid()
         var name = ""
         var indexId: IdUid?
-        
+        var type: UInt?
+        var flags: UInt?
+
         private enum CodingKeys: String, CodingKey {
             case id
             case name
             case indexId
+            case type
+            case flags
         }
         
-        init(name: String, id: IdUid, indexId: IdUid?) {
+        init(name: String, id: IdUid, indexId: IdUid?, type: UInt?, flags: UInt?) {
             self.id = id
             self.name = name
             self.indexId = indexId
+            self.type = type
+            self.flags = flags
         }
         
         func contains(uid: Int64) -> Bool {
@@ -927,7 +933,15 @@ enum IdSync {
                 sourceId = try lastPropertyId.incId(uid: newUid(propertyUid))
             }
             
-            let property = Property(name: schemaProperty.name, id: sourceId, indexId: sourceIndexId)
+            var flags: EntityPropertyFlag = []
+            if schemaProperty.isObjectId {
+                flags.insert(.id)
+            }
+            if schemaProperty.isUnsignedType {
+                flags.insert(.unsigned)
+            }
+            let type: EntityPropertyType = .int
+            let property = Property(name: schemaProperty.name, id: sourceId, indexId: sourceIndexId, type: type.rawValue, flags: flags.rawValue)
             
             schemaProperty.modelId = property.id
             schemaProperty.modelIndexId = property.indexId
