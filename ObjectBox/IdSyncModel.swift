@@ -93,7 +93,8 @@ enum IdSync {
         var indexId: IdUid?
         var type: UInt?
         var flags: UInt?
-        var relationTarget: String?
+        var relationTarget: String? // dbName or if not explicitly specified, name of Swift class
+        var relationTargetUnresolved: String? // Name of Swift class
 
         private enum CodingKeys: String, CodingKey {
             case id
@@ -104,11 +105,11 @@ enum IdSync {
             case relationTarget
         }
         
-        init(name: String, id: IdUid, indexId: IdUid?, relationTarget: String?, type: UInt, flags: UInt) {
+        init(name: String, id: IdUid, indexId: IdUid?, relationTargetUnresolved: String?, type: UInt, flags: UInt) {
             self.id = id
             self.name = name
             self.indexId = indexId
-            self.relationTarget = relationTarget
+            self.relationTargetUnresolved = relationTargetUnresolved
             self.type = type != 0 ? type : nil
             self.flags = flags != 0 ? flags : nil
         }
@@ -730,6 +731,7 @@ enum IdSync {
             }
             
             let entities = (try schema.entities.map { try syncEntity($0) }).sorted { $0.id.id < $1.id.id }
+            try updateRelatedTargetsOfProperties(entities: entities, schema: schema)
             updateRetiredUids(entities)
             try writeModel(entities)
             
@@ -737,6 +739,23 @@ enum IdSync {
             schema.lastIndexId = lastIndexId
             schema.lastRelationId = lastRelationId
         }
+        
+        func updateRelatedTargetsOfProperties(entities: [Entity], schema: Schema) throws {
+            try entities.forEach { entity in
+                if let properties = entity.properties {
+                    try properties.forEach { property in
+                        try updateRelatedTargetsOfProperty(property: property, schema: schema)
+                    }
+                }
+            }
+        }
+
+        func updateRelatedTargetsOfProperty(property: Property, schema: Schema) throws {
+            if let relationTargetUnresolved = property.relationTargetUnresolved, let entity = schema.entitiesByName[relationTargetUnresolved] {
+                property.relationTarget = entity.dbName ?? entity.name
+            }
+        }
+
         
         func findEntity(name: String, uid: Int64?) throws -> Entity? {
             if let uid = uid, uid != 0, uid != 1 {
@@ -934,10 +953,10 @@ enum IdSync {
                 newIndex.properties = [schemaProperty.name]
                 schemaEntity.indexes.append(newIndex)
             }
-            var relationTarget: String? = nil
+            var relationTargetUnresolved: String? = nil
             if schemaProperty.isRelation && schemaProperty.propertyType.hasPrefix("ToOne<") {
                 let templateTypeString = schemaProperty.propertyType.drop(first: "ToOne<".count, last: 1)
-                relationTarget = templateTypeString
+                relationTargetUnresolved = templateTypeString
             }
 
             let sourceId: IdUid
@@ -948,7 +967,7 @@ enum IdSync {
             }
             
             let property = Property(name: schemaProperty.name, id: sourceId, indexId: sourceIndexId,
-                                    relationTarget: relationTarget,
+                                    relationTargetUnresolved: relationTargetUnresolved,
                                     type: schemaProperty.entityType.rawValue, flags: schemaProperty.entityFlags.rawValue)
             
             schemaProperty.modelId = property.id
