@@ -28,6 +28,26 @@ enum ObjectBoxGenerator {
     static var debugDataURL: URL?
     static var builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate", "TimeInterval", "NSTimeInterval"]
     static var builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
+    static var typeMappings: [String: EntityPropertyType] = [
+        "Bool": .bool,
+        "UInt8": .byte,
+        "Int8": .byte,
+        "Int16": .short,
+        "UInt16": .short,
+        "Int32": .int,
+        "UInt32": .int,
+        "Int64": .long,
+        "UInt64": .long,
+        "Int": .long,
+        "UInt": .long,
+        "Float": .float,
+        "Double": .double,
+        "String": .string,
+        "Date": .date,
+        "NSDate": .date,
+        "NSTimeInterval": .double,
+        "TimeInterval": .double,
+    ]
     private static var entities = Array<IdSync.SchemaEntity>()
     
     static func printError(_ error: Swift.Error) {
@@ -156,6 +176,20 @@ enum ObjectBoxGenerator {
         return isStringType
     }
     
+    static func entityType(for typeName: TypeName?) -> EntityPropertyType {
+        var currPropType = typeName
+        
+        while let currPropTypeReadOnly = currPropType {
+            if let entityType = typeMappings[currPropTypeReadOnly.name] {
+                return entityType
+            } else if currPropTypeReadOnly.name.hasPrefix("Id<") {
+                return .long
+            }
+            currPropType = currPropTypeReadOnly.actualTypeName
+        }
+        return .unknown
+    }
+    
     static func processOneEntityProperty(_ currIVar: SourceryVariable, in currType: Type, into schemaProperties: inout [IdSync.SchemaProperty], entity schemaEntity: IdSync.SchemaEntity, schema schemaData: IdSync.Schema) throws {
         let fullTypeName = currIVar.typeName.name;
         if fullTypeName.hasPrefix("ToMany<") {
@@ -181,6 +215,7 @@ enum ObjectBoxGenerator {
             schemaProperty.entityName = currType.localName
             schemaProperty.propertyName = currIVar.name
             schemaProperty.propertyType = fullTypeName
+            schemaProperty.entityType = entityType(for: currIVar.typeName)
             schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
             schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(currIVar.typeName)
             schemaProperty.isStringType = isStringTypeOrAlias(currIVar.typeName)
@@ -232,6 +267,23 @@ enum ObjectBoxGenerator {
                 }
             }
             
+            if schemaProperty.isObjectId {
+                schemaProperty.entityFlags.insert(.id)
+            }
+            if schemaProperty.isUnsignedType {
+                schemaProperty.entityFlags.insert(.unsigned)
+            }
+            if schemaProperty.isUniqueIndex {
+                schemaProperty.entityFlags.insert(.unique)
+            }
+            if schemaProperty.indexType == .hashIndex {
+                schemaProperty.entityFlags.insert(.indexHash)
+            } else if schemaProperty.indexType == .hash64Index {
+                schemaProperty.entityFlags.insert(.indexHash64)
+            } else if schemaProperty.indexType == .valueIndex {
+                schemaProperty.entityFlags.insert(.indexed)
+            }
+            
             schemaProperties.append(schemaProperty)
         }
     }
@@ -274,15 +326,17 @@ enum ObjectBoxGenerator {
                 }
             }
             schemaEntity.idProperty?.isObjectId = true
+            schemaEntity.idProperty?.entityFlags.insert(.id)
         }
         
         schemaProperties.forEach { schemaProperty in
             var flagsList: [String] = []
-            if schemaProperty.isObjectId { flagsList.append(".id") }
-            if schemaProperty.isUnsignedType { flagsList.append(".unsigned") }
-            if schemaProperty.isUniqueIndex { flagsList.append(".unique") }
-            if schemaProperty.indexType == .hashIndex { flagsList.append(".indexHash") }
-            if schemaProperty.indexType == .hash64Index { flagsList.append(".indexHash64") }
+            if schemaProperty.entityFlags.contains(.id) { flagsList.append(".id") }
+            if schemaProperty.entityFlags.contains(.unsigned) { flagsList.append(".unsigned") }
+            if schemaProperty.entityFlags.contains(.unique) { flagsList.append(".unique") }
+            if schemaProperty.entityFlags.contains(.indexHash) { flagsList.append(".indexHash") }
+            if schemaProperty.entityFlags.contains(.indexHash64) { flagsList.append(".indexHash64") }
+            if schemaProperty.entityFlags.contains(.indexed) { flagsList.append(".indexed") }
             if flagsList.count > 0 {
                 schemaProperty.flagsList = ", flags: [\(flagsList.joined(separator: ", "))]"
             }

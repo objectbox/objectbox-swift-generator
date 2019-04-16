@@ -102,12 +102,12 @@ enum IdSync {
             case flags
         }
         
-        init(name: String, id: IdUid, indexId: IdUid?, type: UInt?, flags: UInt?) {
+        init(name: String, id: IdUid, indexId: IdUid?, type: UInt, flags: UInt) {
             self.id = id
             self.name = name
             self.indexId = indexId
-            self.type = type
-            self.flags = flags
+            self.type = type != 0 ? type : nil
+            self.flags = flags != 0 ? flags : nil
         }
         
         func contains(uid: Int64) -> Bool {
@@ -449,6 +449,8 @@ enum IdSync {
         var isRelation: Bool = false
         var isUniqueIndex: Bool = false
         var isUnsignedType: Bool = false
+        var entityType = EntityPropertyType.unknown
+        var entityFlags: EntityPropertyFlag = []
         var name: String = ""
         var flagsList: String = ""
 
@@ -906,6 +908,10 @@ enum IdSync {
                 sourceIndexId = try existingProperty?.indexId ?? lastIndexId.incId(uid: uidHelper.create())
             }
             
+            if shouldHaveIndex {
+                schemaProperty.entityFlags.insert(.indexed)
+            }
+            
             // No entry for this index yet? Add one!
             if shouldHaveIndex,
                 let existingEntryIndexId = sourceIndexId,
@@ -933,15 +939,8 @@ enum IdSync {
                 sourceId = try lastPropertyId.incId(uid: newUid(propertyUid))
             }
             
-            var flags: EntityPropertyFlag = []
-            if schemaProperty.isObjectId {
-                flags.insert(.id)
-            }
-            if schemaProperty.isUnsignedType {
-                flags.insert(.unsigned)
-            }
-            let type: EntityPropertyType = .int
-            let property = Property(name: schemaProperty.name, id: sourceId, indexId: sourceIndexId, type: type.rawValue, flags: flags.rawValue)
+            let property = Property(name: schemaProperty.name, id: sourceId, indexId: sourceIndexId,
+                                    type: schemaProperty.entityType.rawValue, flags: schemaProperty.entityFlags.rawValue)
             
             schemaProperty.modelId = property.id
             schemaProperty.modelIndexId = property.indexId
