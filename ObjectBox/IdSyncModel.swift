@@ -93,6 +93,7 @@ enum IdSync {
         var indexId: IdUid?
         var type: UInt?
         var flags: UInt?
+        var relationTarget: String?
 
         private enum CodingKeys: String, CodingKey {
             case id
@@ -100,12 +101,14 @@ enum IdSync {
             case indexId
             case type
             case flags
+            case relationTarget
         }
         
-        init(name: String, id: IdUid, indexId: IdUid?, type: UInt, flags: UInt) {
+        init(name: String, id: IdUid, indexId: IdUid?, relationTarget: String?, type: UInt, flags: UInt) {
             self.id = id
             self.name = name
             self.indexId = indexId
+            self.relationTarget = relationTarget
             self.type = type != 0 ? type : nil
             self.flags = flags != 0 ? flags : nil
         }
@@ -203,8 +206,8 @@ enum IdSync {
     // Our file format that gets serialized to JSON and back:
     class IdSyncModel: Codable {
         
-        static let modelVersion: Int64 = 4 // !! When upgrading always check modelVersionParserMinimum !!
-        static let modelVersionParserMinimum: Int64 = 4
+        static let modelVersion: Int64 = 5 // !! When upgrading always check modelVersionParserMinimum !!
+        static let modelVersionParserMinimum: Int64 = 5
         
         /** "Comments" in the JSON file */
         var _note1: String? = "KEEP THIS FILE! Check it into a version control system (VCS) like git."
@@ -931,7 +934,12 @@ enum IdSync {
                 newIndex.properties = [schemaProperty.name]
                 schemaEntity.indexes.append(newIndex)
             }
-            
+            var relationTarget: String? = nil
+            if schemaProperty.isRelation && schemaProperty.propertyType.hasPrefix("ToOne<") {
+                let templateTypeString = schemaProperty.propertyType.drop(first: "ToOne<".count, last: 1)
+                relationTarget = templateTypeString
+            }
+
             let sourceId: IdUid
             if let existingPropertyId = existingProperty?.id {
                 sourceId = existingPropertyId
@@ -940,6 +948,7 @@ enum IdSync {
             }
             
             let property = Property(name: schemaProperty.name, id: sourceId, indexId: sourceIndexId,
+                                    relationTarget: relationTarget,
                                     type: schemaProperty.entityType.rawValue, flags: schemaProperty.entityFlags.rawValue)
             
             schemaProperty.modelId = property.id

@@ -180,10 +180,12 @@ enum ObjectBoxGenerator {
         var currPropType = typeName
         
         while let currPropTypeReadOnly = currPropType {
-            if let entityType = typeMappings[currPropTypeReadOnly.name] {
+            if let entityType = typeMappings[currPropTypeReadOnly.unwrappedTypeName] {
                 return entityType
             } else if currPropTypeReadOnly.name.hasPrefix("Id<") {
                 return .long
+            } else if currPropTypeReadOnly.name.hasPrefix("ToOne<") {
+                return .relation
             }
             currPropType = currPropTypeReadOnly.actualTypeName
         }
@@ -280,7 +282,8 @@ enum ObjectBoxGenerator {
                 schemaProperty.entityFlags.insert(.indexHash)
             } else if schemaProperty.indexType == .hash64Index {
                 schemaProperty.entityFlags.insert(.indexHash64)
-            } else if schemaProperty.indexType == .valueIndex {
+            }
+            if schemaProperty.indexType != .none {
                 schemaProperty.entityFlags.insert(.indexed)
             }
             
