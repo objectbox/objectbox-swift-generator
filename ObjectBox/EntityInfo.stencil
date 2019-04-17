@@ -4,7 +4,7 @@ import ObjectBox
 // MARK: - Entity metadata
 
 {% for entity in entities where not entity.isEntitySubclass %}
-extension {{ entity.className }}: Entity {}
+{{ visibility }} extension {{ entity.className }}: Entity {}
 {% endfor %}
 
 {% for entity in entities %}
