@@ -4,7 +4,7 @@ import ObjectBox
 // MARK: - Entity metadata
 
 {% for entity in entities where not entity.isEntitySubclass %}
-{{ visibility }} extension {{ entity.className }}: Entity {}
+extension {{ entity.className }}: Entity {}
 {% endfor %}
 
 {% for entity in entities %}
@@ -59,7 +59,7 @@ extension {{ entity.className }} {
     }
 }
 
-{{ visibility }} extension Property where E == {{ entity.className }} {
+extension Property where E == {{ entity.className }} {
     {% for prop in entity.properties where not prop.isRelation %}
     /// Generated entity property information.
     ///
@@ -67,12 +67,12 @@ extension {{ entity.className }} {
     ///
     ///     box.query { {% if prop.isObjectId %}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertyType == "Bool" %}.{{ prop.propertyName }} == true{% else %}.{{ prop.propertyName }} > 1234{% endif %} }
 
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.uid }}, isPrimaryKey: {{ prop.isObjectId }}) }
+    static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.uid }}, isPrimaryKey: {{ prop.isObjectId }}) }
 
     {% endfor %}
 
     {% for prop in entity.properties where prop.isRelation %}
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>> { return Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>>(propertyId: {{ prop.modelId.uid }}) }
+    static var {{ prop.propertyName }}: Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>> { return Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>>(propertyId: {{ prop.modelId.uid }}) }
 
     {% endfor %}
 }
