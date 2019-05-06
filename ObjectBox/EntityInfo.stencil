@@ -17,11 +17,11 @@ extension {{ entity.className }}: __EntityRelatable {
 }
 
 extension {{ entity.className }}: EntityInspectable {
+    {{ visibility }} typealias CursorBaseType = {{ entity.className }}Cursor
+
     /// Generated metadata used by ObjectBox to persist the entity.
     {{ visibility }} static var entityInfo: EntityInfo {
-        return EntityInfo(
-            name: "{{ entity.name }}",
-            cursorClass: {{ entity.className }}Cursor.self)
+        return EntityInfo(name: "{{ entity.name }}")
     }
 
     fileprivate static func buildEntity(modelBuilder: ModelBuilder) {
@@ -80,17 +80,22 @@ extension Property where E == {{ entity.className }} {
 
 /// Generated service type to handle persisting and reading entity data. Exposed through `{{ entity.className }}.entityInfo`.
 {{ visibility }} class {{ entity.className }}Cursor: NSObject, CursorBase {
-    {{ visibility }} func setEntityId(of entity: Any, to entityId: EntityId) {
-        let entity = entity as! {{entity.className}}
+    {{ visibility }} typealias EntityType = {{ entity.className }}
+
+    {{ visibility }} func setEntityId(of entity: EntityType, to entityId: EntityId) {
         entity.__setId(identifier: entityId)
     }
 
-    {{ visibility }} func entityId(of entity: Any) -> EntityId {
+    {{ visibility }} func setEntityId(struct entity: inout EntityType, to entityId: EntityId) {
+        entity.__setId(identifier: entityId)
+    }
+
+    {{ visibility }} func entityId(of entity: EntityType) -> EntityId {
         let entity = entity as! {{entity.className}}
         return entity.{{ entity.idProperty.propertyName }}.value
     }
 
-    {{ visibility }} func collect(fromEntity entity: Any, propertyCollector: PropertyCollector, store: Store) -> ObjectBox.EntityId {
+    {{ visibility }} func collect(fromEntity entity: EntityType, propertyCollector: PropertyCollector, store: Store) -> ObjectBox.EntityId {
         let entity = entity as! {{ entity.className }}
 
         {# Avoid defining the `offsets` array when there are no fitting properties #}
@@ -120,7 +125,7 @@ extension Property where E == {{ entity.className }} {
         return entity.{{ entity.idProperty.propertyName }}.value
     }
 
-    {{ visibility }} func createEntity(entityReader: EntityReader, store: Store) -> Any {
+    {{ visibility }} func createEntity(entityReader: EntityReader, store: Store) -> EntityType {
         let entity = {{ entity.className }}()
 
     {% for prop in entity.properties where not prop.isRelation %}
