@@ -26,7 +26,7 @@ extension {{ entity.className }}: EntityInspectable {
 
     fileprivate static func buildEntity(modelBuilder: ModelBuilder) {
         let entityBuilder = modelBuilder.entityBuilder(for: entityInfo, id: {{ entity.modelId }}, uid: {{ entity.modelUid }})
-        {% for prop in entity.properties where not prop.isRelation %}
+        {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
         {% set indexParam %}{% if prop.modelIndexId %}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }}{% endif %}{% endset %}
         entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
         {% endfor %}
@@ -38,7 +38,7 @@ extension {{ entity.className }}: EntityInspectable {
 }
 
 extension {{ entity.className }} {
-    {% for prop in entity.properties where not prop.isRelation %}
+    {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
     /// Generated entity property information.
     ///
     /// You may want to use this in queries to specify fetch conditions, for example:
@@ -54,13 +54,15 @@ extension {{ entity.className }} {
     
     {% endfor %}
 
-    fileprivate {% if entity.isValueType %}mutating{% endif %} func __setId(identifier: EntityId) {
+    {% if not entity.isValueType %}
+    fileprivate func __setId(identifier: EntityId) {
         self.{{ entity.idProperty.propertyName }} = Id(identifier)
     }
+    {% endif %}
 }
 
-extension Property where E == {{ entity.className }} {
-    {% for prop in entity.properties where not prop.isRelation %}
+extension ObjectBox.Property where E == {{ entity.className }} {
+    {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
     /// Generated entity property information.
     ///
     /// You may want to use this in queries to specify fetch conditions, for example:
@@ -82,21 +84,21 @@ extension Property where E == {{ entity.className }} {
 {{ visibility }} class {{ entity.className }}Cursor: NSObject, CursorBase {
     {{ visibility }} typealias EntityType = {{ entity.className }}
 
-    {{ visibility }} func setEntityId(of entity: EntityType, to entityId: EntityId) {
-        entity.__setId(identifier: entityId)
-    }
+    override {{ visibility }} required init() {}
 
-    {{ visibility }} func setEntityId(struct entity: inout EntityType, to entityId: EntityId) {
+    {{ visibility }} func setEntityId(of entity: EntityType, to entityId: EntityId) {
+        {% if entity.isValueType %}
+        fatalError("Use the struct variants of the put methods on entities of struct {{ entity.className }}.")
+        {% else %}
         entity.__setId(identifier: entityId)
+        {% endif %}
     }
 
     {{ visibility }} func entityId(of entity: EntityType) -> EntityId {
-        let entity = entity as! {{entity.className}}
         return entity.{{ entity.idProperty.propertyName }}.value
     }
 
     {{ visibility }} func collect(fromEntity entity: EntityType, propertyCollector: PropertyCollector, store: Store) -> ObjectBox.EntityId {
-        let entity = entity as! {{ entity.className }}
 
         {# Avoid defining the `offsets` array when there are no fitting properties #}
         {% if entity.hasStringProperties %}
@@ -108,7 +110,7 @@ extension Property where E == {{ entity.className }} {
         {% endfor %}
         {% endif %}
 
-        {% for prop in entity.properties where not prop.isStringType and not prop.isObjectId and not prop.isRelation %}
+        {% for prop in entity.properties where not prop.isStringType and not prop.isObjectId and not prop.isRelation and not prop.isToManyRelation %}
         propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endfor %}
 
@@ -126,9 +128,24 @@ extension Property where E == {{ entity.className }} {
     }
 
     {{ visibility }} func createEntity(entityReader: EntityReader, store: Store) -> EntityType {
+    {% if entity.isValueType %}
+        let entityId: {{ entity.idProperty.propertyType }} = entityReader.read(at: 2 + 2 * {{ entity.idProperty.modelId.id }})
+        let entity = {{ entity.className }}(
+    {% for prop in entity.properties %}
+    {% if prop.isObjectId %}
+            id: entityId{% elif prop.isRelation %}
+            {{ prop.propertyName }}: entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}, store: store){% elif prop.isToManyRelation %}
+            {{ prop.propertyName }}: {{ prop.toManyRelation.relationType }}.backlink(
+                                        sourceBox: store.box(for: {{ prop.toManyRelation.relationType }}.Source.self),
+                                        sourceProperty: {{ prop.toManyRelation.relationType }}.Source.{{ prop.toManyRelation.backlinkProperty }},
+                                        targetId: entityId){% else %}
+            {{ prop.propertyName }}: entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}){% endif %}{% if not prop.isLast %}, {% endif %}
+    {% endfor %}
+        )
+    {% else %}
         let entity = {{ entity.className }}()
 
-    {% for prop in entity.properties where not prop.isRelation %}
+    {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
         entity.{{ prop.propertyName }} = entityReader.read(at: 2 + 2 * {{ prop.modelId.id }})
     {% endfor %}
 
@@ -142,10 +159,61 @@ extension Property where E == {{ entity.className }} {
                 sourceProperty: {{ tmRelation.relationType }}.Source.{{ tmRelation.backlinkProperty }},
                 targetId: entity.id)
     {% endfor %}
+    {% endif %}
 
         return entity
     }
 }
+
+{% if entity.isValueType %}
+extension ObjectBox.Box where E == {{ entity.className }} {
+
+    /// Puts the {{ entity.className }} in the box (aka persisting it) returning a copy with the ID updated to the ID it
+    /// has been assigned.
+    /// If you know the entity has already been persisted, you can use putImmutable() to avoid the cost of the copy.
+    ///
+    /// - Parameter entity: Object to persist.
+    /// - Returns: The stored object. If `entity`'s id is 0, an ID is generated.
+    /// - Throws: ObjectBoxError errors for database write errors.
+    func put(struct entity: {{ entity.className }}) throws -> {{ entity.className }} {
+        let entityId: Id<{{ entity.className }}> = try self.putImmutable(entity)
+
+        return {{ entity.className }}(
+        {% for prop in entity.properties %}
+        {% if prop.isObjectId %}
+            id: entityId{% elif prop.isRelation %}
+            {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% elif prop.isToManyRelation %}
+            {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% else %}
+            {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% endif %}{% if not prop.isLast %}, {% endif %}
+        {% endfor %}
+        )
+    }
+
+    /// Puts the {{ entity.className }}s in the box (aka persisting it) returning copies with their IDs updated to the
+    /// IDs they've been assigned.
+    /// If you know all entities have already been persisted, you can use putImmutable() to avoid the cost of the
+    /// copies.
+    ///
+    /// - Parameter entities: Objects to persist.
+    /// - Returns: The stored objects. If any entity's id is 0, an ID is generated.
+    /// - Throws: ObjectBoxError errors for database write errors.
+    func put(structs entities: [{{ entity.className }}]) throws -> [{{ entity.className }}] {
+        let entityIds: [Id<{{ entity.className }}>] = try self.putImmutable(entities)
+
+        return zip(entities, entityIds).map { entity, entityId in
+            return {{ entity.className }}(
+                {% for prop in entity.properties %}
+                {% if prop.isObjectId %}
+                id: entityId{% elif prop.isRelation %}
+                {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% elif prop.isToManyRelation %}
+                {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% else %}
+                {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% endif %}{% if not prop.isLast %}, {% endif %}
+                {% endfor %}
+            )
+        }
+    }
+}
+{% endif %}
 
 {% endfor %}
 

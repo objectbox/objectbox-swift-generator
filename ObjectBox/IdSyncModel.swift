@@ -451,12 +451,16 @@ enum IdSync {
         var isBuiltInType: Bool = false
         var isStringType: Bool = false
         var isRelation: Bool = false
+        var isToManyRelation: Bool = false
+        var toManyRelation: SchemaToManyRelation? = nil
         var isUniqueIndex: Bool = false
         var isUnsignedType: Bool = false
         var entityType = EntityPropertyType.unknown
         var entityFlags: EntityPropertyFlag = []
         var name: String = ""
         var flagsList: String = ""
+        var isFirst = false // Helper for generating comma-separated lists in source code.
+        var isLast = false // Helper for generating comma-separated lists in source code.
 
         public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {
             return lhs.entityName == rhs.entityName && lhs.name == rhs.name && lhs.propertyType == rhs.propertyType
