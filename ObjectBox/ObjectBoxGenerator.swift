@@ -194,6 +194,7 @@ enum ObjectBoxGenerator {
     
     static func processOneEntityProperty(_ currIVar: SourceryVariable, in currType: Type, into schemaProperties: inout [IdSync.SchemaProperty], entity schemaEntity: IdSync.SchemaEntity, schema schemaData: IdSync.Schema) throws {
         let fullTypeName = currIVar.typeName.name;
+        var tmRelation: IdSync.SchemaToManyRelation? = nil
         if fullTypeName.hasPrefix("ToMany<") {
             if fullTypeName.hasSuffix(">") {
                 let templateTypesString = fullTypeName.drop(first: "ToMany<".count, last: 1)
@@ -210,85 +211,89 @@ enum ObjectBoxGenerator {
                 if let backlinkProperty = currIVar.annotations["backlink"] as? String {
                     relation.backlinkProperty = backlinkProperty
                 }
+                tmRelation = relation
                 schemaEntity.toManyRelations.append(relation)
             }
-        } else {
-            let schemaProperty = IdSync.SchemaProperty()
-            schemaProperty.entityName = currType.localName
-            schemaProperty.propertyName = currIVar.name
-            schemaProperty.propertyType = fullTypeName
-            schemaProperty.entityType = entityType(for: currIVar.typeName)
-            schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
-            schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(currIVar.typeName)
-            schemaProperty.isStringType = isStringTypeOrAlias(currIVar.typeName)
-            schemaProperty.isRelation = fullTypeName.hasPrefix("ToOne<")
-            if schemaProperty.isStringType {
-                schemaEntity.hasStringProperties = true
-            }
-            schemaProperty.unwrappedPropertyType = currIVar.unwrappedTypeName
-            schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String
-            if let dbNameIsEmpty = schemaProperty.dbName?.isEmpty, dbNameIsEmpty { schemaProperty.dbName = nil }
-            schemaProperty.name = schemaProperty.dbName ?? schemaProperty.propertyName
-            if let propertyUidObject = currIVar.annotations["uid"], let propertyUid = (propertyUidObject as? NSNumber)?.int64Value {
-                var propId = IdSync.IdUid()
-                propId.uid = propertyUid
-                schemaProperty.modelId = propId
-            }
-            if currIVar.annotations["index"] as? Int64 == 1 {
-                schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
-            } else if let indexType = currIVar.annotations["index"] as? String {
-                if (indexType == "hash") {
-                    schemaProperty.indexType = .hashIndex
-                } else if (indexType == "hash64") {
-                    schemaProperty.indexType = .hash64Index
-                } else if (indexType == "value") {
-                    schemaProperty.indexType = .valueIndex
-                }
-            }
-            if currIVar.annotations["unique"] as? Int64 == 1 {
-                schemaProperty.isUniqueIndex = true
-                if (schemaProperty.indexType == .none) {
-                    schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
-                }
-            }
-
-            if currIVar.annotations["objectId"] != nil {
-                if let existingIdProperty = schemaEntity.idProperty {
-                    throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: currIVar.name, existing: existingIdProperty.propertyName)
-                }
-                schemaProperty.isObjectId = true
-                schemaEntity.idProperty = schemaProperty
-            } else if fullTypeName.hasPrefix("Id<") {
-                if fullTypeName.hasSuffix(">") {
-                    let templateTypesString = fullTypeName.drop(first: "Id<".count, last: 1)
-                    let templateTypes = templateTypesString.split(separator: ",")
-                    let idType = templateTypes[0]
-                    if idType == currType.localName {
-                        schemaEntity.idCandidates.append(schemaProperty)
-                    }
-                }
-            }
-            
-            if schemaProperty.isObjectId {
-                schemaProperty.entityFlags.insert(.id)
-            }
-            if schemaProperty.isUnsignedType {
-                schemaProperty.entityFlags.insert(.unsigned)
-            }
-            if schemaProperty.isUniqueIndex {
-                schemaProperty.entityFlags.insert(.unique)
-            }
-            if schemaProperty.indexType == .hashIndex {
-                schemaProperty.entityFlags.insert(.indexHash)
-            } else if schemaProperty.indexType == .hash64Index {
-                schemaProperty.entityFlags.insert(.indexHash64)
-            }
-            if schemaProperty.indexType != .none {
-                schemaProperty.entityFlags.insert(.indexed)
-            }
-            
-            schemaProperties.append(schemaProperty)
         }
+        
+        let schemaProperty = IdSync.SchemaProperty()
+        schemaProperty.entityName = currType.localName
+        schemaProperty.propertyName = currIVar.name
+        schemaProperty.propertyType = fullTypeName
+        schemaProperty.entityType = entityType(for: currIVar.typeName)
+        schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
+        schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(currIVar.typeName)
+        schemaProperty.isStringType = isStringTypeOrAlias(currIVar.typeName)
+        schemaProperty.isRelation = fullTypeName.hasPrefix("ToOne<")
+        schemaProperty.isToManyRelation = fullTypeName.hasPrefix("ToMany<")
+        schemaProperty.toManyRelation = tmRelation
+        schemaProperty.isFirst = schemaProperties.isEmpty
+        if schemaProperty.isStringType {
+            schemaEntity.hasStringProperties = true
+        }
+        schemaProperty.unwrappedPropertyType = currIVar.unwrappedTypeName
+        schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String
+        if let dbNameIsEmpty = schemaProperty.dbName?.isEmpty, dbNameIsEmpty { schemaProperty.dbName = nil }
+        schemaProperty.name = schemaProperty.dbName ?? schemaProperty.propertyName
+        if let propertyUidObject = currIVar.annotations["uid"], let propertyUid = (propertyUidObject as? NSNumber)?.int64Value {
+            var propId = IdSync.IdUid()
+            propId.uid = propertyUid
+            schemaProperty.modelId = propId
+        }
+        if currIVar.annotations["index"] as? Int64 == 1 {
+            schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
+        } else if let indexType = currIVar.annotations["index"] as? String {
+            if (indexType == "hash") {
+                schemaProperty.indexType = .hashIndex
+            } else if (indexType == "hash64") {
+                schemaProperty.indexType = .hash64Index
+            } else if (indexType == "value") {
+                schemaProperty.indexType = .valueIndex
+            }
+        }
+        if currIVar.annotations["unique"] as? Int64 == 1 {
+            schemaProperty.isUniqueIndex = true
+            if (schemaProperty.indexType == .none) {
+                schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
+            }
+        }
+
+        if currIVar.annotations["objectId"] != nil {
+            if let existingIdProperty = schemaEntity.idProperty {
+                throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: currIVar.name, existing: existingIdProperty.propertyName)
+            }
+            schemaProperty.isObjectId = true
+            schemaEntity.idProperty = schemaProperty
+        } else if fullTypeName.hasPrefix("Id<") {
+            if fullTypeName.hasSuffix(">") {
+                let templateTypesString = fullTypeName.drop(first: "Id<".count, last: 1)
+                let templateTypes = templateTypesString.split(separator: ",")
+                let idType = templateTypes[0]
+                if idType == currType.localName {
+                    schemaEntity.idCandidates.append(schemaProperty)
+                }
+            }
+        }
+        
+        if schemaProperty.isObjectId {
+            schemaProperty.entityFlags.insert(.id)
+        }
+        if schemaProperty.isUnsignedType {
+            schemaProperty.entityFlags.insert(.unsigned)
+        }
+        if schemaProperty.isUniqueIndex {
+            schemaProperty.entityFlags.insert(.unique)
+        }
+        if schemaProperty.indexType == .hashIndex {
+            schemaProperty.entityFlags.insert(.indexHash)
+        } else if schemaProperty.indexType == .hash64Index {
+            schemaProperty.entityFlags.insert(.indexHash64)
+        }
+        if schemaProperty.indexType != .none {
+            schemaProperty.entityFlags.insert(.indexed)
+        }
+        
+        schemaProperties.append(schemaProperty)
     }
     
     static func processOneEntityType(_ currType: Type, entityBased isEntityBased: Bool, into schemaData: IdSync.Schema) throws {
@@ -309,6 +314,7 @@ enum ObjectBoxGenerator {
             
             try processOneEntityProperty(currIVar, in: currType, into: &schemaProperties, entity: schemaEntity, schema: schemaData)
         }
+        schemaProperties.last?.isLast = true
         schemaEntity.properties = schemaProperties
         
         if schemaEntity.idProperty == nil { // No explicit annotation?
