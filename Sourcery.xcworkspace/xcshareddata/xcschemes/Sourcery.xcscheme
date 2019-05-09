@@ -127,7 +127,7 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--visibility public"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "$SRCROOT/SourceryRuntime/Sources"
@@ -139,11 +139,11 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--xcode-project /Users/uli/Programming/github-objectbox-swift/Example/NotesExample.xcodeproj --xcode-target NotesExample-iOS --disableCache --model-json /Users/uli/Programming/github-objectbox-swift/Example/model.json"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--xcode-project /Users/uli/Programming/objectbox-swift/ios-framework/CodeGenTests/ToolTestProject.xcodeproj --xcode-target ToolTestProject25 --disableCache --debug-parsetree"
-            isEnabled = "NO">
+            argument = "--xcode-project /Users/uli/Programming/objectbox-swift/ios-framework/CodeGenTests/ToolTestProject.xcodeproj --xcode-target ToolTestProject32 --disableCache --debug-parsetree /Users/uli/Programming/objectbox-swift/ios-framework/CodeGenTests/generated/parsetree.txt"
+            isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>

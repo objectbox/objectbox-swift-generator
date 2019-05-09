@@ -12,7 +12,11 @@ extension {{ entity.className }}: __EntityRelatable {
     {{ visibility }} typealias EntityType = {{ entity.className }}
 
     {{ visibility }} var _id: Id<{{ entity.className }}> {
+        {% if entity.idProperty.propertyType == "UInt64" %}
+        return Id<{{ entity.className }}>(self.{{ entity.idProperty.propertyName }})
+        {% else %}
         return self.{{ entity.idProperty.propertyName }}
+        {% endif %}
     }
 }
 
@@ -55,9 +59,15 @@ extension {{ entity.className }} {
     {% endfor %}
 
     {% if not entity.isValueType %}
-    fileprivate func __setId(identifier: EntityId) {
+    {% if entity.idProperty.propertyType == "UInt64" %}
+    fileprivate func __setId(identifier: ObjectBox.EntityId) {
+        self.{{ entity.idProperty.propertyName }} = UInt64(identifier)
+    }
+    {% else %}
+    fileprivate func __setId(identifier: ObjectBox.EntityId) {
         self.{{ entity.idProperty.propertyName }} = Id(identifier)
     }
+    {% endif %}
     {% endif %}
 }
 
@@ -86,7 +96,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
     override {{ visibility }} required init() {}
 
-    {{ visibility }} func setEntityId(of entity: EntityType, to entityId: EntityId) {
+    {{ visibility }} func setEntityId(of entity: EntityType, to entityId: ObjectBox.EntityId) {
         {% if entity.isValueType %}
         fatalError("Use the struct variants of the put methods on entities of struct {{ entity.className }}.")
         {% else %}
@@ -94,8 +104,12 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endif %}
     }
 
-    {{ visibility }} func entityId(of entity: EntityType) -> EntityId {
+    {{ visibility }} func entityId(of entity: EntityType) -> ObjectBox.EntityId {
+        {% if entity.idProperty.propertyType == "UInt64" %}
+        return ObjectBox.EntityId(entity.{{ entity.idProperty.propertyName }})
+        {% else %}
         return entity.{{ entity.idProperty.propertyName }}.value
+        {% endif %}
     }
 
     {{ visibility }} func collect(fromEntity entity: EntityType, propertyCollector: PropertyCollector, store: Store) -> ObjectBox.EntityId {
@@ -124,7 +138,11 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         }
         {% endif %}
 
+        {% if entity.idProperty.propertyType == "UInt64" %}
+        return ObjectBox.EntityId(entity.{{ entity.idProperty.propertyName }})
+        {% else %}
         return entity.{{ entity.idProperty.propertyName }}.value
+        {% endif %}
     }
 
     {{ visibility }} func createEntity(entityReader: EntityReader, store: Store) -> EntityType {
