@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MY_DIR=`dirname "$0"`
+MY_DIR="`pwd`/`dirname "$0"`"
 
 echo ""
 echo "$(tput smso) Build $(tput rmso)"
