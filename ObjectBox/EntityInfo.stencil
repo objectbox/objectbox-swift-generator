@@ -241,8 +241,8 @@ extension ObjectBox.Box where E == {{ entity.className }} {
 
 {% endfor %}
 
-fileprivate func modelBytes() -> Data {
-    let modelBuilder = ModelBuilder()
+fileprivate func cModel() throws -> OpaquePointer {
+    let modelBuilder = try ModelBuilder()
     {% for entity in entities %}
     {{ entity.className }}.buildEntity(modelBuilder: modelBuilder)
     {% endfor %}
@@ -259,7 +259,7 @@ extension ObjectBox.Store {
     ///   - maxReaders: Maximum amount of concurrent readers, tailored to your use case. Default is `0` (unlimited).
     {{ visibility }} convenience init(directoryPath: String, maxDbSizeInKByte: UInt64 = 1024 * 1024, fileMode: UInt32 = 0o755, maxReaders: UInt32 = 0) throws {
         try self.init(
-            modelBytes: modelBytes(),
+            model: try cModel(),
             directory: directoryPath,
             maxDbSizeInKByte: maxDbSizeInKByte,
             fileMode: fileMode,
