@@ -29,7 +29,7 @@ extension {{ entity.className }}: EntityInspectable {
     }
 
     fileprivate static func buildEntity(modelBuilder: ModelBuilder) {
-        let entityBuilder = modelBuilder.entityBuilder(for: entityInfo, id: {{ entity.modelId }}, uid: {{ entity.modelUid }})
+        let entityBuilder: EntityBuilder<{{ entity.className }}> = modelBuilder.entityBuilder(for: entityInfo, id: {{ entity.modelId }}, uid: {{ entity.modelUid }})
         {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
         {% set indexParam %}{% if prop.modelIndexId %}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }}{% endif %}{% endset %}
         entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
