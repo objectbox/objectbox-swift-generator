@@ -217,9 +217,13 @@ extension ObjectBox.Box where E == {{ entity.className }} {
     /// - Throws: ObjectBoxError errors for database write errors.
     func put(structs entities: [{{ entity.className }}]) throws -> [{{ entity.className }}] {
         let entityIds: [Id<{{ entity.className }}>] = try self.putImmutable(entities)
+        var newEntities = Array<{{ entity.className }}>()
 
-        return zip(entities, entityIds).map { entity, entityId in
-            return {{ entity.className }}(
+        for i in 0 ..< min(entities.count, entityIds.count) {
+            let entity = entities[i]
+            let entityId = entityIds[i]
+
+            newEntities.append({{ entity.className }}(
                 {% for prop in entity.properties %}
                 {% if prop.isObjectId %}
                 id: entityId{% elif prop.isRelation %}
@@ -227,8 +231,10 @@ extension ObjectBox.Box where E == {{ entity.className }} {
                 {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% else %}
                 {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% endif %}{% if not prop.isLast %}, {% endif %}
                 {% endfor %}
-            )
+            ))
         }
+
+        return newEntities
     }
 }
 {% endif %}
