@@ -49,7 +49,10 @@ enum ObjectBoxGenerator {
         "TimeInterval": .double,
     ]
     private static var entities = Array<IdSync.SchemaEntity>()
-    
+    private static var lastEntityId = IdSync.IdUid()
+    private static var lastIndexId = IdSync.IdUid()
+    private static var lastRelationId = IdSync.IdUid()
+
     static func printError(_ error: Swift.Error) {
         if let obxError = error as? IdSync.Error {
             switch(obxError) {
@@ -392,12 +395,18 @@ enum ObjectBoxGenerator {
         }
 
         ObjectBoxGenerator.entities = schemaData.entities
+        ObjectBoxGenerator.lastEntityId = schemaData.lastEntityId
+        ObjectBoxGenerator.lastIndexId = schemaData.lastIndexId
+        ObjectBoxGenerator.lastRelationId = schemaData.lastRelationId
     }
     
     /* Modify the dictionary of global objects that Stencil sees. */
     static func exposeObjects(to objectsDictionary: inout [String:Any]) {
         objectsDictionary["entities"] = ObjectBoxGenerator.entities
         objectsDictionary["visibility"] = ObjectBoxGenerator.classVisibility;
+        objectsDictionary["lastEntityId"] = ObjectBoxGenerator.lastEntityId
+        objectsDictionary["lastIndexId"] = ObjectBoxGenerator.lastIndexId
+        objectsDictionary["lastRelationId"] = ObjectBoxGenerator.lastRelationId
     }
     
     /* Add any filters we define (think function call that receives input data): */

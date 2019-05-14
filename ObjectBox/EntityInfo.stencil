@@ -28,16 +28,18 @@ extension {{ entity.className }}: EntityInspectable {
         return EntityInfo(name: "{{ entity.name }}")
     }
 
-    fileprivate static func buildEntity(modelBuilder: ModelBuilder) {
-        let entityBuilder: EntityBuilder<{{ entity.className }}> = modelBuilder.entityBuilder(for: entityInfo, id: {{ entity.modelId }}, uid: {{ entity.modelUid }})
+    fileprivate static func buildEntity(modelBuilder: ModelBuilder) throws {
+        let entityBuilder: EntityBuilder<{{ entity.className }}> = try modelBuilder.entityBuilder(for: entityInfo, id: {{ entity.modelId }}, uid: {{ entity.modelUid }})
         {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
         {% set indexParam %}{% if prop.modelIndexId %}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }}{% endif %}{% endset %}
-        entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
+        try entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
+        {% endfor %}
+        {% for prop in entity.properties where prop.isRelation %}
+
+        try entityBuilder.addToOneRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }})
         {% endfor %}
 
-        {% for prop in entity.properties where prop.isRelation %}
-        entityBuilder.addRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }})
-        {% endfor %}
+        try entityBuilder.lastProperty(id: {{ entity.lastPropertyId.id }}, uid: {{ entity.lastPropertyId.uid }})
     }
 }
 
@@ -244,8 +246,11 @@ extension ObjectBox.Box where E == {{ entity.className }} {
 fileprivate func cModel() throws -> OpaquePointer {
     let modelBuilder = try ModelBuilder()
     {% for entity in entities %}
-    {{ entity.className }}.buildEntity(modelBuilder: modelBuilder)
+    try {{ entity.className }}.buildEntity(modelBuilder: modelBuilder)
     {% endfor %}
+    try modelBuilder.lastEntity(id: {{ lastEntityId.id }}, uid: {{ lastEntityId.uid }})
+    {% if lastIndexId.id != 0 %}try modelBuilder.lastIndex(id: {{ lastIndexId.id }}, uid: {{ lastIndexId.uid }}){% endif %}
+    {% if lastRelationId.id != 0 %}try modelBuilder.lastRelation(id: {{ lastRelationId.id }}, uid: {{ lastRelationId.uid }}){% endif %}
     return modelBuilder.finish()
 }
 
