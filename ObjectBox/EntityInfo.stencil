@@ -4,10 +4,9 @@ import ObjectBox
 // MARK: - Entity metadata
 
 {% for entity in entities where not entity.isEntitySubclass %}
-extension {{ entity.className }}: Entity {}
-{% endfor %}
-
+extension {{ entity.className }}: Entity {}{% endfor %}
 {% for entity in entities %}
+
 extension {{ entity.className }}: __EntityRelatable {
     {{ visibility }} typealias EntityType = {{ entity.className }}
 
@@ -92,7 +91,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 }
 
 
-/// Generated service type to handle persisting and reading entity data. Exposed through `{{ entity.className }}.entityInfo`.
+/// Generated service type to handle persisting and reading entity data. Exposed through `{{ entity.className }}.CursorBaseType`.
 {{ visibility }} class {{ entity.className }}Cursor: NSObject, CursorBase {
     {{ visibility }} typealias EntityType = {{ entity.className }}
 
@@ -114,7 +113,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endif %}
     }
 
-    {{ visibility }} func collect(fromEntity entity: EntityType, propertyCollector: PropertyCollector, store: Store) -> ObjectBox.EntityId {
+    {{ visibility }} func collect(fromEntity entity: EntityType, id: EntityId, propertyCollector: PropertyCollector, store: Store) {
 
         {# Avoid defining the `offsets` array when there are no fitting properties #}
         {% if entity.hasStringProperties %}
@@ -126,6 +125,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endfor %}
         {% endif %}
 
+        propertyCollector.collect(id, at: 2 + 2 * {{ entity.idProperty.modelId.id }})
         {% for prop in entity.properties where not prop.isStringType and not prop.isObjectId and not prop.isRelation and not prop.isToManyRelation %}
         propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endfor %}
@@ -139,12 +139,6 @@ extension ObjectBox.Property where E == {{ entity.className }} {
             propertyCollector.collect(dataOffset: value.offset, at: value.index)
         }
         {% endif %}
-
-        {% if entity.idProperty.propertyType == "UInt64" %}
-        return ObjectBox.EntityId(entity.{{ entity.idProperty.propertyName }})
-        {% else %}
-        return entity.{{ entity.idProperty.propertyName }}.value
-        {% endif %}
     }
 
     {{ visibility }} func createEntity(entityReader: EntityReader, store: Store) -> EntityType {
@@ -153,7 +147,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         let entity = {{ entity.className }}(
     {% for prop in entity.properties %}
     {% if prop.isObjectId %}
-            id: entityId{% elif prop.isRelation %}
+            {{ prop.propertyName }}: entityId{% elif prop.isRelation %}
             {{ prop.propertyName }}: entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}, store: store){% elif prop.isToManyRelation %}
             {{ prop.propertyName }}: {{ prop.toManyRelation.relationType }}.backlink(
                                         sourceBox: store.box(for: {{ prop.toManyRelation.relationType }}.Source.self),
@@ -243,14 +237,16 @@ extension ObjectBox.Box where E == {{ entity.className }} {
 
 {% endfor %}
 
+// MARK: - Store setup
+
 fileprivate func cModel() throws -> OpaquePointer {
     let modelBuilder = try ModelBuilder()
     {% for entity in entities %}
     try {{ entity.className }}.buildEntity(modelBuilder: modelBuilder)
     {% endfor %}
-    try modelBuilder.lastEntity(id: {{ lastEntityId.id }}, uid: {{ lastEntityId.uid }})
-    {% if lastIndexId.id != 0 %}try modelBuilder.lastIndex(id: {{ lastIndexId.id }}, uid: {{ lastIndexId.uid }}){% endif %}
-    {% if lastRelationId.id != 0 %}try modelBuilder.lastRelation(id: {{ lastRelationId.id }}, uid: {{ lastRelationId.uid }}){% endif %}
+    modelBuilder.lastEntity(id: {{ lastEntityId.id }}, uid: {{ lastEntityId.uid }})
+    {% if lastIndexId.id != 0 %}modelBuilder.lastIndex(id: {{ lastIndexId.id }}, uid: {{ lastIndexId.uid }}){% endif %}
+    {% if lastRelationId.id != 0 %}modelBuilder.lastRelation(id: {{ lastRelationId.id }}, uid: {{ lastRelationId.uid }}){% endif %}
     return modelBuilder.finish()
 }
 
