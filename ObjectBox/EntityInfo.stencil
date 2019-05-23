@@ -4,10 +4,10 @@ import ObjectBox
 // MARK: - Entity metadata
 
 {% for entity in entities where not entity.isEntitySubclass %}
-extension {{ entity.className }}: Entity {}{% endfor %}
+extension {{ entity.className }}: ObjectBox.Entity {}{% endfor %}
 {% for entity in entities %}
 
-extension {{ entity.className }}: __EntityRelatable {
+extension {{ entity.className }}: ObjectBox.__EntityRelatable {
     {{ visibility }} typealias EntityType = {{ entity.className }}
 
     {{ visibility }} var _id: Id<{{ entity.className }}> {
@@ -19,13 +19,13 @@ extension {{ entity.className }}: __EntityRelatable {
     }
 }
 
-extension {{ entity.className }}: EntityInspectable {
-    {{ visibility }} typealias CursorBaseType = {{ entity.className }}Cursor
+extension {{ entity.className }}: ObjectBox.EntityInspectable {
+    {{ visibility }} typealias EntityBindingType = {{ entity.className }}Binding
 
     /// Generated metadata used by ObjectBox to persist the entity.
-    {{ visibility }} static var entityInfo: EntityInfo {
-        return EntityInfo(name: "{{ entity.name }}")
-    }
+    {{ visibility }} static var entityInfo = ObjectBox.EntityInfo(name: "{{ entity.name }}")
+
+    {{ visibility }} static var entityBinding = EntityBindingType()
 
     fileprivate static func buildEntity(modelBuilder: ModelBuilder) throws {
         let entityBuilder: EntityBuilder<{{ entity.className }}> = try modelBuilder.entityBuilder(for: entityInfo, id: {{ entity.modelId }}, uid: {{ entity.modelUid }})
@@ -91,8 +91,8 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 }
 
 
-/// Generated service type to handle persisting and reading entity data. Exposed through `{{ entity.className }}.CursorBaseType`.
-{{ visibility }} class {{ entity.className }}Cursor: NSObject, CursorBase {
+/// Generated service type to handle persisting and reading entity data. Exposed through `{{ entity.className }}.EntityBindingType`.
+{{ visibility }} class {{ entity.className }}Binding: NSObject, ObjectBox.EntityBinding {
     {{ visibility }} typealias EntityType = {{ entity.className }}
 
     override {{ visibility }} required init() {}
