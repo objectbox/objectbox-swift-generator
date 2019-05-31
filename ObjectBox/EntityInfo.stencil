@@ -23,7 +23,7 @@ extension {{ entity.className }}: ObjectBox.EntityInspectable {
     {{ visibility }} typealias EntityBindingType = {{ entity.className }}Binding
 
     /// Generated metadata used by ObjectBox to persist the entity.
-    {{ visibility }} static var entityInfo = ObjectBox.EntityInfo(name: "{{ entity.name }}")
+    {{ visibility }} static var entityInfo = ObjectBox.EntityInfo(name: "{{ entity.name }}", id: {{ entity.modelId }})
 
     {{ visibility }} static var entityBinding = EntityBindingType()
 
@@ -265,13 +265,6 @@ extension ObjectBox.Store {
             maxDbSizeInKByte: maxDbSizeInKByte,
             fileMode: fileMode,
             maxReaders: maxReaders)
-        registerAllEntities()
-    }
-    
-    {{ visibility }} func registerAllEntities() {
-        {% for entity in entities %}
-        self.register(entity: {{ entity.className }}.self)
-        {% endfor %}
     }
 }
 
