@@ -19,7 +19,7 @@ class Sourcery {
     public static let version: String = inUnitTests ? "Major.Minor.Patch" : Version.current.value
     public static let generationMarker: String = "// Generated using the ObjectBox Swift Generator"
     public static let generationHeader = "\(Sourcery.generationMarker) — https://objectbox.io\n"
-        + "// DO NOT EDIT\n\n"
+        + "// DO NOT EDIT\n"
 
     enum Error: Swift.Error {
         case containsMergeConflictMarkers
