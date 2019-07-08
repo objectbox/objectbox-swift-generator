@@ -239,7 +239,7 @@ internal struct AnnotationsParser {
             .commaSeparated()
             .map { $0.trimmingCharacters(in: .whitespaces) }
 
-        var namespaces = annotationDefinitions[0].components(separatedBy: ":", excludingDelimiterBetween: (open: "\"'", close: "\"'"))
+        var namespaces = annotationDefinitions[0].components(separatedBy: ":", excludingDelimiterBetween: (open: "\"'{[", close: "\"'}]"))
         annotationDefinitions[0] = namespaces.removeLast()
 
         var annotations = Annotations()

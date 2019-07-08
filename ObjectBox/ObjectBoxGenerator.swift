@@ -261,12 +261,17 @@ enum ObjectBoxGenerator {
             }
         }
 
-        if currIVar.annotations["objectId"] != nil {
+        if let objectIdAnnotationValue = currIVar.annotations["objectId"] {
             if let existingIdProperty = schemaEntity.idProperty {
                 throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: currIVar.name, existing: existingIdProperty.propertyName)
             }
             schemaProperty.isObjectId = true
             schemaEntity.idProperty = schemaProperty
+            if let objectAnnotationDict = objectIdAnnotationValue as? NSDictionary {
+                if let assignableBool = objectAnnotationDict["assignable"] as? Bool, assignableBool == true {
+                    schemaProperty.entityFlags.insert(.idSelfAssignable)
+                }
+            }
         } else if fullTypeName.hasPrefix("Id<") {
             if fullTypeName.hasSuffix(">") {
                 let templateTypesString = fullTypeName.drop(first: "Id<".count, last: 1)
@@ -349,6 +354,7 @@ enum ObjectBoxGenerator {
             if schemaProperty.entityFlags.contains(.indexHash) { flagsList.append(".indexHash") }
             if schemaProperty.entityFlags.contains(.indexHash64) { flagsList.append(".indexHash64") }
             if schemaProperty.entityFlags.contains(.indexed) { flagsList.append(".indexed") }
+            if schemaProperty.entityFlags.contains(.idSelfAssignable) { flagsList.append(".idSelfAssignable") }
             if flagsList.count > 0 {
                 schemaProperty.flagsList = ", flags: [\(flagsList.joined(separator: ", "))]"
             }
