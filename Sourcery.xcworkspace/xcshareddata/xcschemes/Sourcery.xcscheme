@@ -146,7 +146,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--sources /Users/uli/Downloads/annotationstest.swift"
+            argument = "--disableCache --sources /Users/uli/Downloads/annotationstest.swift"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

@@ -50,6 +50,8 @@
 		52F79EA11EE9F017006D3546 /* ConfigurationSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F79EA01EE9F017006D3546 /* ConfigurationSpec.swift */; };
 		5509A54021BA839D00FBC0DC /* IdSyncModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5509A53F21BA839D00FBC0DC /* IdSyncModelTests.swift */; };
 		5509A54221BA881E00FBC0DC /* IdSyncModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */; };
+		550E5E3C22D389B200DA91EB /* PrettyJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 550E5E3B22D389B200DA91EB /* PrettyJSON.swift */; };
+		550E5E3D22D3A11C00DA91EB /* PrettyJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 550E5E3B22D389B200DA91EB /* PrettyJSON.swift */; };
 		55BE9BFC21B051D30017F77D /* ObjectBoxGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BE9BFB21B051D30017F77D /* ObjectBoxGenerator.swift */; };
 		55BE9BFF21B527FE0017F77D /* IdSyncModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */; };
 		55BE9C0521B97EA40017F77D /* EntityInfo.stencil in Resources */ = {isa = PBXBuildFile; fileRef = 55BE9C0421B97EA40017F77D /* EntityInfo.stencil */; };
@@ -212,6 +214,7 @@
 		524A2EA61FFD3C40001CD8F9 /* BytesRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BytesRange.swift; path = SourceryRuntime/Sources/BytesRange.swift; sourceTree = SOURCE_ROOT; };
 		52F79EA01EE9F017006D3546 /* ConfigurationSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConfigurationSpec.swift; sourceTree = "<group>"; };
 		5509A53F21BA839D00FBC0DC /* IdSyncModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdSyncModelTests.swift; sourceTree = "<group>"; };
+		550E5E3B22D389B200DA91EB /* PrettyJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrettyJSON.swift; sourceTree = "<group>"; };
 		554C6B5B2264EC260058F272 /* OBXProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OBXProperty.h; sourceTree = "<group>"; };
 		55BE9BFB21B051D30017F77D /* ObjectBoxGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectBoxGenerator.swift; sourceTree = "<group>"; };
 		55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdSyncModel.swift; sourceTree = "<group>"; };
@@ -437,6 +440,7 @@
 			isa = PBXGroup;
 			children = (
 				55BE9BFB21B051D30017F77D /* ObjectBoxGenerator.swift */,
+				550E5E3B22D389B200DA91EB /* PrettyJSON.swift */,
 				55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */,
 				5509A53F21BA839D00FBC0DC /* IdSyncModelTests.swift */,
 				55BE9C0021B5435C0017F77D /* Sourcery-Bridging-Header.h */,
@@ -1241,6 +1245,7 @@
 				E291D9FBE0B751C3C898E5B6 /* Array+Parallel.swift in Sources */,
 				E291D5EA18C2B12217A59EC9 /* Sha.swift in Sources */,
 				55BE9BFF21B527FE0017F77D /* IdSyncModel.swift in Sources */,
+				550E5E3C22D389B200DA91EB /* PrettyJSON.swift in Sources */,
 				E291DA2409438D3B0DA5F3BB /* InlineParser.swift in Sources */,
 				E291D1249578F631BC03070A /* Verifier.swift in Sources */,
 			);
@@ -1280,6 +1285,7 @@
 				52F79EA11EE9F017006D3546 /* ConfigurationSpec.swift in Sources */,
 				E291D52FDFF7CF446E239C13 /* TemplateAnnotationsParserSpec.swift in Sources */,
 				E291D5115BBE9AB32275F38F /* VerifierSpec.swift in Sources */,
+				550E5E3D22D3A11C00DA91EB /* PrettyJSON.swift in Sources */,
 				6359E6651FE409250015AF8F /* FileParser+SubscriptsSpec.swift in Sources */,
 				6393BC92201B50910044E8CC /* JavaScriptTemplateSpecs.swift in Sources */,
 			);

@@ -225,7 +225,7 @@ enum IdSync {
         // TODO use this once we support sequences
         var lastSequenceId: IdUid?
         
-        var entities: Array<Entity>? = []
+        var entities: [Entity]? = [Entity]()
         
         /**
          * Previously allocated UIDs (e.g. via "@Uid" without value) to use to provide UIDs for new entities,
@@ -697,9 +697,11 @@ enum IdSync {
             model.modelVersion = IdSyncModel.modelVersion
             model.modelVersionParserMinimum = IdSyncModel.modelVersionParserMinimum
             
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let jsonData = try encoder.encode(model)
+//            let encoder = JSONEncoder()
+//            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+//            let jsonData = try encoder.encode(model)
+            let encoder = PrettyJSON()
+            let jsonData = encoder.encode(model)
             if FileManager.default.fileExists(atPath: jsonFile.path) {
                 let backupData = try? Data(contentsOf: jsonFile)
                 if backupData == jsonData {
