@@ -1,10 +1,3 @@
-//
-//  PrettyJSON.swift
-//  Sourcery
-//
-//  Created by Uli Kusterer on 08.07.19.
-//
-
 import Foundation
 
 internal func escapeName(_ string: String) -> String {
