@@ -177,7 +177,7 @@ enum ObjectBoxGenerator {
         var currPropType = typeName
         
         while let currPropTypeReadOnly = currPropType, !isStringType {
-            isStringType = currPropTypeReadOnly.name == "String" || currPropTypeReadOnly.name == "NSString"
+            isStringType = currPropTypeReadOnly.unwrappedTypeName == "String" || currPropTypeReadOnly.unwrappedTypeName == "NSString"
             currPropType = currPropTypeReadOnly.actualTypeName
         }
         
@@ -189,8 +189,8 @@ enum ObjectBoxGenerator {
         var currPropType = typeName
         
         while let currPropTypeReadOnly = currPropType, !isByteVectorType {
-            isByteVectorType = currPropTypeReadOnly.name == "Data" || currPropTypeReadOnly.name == "NSData"
-                || currPropTypeReadOnly.name == "Array<UInt8>" || currPropTypeReadOnly.name == "[UInt8]"
+            isByteVectorType = currPropTypeReadOnly.unwrappedTypeName == "Data" || currPropTypeReadOnly.unwrappedTypeName == "NSData"
+                || currPropTypeReadOnly.unwrappedTypeName == "Array<UInt8>" || currPropTypeReadOnly.unwrappedTypeName == "[UInt8]"
             currPropType = currPropTypeReadOnly.actualTypeName
         }
         
@@ -246,7 +246,6 @@ enum ObjectBoxGenerator {
         schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(currIVar.typeName)
         schemaProperty.isStringType = isStringTypeOrAlias(currIVar.typeName)
         schemaProperty.isByteVectorType = isByteVectorTypeOrAlias(currIVar.typeName)
-        print("currIVar.typeName = \(currIVar.typeName)")
         schemaProperty.isRelation = fullTypeName.hasPrefix("ToOne<")
         schemaProperty.isToManyRelation = fullTypeName.hasPrefix("ToMany<")
         schemaProperty.toManyRelation = tmRelation
