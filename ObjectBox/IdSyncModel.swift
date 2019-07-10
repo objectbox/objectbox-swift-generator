@@ -225,7 +225,7 @@ enum IdSync {
         // TODO use this once we support sequences
         var lastSequenceId: IdUid?
         
-        var entities: [Entity]? = [Entity]()
+        var entities: [Entity]? = []
         
         /**
          * Previously allocated UIDs (e.g. via "@Uid" without value) to use to provide UIDs for new entities,

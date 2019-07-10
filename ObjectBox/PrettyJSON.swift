@@ -37,7 +37,7 @@ class PrettyJSON {
         let outerIndent = String(repeating: " ", count: indent)
         let indent = String(repeating: " ", count: indent + 2)
         
-        let list = array.map({ return ",\n\(indent)\($0)" }).dropFirst()
+        let list = array.map({ return ",\n\(indent)\($0)" }).joined().dropFirst()
         return "[\(list)\n\(outerIndent)]"
     }
     
@@ -90,7 +90,7 @@ class PrettyJSON {
                 output.append("\n      \"relations\": [")
                 let entityRelations = entity.relations ?? []
                 if entityRelations.isEmpty {
-                    output.append("],")
+                    output.append("]")
                 } else {
                     var relationsToGo = entityRelations.count
                     for relation in entityRelations {
@@ -101,7 +101,7 @@ class PrettyJSON {
                         relationsToGo -= 1
                         output.append("\(keyValueString(keyValues, indent: 10))\n        }\(relationsToGo > 0 ? "," : "")")
                     }
-                    output.append("\n      ],")
+                    output.append("\n      ]")
                 }
                 
                 entitiesToGo -= 1
@@ -127,6 +127,9 @@ class PrettyJSON {
         keyValues.append(KeyValue(key: "modelVersion", value: "\(model.modelVersion)", quoteValue: false))
         keyValues.append(KeyValue(key: "modelVersionParserMinimum", value: "\(model.modelVersionParserMinimum)", quoteValue: false))
         
+        if let newUidPool = model.newUidPool {
+            keyValues.append(KeyValue(key: "newUidPool", value: arrayString(newUidPool.map({ return "\($0)" }), indent: 2), quoteValue: false))
+        }
         if let retiredEntityUids = model.retiredEntityUids {
             keyValues.append(KeyValue(key: "retiredEntityUids", value: arrayString(retiredEntityUids.map({ return "\($0)" }), indent: 2), quoteValue: false))
         }
