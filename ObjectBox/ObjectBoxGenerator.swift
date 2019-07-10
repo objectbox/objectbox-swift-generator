@@ -26,7 +26,8 @@ enum ObjectBoxGenerator {
     static var modelJsonFile: URL?
     static var classVisibility = "internal"
     static var debugDataURL: URL?
-    static var builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate", "TimeInterval", "NSTimeInterval"]
+    static var builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate",
+                               "TimeInterval", "NSTimeInterval", "Data", "NSData", "Array<UInt8>", "[UInt8]"]
     static var builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
     static var typeMappings: [String: EntityPropertyType] = [
         "Bool": .bool,
@@ -47,6 +48,10 @@ enum ObjectBoxGenerator {
         "NSDate": .date,
         "NSTimeInterval": .double,
         "TimeInterval": .double,
+        "Data": .byteVector,
+        "NSData": .byteVector,
+        "Array<UInt8>": .byteVector,
+        "[UInt8]": .byteVector,
     ]
     private static var entities = Array<IdSync.SchemaEntity>()
     private static var lastEntityId = IdSync.IdUid()
@@ -172,11 +177,24 @@ enum ObjectBoxGenerator {
         var currPropType = typeName
         
         while let currPropTypeReadOnly = currPropType, !isStringType {
-            isStringType = currPropTypeReadOnly.name == "String"
+            isStringType = currPropTypeReadOnly.unwrappedTypeName == "String" || currPropTypeReadOnly.unwrappedTypeName == "NSString"
             currPropType = currPropTypeReadOnly.actualTypeName
         }
         
         return isStringType
+    }
+    
+    static func isByteVectorTypeOrAlias( _ typeName: TypeName? ) -> Bool {
+        var isByteVectorType: Bool = false
+        var currPropType = typeName
+        
+        while let currPropTypeReadOnly = currPropType, !isByteVectorType {
+            isByteVectorType = currPropTypeReadOnly.unwrappedTypeName == "Data" || currPropTypeReadOnly.unwrappedTypeName == "NSData"
+                || currPropTypeReadOnly.unwrappedTypeName == "Array<UInt8>" || currPropTypeReadOnly.unwrappedTypeName == "[UInt8]"
+            currPropType = currPropTypeReadOnly.actualTypeName
+        }
+        
+        return isByteVectorType
     }
     
     static func entityType(for typeName: TypeName?) -> EntityPropertyType {
@@ -227,12 +245,16 @@ enum ObjectBoxGenerator {
         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
         schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(currIVar.typeName)
         schemaProperty.isStringType = isStringTypeOrAlias(currIVar.typeName)
+        schemaProperty.isByteVectorType = isByteVectorTypeOrAlias(currIVar.typeName)
         schemaProperty.isRelation = fullTypeName.hasPrefix("ToOne<")
         schemaProperty.isToManyRelation = fullTypeName.hasPrefix("ToMany<")
         schemaProperty.toManyRelation = tmRelation
         schemaProperty.isFirst = schemaProperties.isEmpty
         if schemaProperty.isStringType {
             schemaEntity.hasStringProperties = true
+        }
+        if schemaProperty.isByteVectorType {
+            schemaEntity.hasByteVectorProperties = true
         }
         schemaProperty.unwrappedPropertyType = currIVar.unwrappedTypeName
         schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String

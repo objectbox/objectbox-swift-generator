@@ -402,6 +402,7 @@ enum IdSync {
         var isEntitySubclass = false
         var isValueType = false
         var hasStringProperties = false // transient properties are ignored for this.
+        var hasByteVectorProperties = false // transient properties are ignored for this.
         var idProperty: SchemaProperty?
         var idCandidates = Array<SchemaProperty>()
         var name: String = ""
@@ -450,6 +451,7 @@ enum IdSync {
         var isObjectId: Bool = false
         var isBuiltInType: Bool = false
         var isStringType: Bool = false
+        var isByteVectorType: Bool = false
         var isRelation: Bool = false
         var isToManyRelation: Bool = false
         var toManyRelation: SchemaToManyRelation? = nil
@@ -486,6 +488,7 @@ enum IdSync {
                 if (isUniqueIndex) { moreData += "\n\t\t\tisUniqueIndex = \(isUniqueIndex)" }
                 if (isUnsignedType) { moreData += "\n\t\t\tisUnsignedType = \(isUnsignedType)" }
                 if (indexType != .none) { moreData += "\n\t\t\tindexType = \(indexType)" }
+                if (isByteVectorType) { moreData += "\n\t\t\tisByteVectorType = \(isByteVectorType)" }
                 return "SchemaProperty {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\tmodelIndexId = \(String(describing: modelIndexId))\n\t\t\tbacklinkName = \(String(describing: backlinkName))\n\t\t\tbacklinkType = \(String(describing: backlinkType))\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
             }
         }

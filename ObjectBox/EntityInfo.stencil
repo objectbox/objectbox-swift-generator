@@ -116,17 +116,19 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     {{ visibility }} func collect(fromEntity entity: EntityType, id: EntityId, propertyCollector: PropertyCollector, store: Store) {
 
         {# Avoid defining the `offsets` array when there are no fitting properties #}
-        {% if entity.hasStringProperties %}
+        {% if entity.hasStringProperties or entity.hasByteVectorProperties %}
         var offsets: [(offset: OBXDataOffset, index: UInt16)] = []
         {% for prop in entity.properties %}
         {% if prop.isStringType %}
         offsets.append((propertyCollector.prepare(string: entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}), 2 + 2 * {{ prop.modelId.id }}))
+        {% elif prop.isByteVectorType %}
+        offsets.append((propertyCollector.prepare(bytes: entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}), 2 + 2 * {{ prop.modelId.id }}))
         {% endif %}
         {% endfor %}
         {% endif %}
 
         propertyCollector.collect(id, at: 2 + 2 * {{ entity.idProperty.modelId.id }})
-        {% for prop in entity.properties where not prop.isStringType and not prop.isObjectId and not prop.isRelation and not prop.isToManyRelation %}
+        {% for prop in entity.properties where not prop.isStringType and not prop.isByteVectorType and not prop.isObjectId and not prop.isRelation and not prop.isToManyRelation %}
         propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endfor %}
 
@@ -134,7 +136,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
         {% endfor %}
 
-        {% if entity.hasStringProperties %}
+        {% if entity.hasStringProperties or entity.hasByteVectorProperties %}
         for value in offsets {
             propertyCollector.collect(dataOffset: value.offset, at: value.index)
         }
