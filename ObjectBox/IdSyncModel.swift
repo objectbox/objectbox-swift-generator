@@ -461,6 +461,12 @@ enum IdSync {
         var entityFlags: EntityPropertyFlag = []
         var name: String = ""
         var flagsList: String = ""
+        var converterName: String = ""
+        var conversionPrefix: String = "" // If converting, "converterName.convert(", but if you don't give a converter it's "converterName(rawValue: "
+        var conversionSuffix: String = "" // If converting ")".
+        var unConversionPrefix: String = "" // If converting, "converterName.convert(", but if you don't give a converter it's ""
+        var unConversionSuffix: String = "" // If converting, ")", but if you don't give a converter it's ".rawValue"
+        var typeBeforeConversion: String = "" // Type in Swift, whereas propertyType is ObjectBox type. Used with convert annotation.
         var isFirst = false // Helper for generating comma-separated lists in source code.
         var isLast = false // Helper for generating comma-separated lists in source code.
 
