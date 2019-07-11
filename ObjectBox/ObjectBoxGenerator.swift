@@ -220,6 +220,17 @@ enum ObjectBoxGenerator {
         return .unknown
     }
     
+    static func extractConvertAnnotation(_ annotation: Any?) -> [String: String]? {
+        if let dict = annotation as? [String: String] {
+            return dict
+        }
+        if let string = annotation as? String {
+            return ["dbType": string]
+        }
+        
+        return nil
+    }
+    
     static func processOneEntityProperty(_ currIVar: SourceryVariable, in currType: Type, into schemaProperties: inout [IdSync.SchemaProperty], entity schemaEntity: IdSync.SchemaEntity, schema schemaData: IdSync.Schema) throws {
         let fullTypeName = currIVar.typeName.name;
         var tmRelation: IdSync.SchemaToManyRelation? = nil
@@ -273,7 +284,7 @@ enum ObjectBoxGenerator {
             schemaProperty.modelId = propId
         }
         
-        if let convertDict = currIVar.annotations["convert"] as? [String:String] {
+        if let convertDict = extractConvertAnnotation(currIVar.annotations["convert"]) {
             guard let dbType = convertDict["dbType"] else {
                 throw Error.convertAnnotationMissingType(name: schemaProperty.propertyName, entity: schemaProperty.entityName)
             }
