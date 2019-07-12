@@ -145,7 +145,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
     {{ visibility }} func createEntity(entityReader: EntityReader, store: Store) -> EntityType {
     {% if entity.isValueType %}
-    let entityId: {{ entity.idProperty.propertyType }} = {{ entity.idProperty.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ entity.idProperty.modelId.id }}){{ entity.idProperty.conversionSuffix }}
+        let entityId: {{ entity.idProperty.propertyType }} = {{ entity.idProperty.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ entity.idProperty.modelId.id }}){{ entity.idProperty.conversionSuffix }}
         let entity = {{ entity.className }}(
     {% for prop in entity.properties %}
     {% if prop.isObjectId %}
