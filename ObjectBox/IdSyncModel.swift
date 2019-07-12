@@ -463,7 +463,7 @@ enum IdSync {
         var flagsList: String = ""
         var converterName: String = ""
         var conversionPrefix: String = "" // If converting, "converterName.convert(", but if you don't give a converter it's "converterName(rawValue: "
-        var conversionSuffix: String = "" // If converting ")".
+        var conversionSuffix: String = "" // If converting ")". If you don't give a converter and the type is not an optional, this is ") ?? default" (where "default" is given in the annotation).
         var unConversionPrefix: String = "" // If converting, "converterName.convert(", but if you don't give a converter it's ""
         var unConversionSuffix: String = "" // If converting, ")", but if you don't give a converter it's ".rawValue"
         var typeBeforeConversion: String = "" // Type in Swift, whereas propertyType is ObjectBox type. Used with convert annotation.

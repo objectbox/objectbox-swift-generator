@@ -22,6 +22,7 @@ enum ObjectBoxGenerator {
         case AmbiguousIdOnEntity(entity: String, properties: [String])
         case MissingBacklinkOnToManyRelation(entity: String, relation: String)
         case convertAnnotationMissingType(name: String, entity: String)
+        case convertAnnotationMissingConverterOrDefault(name: String, entity: String)
     }
 
     static var modelJsonFile: URL?
@@ -145,6 +146,8 @@ enum ObjectBoxGenerator {
                 Log.error("Missing backlink on to-many relation \(relation) of entity \(entity)")
             case .convertAnnotationMissingType(let name, let entity):
                 Log.error("Must specify a dbType in '// objectbox: convert = { \"dbType\": \"TYPE HERE\" }' annotation of property \(name) of entity \(entity)")
+            case .convertAnnotationMissingConverterOrDefault(let name, let entity):
+                Log.error("Must specify a converter or default in '// objectbox: convert = { \"dbType\": \"TYPE HERE\", \"default\": \"DEFAULT HERE\" }' annotation of property \(name) of entity \(entity)")
             }
         } else {
             Log.error("\(error)")
@@ -296,10 +299,16 @@ enum ObjectBoxGenerator {
                 schemaProperty.unConversionSuffix = ")"
             } else {
                 schemaProperty.converterName = schemaProperty.unwrappedPropertyType
-                schemaProperty.conversionPrefix = "\(schemaProperty.unwrappedPropertyType)(rawValue: "
-                schemaProperty.conversionSuffix = ")"
+                schemaProperty.conversionPrefix = "optConstruct(\(schemaProperty.unwrappedPropertyType).self, rawValue: "
                 schemaProperty.unConversionPrefix = ""
                 schemaProperty.unConversionSuffix = ".rawValue"
+                if let defaultValue = convertDict["default"] {
+                    schemaProperty.conversionSuffix = ") ?? \(defaultValue)"
+                } else if schemaProperty.propertyType.hasSuffix("?") {
+                    schemaProperty.conversionSuffix = ")"
+                } else {
+                    throw Error.convertAnnotationMissingConverterOrDefault(name: schemaProperty.propertyName, entity: schemaProperty.entityName)
+                }
             }
             
             schemaProperty.typeBeforeConversion = schemaProperty.propertyType
