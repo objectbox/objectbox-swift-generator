@@ -469,6 +469,11 @@ enum ObjectBoxGenerator {
                 if currRelation.backlinkProperty == nil {
                     throw Error.MissingBacklinkOnToManyRelation(entity: currSchemaEntity.className, relation: currRelation.relationName)
                 }
+                
+                if let relatedEntity = schemaData.entitiesByName[currRelation.relationTargetType],
+                    let id = relatedEntity.modelId, let uid = relatedEntity.modelUid {
+                    currRelation.targetId = IdSync.IdUid(id: id, uid: uid)
+                }
             }
         }
                 

@@ -34,8 +34,12 @@ extension {{ entity.className }}: ObjectBox.EntityInspectable {
         try entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
         {% endfor %}
         {% for prop in entity.properties where prop.isRelation %}
-
         try entityBuilder.addToOneRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }})
+        {% endfor %}
+        {% for prop in entity.properties where prop.isToManyRelation %}
+        // {{ prop.name }}
+        try entityBuilder.addToManyRelation(id: {{ toManyRelation.modelId.id }}, uid: {{ toManyRelation.modelId.uid }},
+                                            targetId: {{ toManyRelation.targetId.id }}, targetUid: {{ toManyRelation.targetId.uid }})
         {% endfor %}
 
         try entityBuilder.lastProperty(id: {{ entity.lastPropertyId.id }}, uid: {{ entity.lastPropertyId.uid }})

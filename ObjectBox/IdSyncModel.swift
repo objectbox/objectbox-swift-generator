@@ -16,7 +16,10 @@ enum IdSync {
         var id: Int32 = 0
         var uid: Int64 = 0
         
-        init() {}
+        init(id: Int32 = 0, uid: Int64 = 0) {
+            self.id = id
+            self.uid = uid
+        }
         
         init(string: String) {
             let parts = string.components(separatedBy: ":")
@@ -505,6 +508,7 @@ enum IdSync {
         var relationName: String = ""
         var relationType: String = ""
         var relationTargetType: String = ""
+        var targetId: IdUid?
         var dbName: String?
 
         init(name: String, type: String, targetType: String)
