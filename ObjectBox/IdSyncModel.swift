@@ -1016,6 +1016,15 @@ enum IdSync {
                 
                 relations.append(relation)
             }
+            
+            try schemaEntity.toManyRelations.forEach { schemaRelation in
+                let relation = try syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
+                if relation.id.id > lastRelationId.id {
+                    lastRelationId.id = relation.id.id
+                }
+                
+                relations.append(relation)
+            }
             relations.sort { $0.id.id < $1.id.id }
 
             return relations
