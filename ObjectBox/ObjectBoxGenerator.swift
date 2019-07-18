@@ -246,9 +246,7 @@ enum ObjectBoxGenerator {
                 
                 let relation = IdSync.SchemaToManyRelation(name: currIVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
                 if let propertyUid = currIVar.annotations["uid"] as? Int64 {
-                    var propId = IdSync.IdUid()
-                    propId.uid = propertyUid
-                    relation.modelId = propId
+                    relation.modelId = IdSync.IdUid(id: 0, uid: propertyUid)
                 }
                 if let backlinkProperty = currIVar.annotations["backlink"] as? String {
                     relation.backlinkProperty = backlinkProperty
@@ -457,17 +455,14 @@ enum ObjectBoxGenerator {
         }
         
         // Find back links for to-many relations:
-        try schemaData.entities.forEach { currSchemaEntity in
-            try currSchemaEntity.toManyRelations.forEach { currRelation in
+        schemaData.entities.forEach { currSchemaEntity in
+            currSchemaEntity.toManyRelations.forEach { currRelation in
                 if currRelation.backlinkProperty == nil, let relatedEntity = schemaData.entitiesByName[currRelation.relationTargetType] {
                     let backlinkCandidates = relatedEntity.properties.filter { $0.isRelation && $0.propertyType == "ToOne<\(currSchemaEntity.className)>" }
                     
                     if backlinkCandidates.count == 1 {
                         currRelation.backlinkProperty = backlinkCandidates[0].propertyName
                     }
-                }
-                if currRelation.backlinkProperty == nil {
-                    throw Error.MissingBacklinkOnToManyRelation(entity: currSchemaEntity.className, relation: currRelation.relationName)
                 }
                 
                 if let relatedEntity = schemaData.entitiesByName[currRelation.relationTargetType],
