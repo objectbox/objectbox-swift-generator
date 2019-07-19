@@ -120,16 +120,16 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         var offsets: [(offset: OBXDataOffset, index: UInt16)] = []
         {% for prop in entity.properties %}
         {% if prop.isStringType %}
-        offsets.append((propertyCollector.prepare(string: entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}), 2 + 2 * {{ prop.modelId.id }}))
+        offsets.append((propertyCollector.prepare(string: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }}), 2 + 2 * {{ prop.modelId.id }}))
         {% elif prop.isByteVectorType %}
-        offsets.append((propertyCollector.prepare(bytes: entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}), 2 + 2 * {{ prop.modelId.id }}))
+        offsets.append((propertyCollector.prepare(bytes: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }}), 2 + 2 * {{ prop.modelId.id }}))
         {% endif %}
         {% endfor %}
         {% endif %}
 
         propertyCollector.collect(id, at: 2 + 2 * {{ entity.idProperty.modelId.id }})
         {% for prop in entity.properties where not prop.isStringType and not prop.isByteVectorType and not prop.isObjectId and not prop.isRelation and not prop.isToManyRelation %}
-        propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }})
+        propertyCollector.collect({{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endfor %}
 
         {% for prop in entity.properties where prop.isRelation %}
@@ -145,24 +145,24 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
     {{ visibility }} func createEntity(entityReader: EntityReader, store: Store) -> EntityType {
     {% if entity.isValueType %}
-        let entityId: {{ entity.idProperty.propertyType }} = entityReader.read(at: 2 + 2 * {{ entity.idProperty.modelId.id }})
+        let entityId: {{ entity.idProperty.propertyType }} = {{ entity.idProperty.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ entity.idProperty.modelId.id }}){{ entity.idProperty.conversionSuffix }}
         let entity = {{ entity.className }}(
     {% for prop in entity.properties %}
     {% if prop.isObjectId %}
             {{ prop.propertyName }}: entityId{% elif prop.isRelation %}
-            {{ prop.propertyName }}: entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}, store: store){% elif prop.isToManyRelation %}
+            {{ prop.propertyName }}: {{ prop.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}, store: store){{ prop.conversionSuffix }}{% elif prop.isToManyRelation %}
             {{ prop.propertyName }}: {{ prop.toManyRelation.relationType }}.backlink(
                                         sourceBox: store.box(for: {{ prop.toManyRelation.relationType }}.Source.self),
                                         sourceProperty: {{ prop.toManyRelation.relationType }}.Source.{{ prop.toManyRelation.backlinkProperty }},
                                         targetId: entityId){% else %}
-            {{ prop.propertyName }}: entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}){% endif %}{% if not prop.isLast %}, {% endif %}
+            {{ prop.propertyName }}: {{ prop.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}){{ prop.conversionSuffix }}{% endif %}{% if not prop.isLast %}, {% endif %}
     {% endfor %}
         )
     {% else %}
         let entity = {{ entity.className }}()
 
     {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
-        entity.{{ prop.propertyName }} = entityReader.read(at: 2 + 2 * {{ prop.modelId.id }})
+        entity.{{ prop.propertyName }} = {{ prop.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}){{ prop.conversionSuffix }}
     {% endfor %}
 
     {% for prop in entity.properties where prop.isRelation %}
@@ -238,6 +238,11 @@ extension ObjectBox.Box where E == {{ entity.className }} {
 {% endif %}
 
 {% endfor %}
+/// Helper function that allows calling Enum(rawValue: value) with a nil value, which will return nil.
+fileprivate func optConstruct<T: RawRepresentable>(_ type: T.Type, rawValue: T.RawValue?) -> T? {
+    guard let rawValue = rawValue else { return nil }
+    return T(rawValue: rawValue)
+}
 
 // MARK: - Store setup
 

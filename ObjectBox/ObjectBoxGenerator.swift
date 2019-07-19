@@ -21,6 +21,8 @@ enum ObjectBoxGenerator {
         case MissingIdOnEntity(entity: String)
         case AmbiguousIdOnEntity(entity: String, properties: [String])
         case MissingBacklinkOnToManyRelation(entity: String, relation: String)
+        case convertAnnotationMissingType(name: String, entity: String)
+        case convertAnnotationMissingConverterOrDefault(name: String, entity: String)
     }
 
     static var modelJsonFile: URL?
@@ -29,6 +31,8 @@ enum ObjectBoxGenerator {
     static var builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate",
                                "TimeInterval", "NSTimeInterval", "Data", "NSData", "Array<UInt8>", "[UInt8]"]
     static var builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
+    static var builtInStringTypes = ["String", "NSString"]
+    static var builtInByteVectorTypes = ["Data", "NSData", "[UInt8]", "Array<UInt8>"]
     static var typeMappings: [String: EntityPropertyType] = [
         "Bool": .bool,
         "UInt8": .byte,
@@ -140,6 +144,10 @@ enum ObjectBoxGenerator {
                 Log.error("Entity \(entity) has several properties of type Id<\(entity)>, but no entity ID. Please designate one as this entity's ID using an '// objectbox: objectId' annotation. Candidates are: \(properties.joined(separator: ", "))")
             case .MissingBacklinkOnToManyRelation(let entity, let relation):
                 Log.error("Missing backlink on to-many relation \(relation) of entity \(entity)")
+            case .convertAnnotationMissingType(let name, let entity):
+                Log.error("Must specify a dbType in '// objectbox: convert = { \"dbType\": \"TYPE HERE\" }' annotation of property \(name) of entity \(entity)")
+            case .convertAnnotationMissingConverterOrDefault(let name, let entity):
+                Log.error("Must specify a converter or default in '// objectbox: convert = { \"dbType\": \"TYPE HERE\", \"default\": \"DEFAULT HERE\" }' annotation of property \(name) of entity \(entity)")
             }
         } else {
             Log.error("\(error)")
@@ -152,7 +160,10 @@ enum ObjectBoxGenerator {
         var currPropType = typeName
         
         while let currPropTypeReadOnly = currPropType, !isBuiltIn {
-            isBuiltIn = (builtInTypes + builtInUnsignedTypes).firstIndex(of: currPropTypeReadOnly.name) != nil
+            isBuiltIn = (builtInTypes + builtInUnsignedTypes).firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
+            if !isBuiltIn && currPropTypeReadOnly.unwrappedTypeName.hasPrefix("Id<") {
+                isBuiltIn = true
+            }
             currPropType = currPropTypeReadOnly.actualTypeName
         }
         
@@ -177,7 +188,7 @@ enum ObjectBoxGenerator {
         var currPropType = typeName
         
         while let currPropTypeReadOnly = currPropType, !isStringType {
-            isStringType = currPropTypeReadOnly.unwrappedTypeName == "String" || currPropTypeReadOnly.unwrappedTypeName == "NSString"
+            isStringType = builtInStringTypes.firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
             currPropType = currPropTypeReadOnly.actualTypeName
         }
         
@@ -189,8 +200,7 @@ enum ObjectBoxGenerator {
         var currPropType = typeName
         
         while let currPropTypeReadOnly = currPropType, !isByteVectorType {
-            isByteVectorType = currPropTypeReadOnly.unwrappedTypeName == "Data" || currPropTypeReadOnly.unwrappedTypeName == "NSData"
-                || currPropTypeReadOnly.unwrappedTypeName == "Array<UInt8>" || currPropTypeReadOnly.unwrappedTypeName == "[UInt8]"
+            isByteVectorType = builtInByteVectorTypes.firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
             currPropType = currPropTypeReadOnly.actualTypeName
         }
         
@@ -211,6 +221,17 @@ enum ObjectBoxGenerator {
             currPropType = currPropTypeReadOnly.actualTypeName
         }
         return .unknown
+    }
+    
+    static func extractConvertAnnotation(_ annotation: Any?) -> [String: String]? {
+        if let dict = annotation as? [String: String] {
+            return dict
+        }
+        if let string = annotation as? String {
+            return ["dbType": string]
+        }
+        
+        return nil
     }
     
     static func processOneEntityProperty(_ currIVar: SourceryVariable, in currType: Type, into schemaProperties: inout [IdSync.SchemaProperty], entity schemaEntity: IdSync.SchemaEntity, schema schemaData: IdSync.Schema) throws {
@@ -265,6 +286,43 @@ enum ObjectBoxGenerator {
             propId.uid = propertyUid
             schemaProperty.modelId = propId
         }
+        
+        if let convertDict = extractConvertAnnotation(currIVar.annotations["convert"]) {
+            guard let dbType = convertDict["dbType"] else {
+                throw Error.convertAnnotationMissingType(name: schemaProperty.propertyName, entity: schemaProperty.entityName)
+            }
+            if let typeName = convertDict["converter"] {
+                schemaProperty.converterName = typeName
+                schemaProperty.conversionPrefix = "\(typeName).convert("
+                schemaProperty.conversionSuffix = ")"
+                schemaProperty.unConversionPrefix = "\(typeName).convert("
+                schemaProperty.unConversionSuffix = ")"
+            } else {
+                schemaProperty.converterName = schemaProperty.unwrappedPropertyType
+                schemaProperty.conversionPrefix = "optConstruct(\(schemaProperty.unwrappedPropertyType).self, rawValue: "
+                schemaProperty.unConversionPrefix = ""
+                schemaProperty.unConversionSuffix = ".rawValue"
+                if let defaultValue = convertDict["default"] {
+                    schemaProperty.conversionSuffix = ") ?? \(defaultValue)"
+                } else if schemaProperty.propertyType.hasSuffix("?") {
+                    schemaProperty.conversionSuffix = ")"
+                } else {
+                    throw Error.convertAnnotationMissingConverterOrDefault(name: schemaProperty.propertyName, entity: schemaProperty.entityName)
+                }
+            }
+            
+            schemaProperty.typeBeforeConversion = schemaProperty.propertyType
+            schemaProperty.propertyType = dbType
+            schemaProperty.unwrappedPropertyType = dbType.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
+            
+            if let entityType = typeMappings[schemaProperty.unwrappedPropertyType] {
+                schemaProperty.entityType = entityType
+            }
+            schemaProperty.isUnsignedType = builtInUnsignedTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
+            schemaProperty.isStringType = builtInStringTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
+            schemaProperty.isByteVectorType = builtInByteVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
+        }
+        
         if currIVar.annotations["index"] as? Int64 == 1 {
             schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
         } else if let indexType = currIVar.annotations["index"] as? String {
