@@ -36,10 +36,10 @@ extension {{ entity.className }}: ObjectBox.EntityInspectable {
         {% for prop in entity.properties where prop.isRelation %}
         try entityBuilder.addToOneRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertyType }}.OwningType.entityInfo{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }})
         {% endfor %}
-        {% for prop in entity.properties where prop.isToManyRelation and prop.toManyRelation.backlinkProperty == "" %}
-        // {{ prop.name }}
-        try entityBuilder.addToManyRelation(id: {{ toManyRelation.modelId.id }}, uid: {{ toManyRelation.modelId.uid }},
-                                            targetId: {{ toManyRelation.targetId.id }}, targetUid: {{ toManyRelation.targetId.uid }})
+        {% for tmRelation in entity.toManyRelations where not tmRelation.backlinkProperty %}
+        // {{ tmRelation.relationName }}
+        try entityBuilder.addToManyRelation(id: {{ tmRelation.modelId.id }}, uid: {{ tmRelation.modelId.uid }},
+                                            targetId: {{ tmRelation.targetId.id }}, targetUid: {{ tmRelation.targetId.uid }})
         {% endfor %}
 
         try entityBuilder.lastProperty(id: {{ entity.lastPropertyId.id }}, uid: {{ entity.lastPropertyId.uid }})
@@ -143,6 +143,22 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% if entity.hasStringProperties or entity.hasByteVectorProperties %}
         for value in offsets {
             propertyCollector.collect(dataOffset: value.offset, at: value.index)
+        }
+        {% endif %}
+    }
+
+    {{ visibility }} func postPut(fromEntity entity: EntityType, id: EntityId, store: Store) {
+        {% if entity.toManyRelations.count != 0 %}
+        if entityId(of: entity) == 0 { // Written for first time? Attach ToMany relations:
+        {% for tmRelation in entity.toManyRelations where not tmRelation.backlinkProperty %}
+            let {{ tmRelation.relationName }} = {{ tmRelation.relationType }}.relation(
+                sourceBox: store.box(for: {{ tmRelation.relationType }}.OwningType.self),
+                sourceId: Id<{{ tmRelation.relationType }}.OwningType>(id),
+                targetBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
+                relationId: {{ tmRelation.modelId.id }})
+            {{ tmRelation.relationName }}.replaceSubrange({{ tmRelation.relationName }}.startIndex ..< {{ tmRelation.relationName }}.endIndex, with: entity.{{ tmRelation.relationName }})
+            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
+        {% endfor %}
         }
         {% endif %}
     }

@@ -454,7 +454,11 @@ enum ObjectBoxGenerator {
             }
         }
         
-        // Find back links for to-many relations:
+        let jsonFile = ObjectBoxGenerator.modelJsonFile ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("model.json")
+        let idSync = try IdSync.IdSync(jsonFile: jsonFile)
+        try idSync.sync(schema: schemaData)
+        
+        // Find back links for to-many relations (must be after sync or we can't get IDs for the target entity):
         schemaData.entities.forEach { currSchemaEntity in
             currSchemaEntity.toManyRelations.forEach { currRelation in
                 if currRelation.backlinkProperty == nil, let relatedEntity = schemaData.entitiesByName[currRelation.relationTargetType] {
@@ -465,17 +469,14 @@ enum ObjectBoxGenerator {
                     }
                 }
                 
-                if let relatedEntity = schemaData.entitiesByName[currRelation.relationTargetType],
-                    let id = relatedEntity.modelId, let uid = relatedEntity.modelUid {
-                    currRelation.targetId = IdSync.IdUid(id: id, uid: uid)
+                if let relatedEntity = schemaData.entitiesByName[currRelation.relationTargetType] {
+                    if let id = relatedEntity.modelId, let uid = relatedEntity.modelUid {
+                        currRelation.targetId = IdSync.IdUid(id: id, uid: uid)
+                    }
                 }
             }
         }
-                
-        let jsonFile = ObjectBoxGenerator.modelJsonFile ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("model.json")
-        let idSync = try IdSync.IdSync(jsonFile: jsonFile)
-        try idSync.sync(schema: schemaData)
-        
+
         if let debugDataURL = ObjectBoxGenerator.debugDataURL {
             try "\(schemaData)".write(to: debugDataURL, atomically: true, encoding: .utf8)
         }
