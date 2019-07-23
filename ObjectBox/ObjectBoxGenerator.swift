@@ -241,8 +241,8 @@ enum ObjectBoxGenerator {
             if fullTypeName.hasSuffix(">") {
                 let templateTypesString = fullTypeName.drop(first: "ToMany<".count, last: 1)
                 let templateTypes = templateTypesString.split(separator: ",")
-                let destinationType = templateTypes[0]
-                let myType = templateTypes[1]
+                let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+                let myType = templateTypes[1].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                 
                 let relation = IdSync.SchemaToManyRelation(name: currIVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
                 if let propertyUid = currIVar.annotations["uid"] as? Int64 {
@@ -470,6 +470,10 @@ enum ObjectBoxGenerator {
                 }
                 
                 if let relatedEntity = schemaData.entitiesByName[currRelation.relationTargetType] {
+                    if let forwardRelation = relatedEntity.toManyRelations.first(where: { $0.relationName == currRelation.backlinkProperty }) {
+                        currRelation.isToManyBacklink = true
+                        currRelation.modelId = forwardRelation.modelId
+                    }
                     if let id = relatedEntity.modelId, let uid = relatedEntity.modelUid {
                         currRelation.targetId = IdSync.IdUid(id: id, uid: uid)
                     }
