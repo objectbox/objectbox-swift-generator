@@ -147,8 +147,8 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endif %}
     }
 
+  {% if entity.toManyRelations.count != 0 %}
     {{ visibility }} func postPut(fromEntity entity: EntityType, id: EntityId, store: Store) {
-        {% if entity.toManyRelations.count != 0 %}
         if entityId(of: entity) == 0 { // Written for first time? Attach ToMany relations:
         {% for tmRelation in entity.toManyRelations %}
           {% if not tmRelation.backlinkProperty %}
@@ -170,9 +170,8 @@ extension ObjectBox.Property where E == {{ entity.className }} {
           {% endif %}
         {% endfor %}
         }
-        {% endif %}
     }
-
+  {% endif %}
     {{ visibility }} func createEntity(entityReader: EntityReader, store: Store) -> EntityType {
     {% if entity.isValueType %}
         let entityId: {{ entity.idProperty.propertyType }} = {{ entity.idProperty.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ entity.idProperty.modelId.id }}){{ entity.idProperty.conversionSuffix }}
