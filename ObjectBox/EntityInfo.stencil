@@ -172,6 +172,18 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         }
     }
   {% endif %}
+  {% if entity.relations.count != 0 %}
+    {{ visibility }} func setToOneRelation(_ propertyId: obx_schema_id, of entity: EntityType, to entityId: EntityId?) {
+        switch propertyId {
+      {% for relation in entity.relations %}
+            case {{ relation.modelId.id }}:
+                entity.{{ relation.relationName }}.targetId = (entityId != nil) ? Id<{{ relation.relationTargetType }}>(entityId!) : nil
+      {% endfor %}
+            default:
+                fatalError("Attempt to change nonexistent ToOne relation with ID \(propertyId)")
+        }
+    }
+  {% endif %}
     {{ visibility }} func createEntity(entityReader: EntityReader, store: Store) -> EntityType {
     {% if entity.isValueType %}
         let entityId: {{ entity.idProperty.propertyType }} = {{ entity.idProperty.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ entity.idProperty.modelId.id }}){{ entity.idProperty.conversionSuffix }}
