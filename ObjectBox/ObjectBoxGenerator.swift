@@ -378,7 +378,26 @@ enum ObjectBoxGenerator {
         if schemaProperty.indexType != .none {
             schemaProperty.entityFlags.insert(.indexed)
         }
+        if schemaProperty.isRelation && fullTypeName.hasPrefix("ToOne<") && fullTypeName.hasSuffix(">") {
+            let templateTypesString = fullTypeName.drop(first: "ToOne<".count, last: 1)
+            let templateTypes = templateTypesString.split(separator: ",")
+            let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            let relation = IdSync.SchemaRelation(name: schemaProperty.propertyName, type: schemaProperty.propertyType,
+                                                 targetType: destinationType)
+            relation.property = schemaProperty
+            schemaEntity.relations.append(relation)
+            if let backlink = currIVar.annotations["backlink"] as? String {
+                print("warning: Found an // objectbox: backlink annotation on ToOne relation "
+                    + "\"\(schemaProperty.propertyName)\". Did you mean to put "
+                    + "// objectbox: backlink = \"\(currIVar.name)\"  on the ToMany relation \"\(backlink)\" "
+                    + "in \"\(destinationType)\"?")
+            }
+        }
         
+        if tmRelation != nil {
+            tmRelation?.property = schemaProperty
+        }
+
         schemaProperties.append(schemaProperty)
     }
     

@@ -147,7 +147,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endif %}
     }
 
-  {% if entity.toManyRelations.count != 0 %}
+  {% if entity.toManyRelations.count != 0 or entity.relations.count != 0 %}
     {{ visibility }} func postPut(fromEntity entity: EntityType, id: EntityId, store: Store) {
         if entityId(of: entity) == 0 { // Written for first time? Attach ToMany relations:
         {% for tmRelation in entity.toManyRelations %}
@@ -167,8 +167,20 @@ extension ObjectBox.Property where E == {{ entity.className }} {
                 relationId: {{ tmRelation.modelId.id }})
             {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
             entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
+          {% else %}
+            let {{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
+                sourceBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
+                sourceProperty: {{ tmRelation.relationType }}.ReferencedType.{{ tmRelation.backlinkProperty }},
+                targetId: Id<{{ tmRelation.relationType }}.OwningType>(id))
+            {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
+            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
           {% endif %}
         {% endfor %}
+        {% if entity.relations.count != 0 %}
+          {% for relation in entity.relations %}
+            entity.{{ relation.property.name }}.attach(to: store.box(for: {{ relation.relationTargetType }}.self))
+          {% endfor %}
+        {% endif %}
         }
     }
   {% endif %}
@@ -176,8 +188,8 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     {{ visibility }} func setToOneRelation(_ propertyId: obx_schema_id, of entity: EntityType, to entityId: EntityId?) {
         switch propertyId {
       {% for relation in entity.relations %}
-            case {{ relation.modelId.id }}:
-                entity.{{ relation.relationName }}.targetId = (entityId != nil) ? Id<{{ relation.relationTargetType }}>(entityId!) : nil
+            case {{ relation.property.modelId.id }}:
+                entity.{{ relation.property.name }}.targetId = (entityId != nil) ? Id<{{ relation.relationTargetType }}>(entityId!) : nil
       {% endfor %}
             default:
                 fatalError("Attempt to change nonexistent ToOne relation with ID \(propertyId)")

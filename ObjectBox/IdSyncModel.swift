@@ -516,6 +516,7 @@ enum IdSync {
         var relationTargetType: String = ""
         var targetId: IdUid?
         var dbName: String?
+        var property: SchemaProperty?
         var isToManyBacklink: Bool = false
 
         init(name: String, type: String, targetType: String)
