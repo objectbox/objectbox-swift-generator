@@ -147,6 +147,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endif %}
     }
 
+  {% if not entity.isValueType %}
   {% if entity.toManyRelations.count != 0 or entity.relations.count != 0 %}
     {{ visibility }} func postPut(fromEntity entity: EntityType, id: EntityId, store: Store) {
         if entityId(of: entity) == 0 { // Written for first time? Attach ToMany relations:
@@ -183,6 +184,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endif %}
         }
     }
+  {% endif %}
   {% endif %}
   {% if entity.relations.count != 0 %}
     {{ visibility }} func setToOneRelation(_ propertyId: obx_schema_id, of entity: EntityType, to entityId: EntityId?) {
