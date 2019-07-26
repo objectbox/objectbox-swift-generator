@@ -459,8 +459,8 @@ enum ObjectBoxGenerator {
         try idSync.sync(schema: schemaData)
         
         // Find back links for to-many relations (must be after sync or we can't get IDs for the target entity):
-        schemaData.entities.forEach { currSchemaEntity in
-            currSchemaEntity.toManyRelations.forEach { currRelation in
+        try schemaData.entities.forEach { currSchemaEntity in
+            try currSchemaEntity.toManyRelations.forEach { currRelation in
                 if currRelation.backlinkProperty == nil, let relatedEntity = schemaData.entitiesByName[currRelation.relationTargetType] {
                     let backlinkCandidates = relatedEntity.properties.filter { $0.isRelation && $0.propertyType == "ToOne<\(currSchemaEntity.className)>" }
                     
@@ -476,11 +476,25 @@ enum ObjectBoxGenerator {
                     }
                     if let id = relatedEntity.modelId, let uid = relatedEntity.modelUid {
                         currRelation.targetId = IdSync.IdUid(id: id, uid: uid)
+                        if let existingEntity = try idSync.findEntity(name: currSchemaEntity.className, uid: nil) {
+                            if let existingRelation = try idSync.findRelation(entity: existingEntity,
+                                                                              name: currRelation.relationName,
+                                                                              uid: nil),
+                                let targetId = currRelation.targetId {
+                                existingRelation.targetId = targetId
+                            } else {
+                                print("warning: couldn't find relation \(currRelation.relationName) on \(existingEntity.name)")
+                            }
+                        } else {
+                            print("warning: couldn't find entity \(currSchemaEntity.className)")
+                        }
                     }
                 }
             }
         }
-
+        
+        try idSync.write()
+        
         if let debugDataURL = ObjectBoxGenerator.debugDataURL {
             try "\(schemaData)".write(to: debugDataURL, atomically: true, encoding: .utf8)
         }

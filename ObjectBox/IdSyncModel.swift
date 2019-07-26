@@ -125,13 +125,15 @@ enum IdSync {
         }
     }
     
-    class Relation: Codable {
+    class Relation: Codable, CustomDebugStringConvertible {
         var id = IdUid()
         var name = ""
+        var targetId: IdUid?
         
         private enum CodingKeys: String, CodingKey {
             case id
             case name
+            case targetId
         }
         
         init(name: String, id: IdUid) {
@@ -143,6 +145,10 @@ enum IdSync {
             if id.uid == uid { return true }
             
             return false
+        }
+        
+        var debugDescription: String {
+            return "Relation(\(id), \(name), \(String(describing: targetId)))"
         }
     }
     
@@ -569,6 +575,8 @@ enum IdSync {
 
         private var entitiesBySchemaEntity = Dictionary<SchemaEntity, Entity>()
         private var propertiesBySchemaProperty = Dictionary<SchemaProperty, Property>()
+        
+        private var entities = [Entity]()
 
         init(jsonFile: URL) throws {
             self.jsonFile = jsonFile
@@ -750,14 +758,17 @@ enum IdSync {
                 throw Error.SyncMayOnlyBeCalledOnce
             }
             
-            let entities = (try schema.entities.map { try syncEntity($0) }).sorted { $0.id.id < $1.id.id }
+            entities = (try schema.entities.map { try syncEntity($0) }).sorted { $0.id.id < $1.id.id }
             try updateRelatedTargetsOfProperties(entities: entities, schema: schema)
             updateRetiredUids(entities)
-            try writeModel(entities)
             
             schema.lastEntityId = lastEntityId
             schema.lastIndexId = lastIndexId
             schema.lastRelationId = lastRelationId
+        }
+        
+        func write() throws {
+            try writeModel(entities)
         }
         
         func updateRelatedTargetsOfProperties(entities: [Entity], schema: Schema) throws {
@@ -1063,9 +1074,22 @@ enum IdSync {
             }
             
             let relation = Relation(name: name, id: sourceId)
+            if let existingEntity = existingEntity {
+                appendOrUpdate(relation, inPossiblyNilArray: &existingEntity.relations)
+            }
             
             schemaRelation.modelId = relation.id
             return relation
+        }
+        
+        func appendOrUpdate(_ element: Relation, inPossiblyNilArray array: inout [Relation]?) {
+            guard array != nil else { array = [element]; return }
+            
+            if let idx = array?.firstIndex(where: { $0.name == element.name }) {
+                array?[idx] = element
+            } else {
+                array?.append(element)
+            }
         }
         
         func newUid(_ candidate: Int64?) throws -> Int64 {
