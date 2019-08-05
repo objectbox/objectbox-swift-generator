@@ -152,7 +152,7 @@ enum IdSync {
         }
     }
     
-    class Entity: Codable, Hashable, Equatable {
+    class Entity: Codable, Hashable, Equatable, CustomDebugStringConvertible {
         var id = IdUid()
         var name = ""
         var lastPropertyId: IdUid?
@@ -210,6 +210,10 @@ enum IdSync {
 
         public func hash(into hasher: inout Hasher) {
             name.hash(into: &hasher)
+        }
+
+        var debugDescription: String {
+            return "IdSync.Entity{ \(name), \(id) }"
         }
     }
     
@@ -754,6 +758,57 @@ enum IdSync {
            }
         }
         
+        func ensureRelationsHaveIds(schema: Schema) {
+            schema.entities.forEach { currSchemaEntity in
+                currSchemaEntity.toManyRelations.forEach { currRelation in
+                    if let relatedEntity = schema.entitiesByName[currRelation.relationTargetType] {
+                        if let forwardRelation = relatedEntity.toManyRelations.first(where: { $0.relationName == currRelation.backlinkProperty }) {
+                            currRelation.isToManyBacklink = true
+                            currRelation.modelId = forwardRelation.modelId
+                        }
+                    }
+                }
+            }
+        }
+        
+        func assignBacklinksToToManyRelations(schema: Schema) {
+            schema.entities.forEach { currSchemaEntity in
+                currSchemaEntity.toManyRelations.forEach { currRelation in
+                    if currRelation.backlinkProperty == nil, let relatedEntity = schema.entitiesByName[currRelation.relationTargetType] {
+                        let backlinkCandidates = relatedEntity.properties.filter { $0.isRelation && $0.propertyType == "ToOne<\(currSchemaEntity.className)>" }
+                        
+                        if backlinkCandidates.count == 1 {
+                            currRelation.backlinkProperty = backlinkCandidates[0].propertyName
+                        }
+                    }
+                }
+            }
+        }
+        
+        func assignRelationTargetIds(schema: Schema) {
+            schema.entities.forEach { currSchemaEntity in
+                currSchemaEntity.toManyRelations.forEach { currRelation in
+                    if let relatedEntity = schema.entitiesByName[currRelation.relationTargetType] {
+                        if let id = relatedEntity.modelId, let uid = relatedEntity.modelUid {
+                            currRelation.targetId = IdUid(id: id, uid: uid)
+                            if let existingEntity = try? findEntity(name: currSchemaEntity.className, uid: nil) {
+                                if let existingRelation = try? findRelation(entity: existingEntity,
+                                                                           name: currRelation.relationName,
+                                                                           uid: nil),
+                                    let targetId = currRelation.targetId {
+                                    existingRelation.targetId = targetId
+                                } else {
+                                    print("warning: couldn't find relation \(currRelation.relationName) on \(existingEntity.name)")
+                                }
+                            } else {
+                                print("warning: couldn't find entity \(currSchemaEntity.className)")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         func sync(schema: Schema) throws {
             guard entitiesBySchemaEntity.isEmpty && propertiesBySchemaProperty.isEmpty else {
                 throw Error.SyncMayOnlyBeCalledOnce
@@ -765,8 +820,13 @@ enum IdSync {
                 entitiesReadByUid[currEntity.id.uid] = currEntity
             }
             try updateRelatedTargetsOfProperties(entities: entities, schema: schema)
-            updateRetiredUids(entities)
+
+            ensureRelationsHaveIds(schema: schema)
+            assignBacklinksToToManyRelations(schema: schema)
+            assignRelationTargetIds(schema: schema)
             
+            updateRetiredUids(entities)
+
             schema.lastEntityId = lastEntityId
             schema.lastIndexId = lastIndexId
             schema.lastRelationId = lastRelationId
