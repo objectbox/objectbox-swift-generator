@@ -759,6 +759,10 @@ enum IdSync {
             }
             
             entities = (try schema.entities.map { try syncEntity($0) }).sorted { $0.id.id < $1.id.id }
+            for currEntity in entities {
+                entitiesReadByName[currEntity.name.lowercased()] = currEntity
+                entitiesReadByUid[currEntity.id.uid] = currEntity
+            }
             try updateRelatedTargetsOfProperties(entities: entities, schema: schema)
             updateRetiredUids(entities)
             
