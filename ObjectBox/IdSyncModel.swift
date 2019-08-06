@@ -795,17 +795,29 @@ enum IdSync {
                     if let relatedEntity = schema.entitiesByName[currRelation.relationTargetType] {
                         if let id = relatedEntity.modelId, let uid = relatedEntity.modelUid {
                             currRelation.targetId = IdUid(id: id, uid: uid)
-                            if let existingEntity = try? findEntity(name: currSchemaEntity.className, uid: nil) {
-                                if let existingRelation = try? findRelation(entity: existingEntity,
-                                                                           name: currRelation.relationName,
-                                                                           uid: nil),
-                                    let targetId = currRelation.targetId {
-                                    existingRelation.targetId = targetId
+                            
+                            if !currRelation.isToManyBacklink {
+                                if let existingEntity = try? findEntity(name: currSchemaEntity.className, uid: nil) {
+                                    if let existingRelation = try? findRelation(entity: existingEntity,
+                                                                                name: currRelation.relationName,
+                                                                                uid: nil),
+                                        let targetId = currRelation.targetId {
+                                        // Ensure the codegen can ask a standalone backlink for its relation's ID:
+                                        existingRelation.targetId = targetId
+                                    } else if let backlinkProperty = currRelation.backlinkProperty {
+                                        // It is a backlink for a to-one relation?
+                                        if let targetEntity = try? findEntity(name: currRelation.relationTargetType, uid: nil),
+                                            let _ = try? findProperty(entity: targetEntity,
+                                                                      name: backlinkProperty,
+                                                                      uid: nil) {
+                                            // All is well, the backlink has a counterpart.
+                                        } else {
+                                            print("warning: couldn't find backlink relation \(currRelation.relationName) on \(existingEntity.name)")
+                                        }
+                                    } // else is a unidirectional standalone to-many. That's fine.
                                 } else {
-                                    print("warning: couldn't find relation \(currRelation.relationName) on \(existingEntity.name)")
+                                    print("warning: couldn't find entity \(currSchemaEntity.className)")
                                 }
-                            } else {
-                                print("warning: couldn't find entity \(currSchemaEntity.className)")
                             }
                         }
                     }
@@ -1103,22 +1115,15 @@ enum IdSync {
         func syncRelations(schemaEntity: SchemaEntity, existingEntity: Entity?) throws -> [Relation] {
             var relations = Array<Relation>()
             
-            try schemaEntity.relations.forEach { schemaRelation in
-                let relation = try syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
-                if relation.id.id > lastRelationId.id {
-                    lastRelationId.id = relation.id.id
-                }
-                
-                relations.append(relation)
-            }
-            
             try schemaEntity.toManyRelations.forEach { schemaRelation in
-                let relation = try syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
-                if relation.id.id > lastRelationId.id {
-                    lastRelationId.id = relation.id.id
+                if schemaRelation.backlinkProperty == nil { // Only add the forward-relations to the relation list.
+                    let relation = try syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
+                    if relation.id.id > lastRelationId.id {
+                        lastRelationId.id = relation.id.id
+                    }
+                    
+                    relations.append(relation)
                 }
-                
-                relations.append(relation)
             }
             relations.sort { $0.id.id < $1.id.id }
 
