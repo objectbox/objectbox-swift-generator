@@ -574,8 +574,10 @@ enum IdSync {
         
         let uidHelper = UidHelper()
         
-        private var entitiesReadByUid = Dictionary<Int64, Entity>()
-        private var entitiesReadByName = Dictionary<String, Entity>()
+        private var entitiesReadByUid = Dictionary<Int64, Entity>() // Entities that were in the model.json
+        private var entitiesReadByName = Dictionary<String, Entity>() // Entities that were in the model.json
+        private var entitiesByUid = Dictionary<Int64, Entity>() // Entities in the model.json or seen in code.
+        private var entitiesByName = Dictionary<String, Entity>() // Entities in the model.json or seen in code.
         private var parsedUids = Set<Int64>()
 
         private var entitiesBySchemaEntity = Dictionary<SchemaEntity, Entity>()
@@ -625,11 +627,13 @@ enum IdSync {
                 try uidHelper.addExistingId(entity.id.uid)
                 try entity.properties?.forEach { try uidHelper.addExistingId($0.id.uid) }
                 entitiesReadByUid[entity.id.uid] = entity
+                entitiesByUid[entity.id.uid] = entity
                 let loweredEntityName = entity.name.lowercased()
                 guard !entitiesReadByName.contains(reference: loweredEntityName) else {
                     throw Error.DuplicateEntityName(entity.name)
                 }
                 entitiesReadByName[loweredEntityName] = entity
+                entitiesByName[loweredEntityName] = entity
             }
         }
         
@@ -816,8 +820,8 @@ enum IdSync {
             
             entities = (try schema.entities.map { try syncEntity($0) }).sorted { $0.id.id < $1.id.id }
             for currEntity in entities {
-                entitiesReadByName[currEntity.name.lowercased()] = currEntity
-                entitiesReadByUid[currEntity.id.uid] = currEntity
+                entitiesByName[currEntity.name.lowercased()] = currEntity
+                entitiesByUid[currEntity.id.uid] = currEntity
             }
             try updateRelatedTargetsOfProperties(entities: entities, schema: schema)
 
@@ -855,6 +859,20 @@ enum IdSync {
         
         func findEntity(name: String, uid: Int64?) throws -> Entity? {
             if let uid = uid, uid != 0, uid != 1 {
+                if let foundEntity = entitiesByUid[uid] {
+                    return foundEntity
+                } else if newUidPool.contains(uid) {
+                    return nil
+                } else {
+                    throw Error.NoSuchEntity(uid)
+                }
+            } else {
+                return entitiesByName[name.lowercased()]
+            }
+        }
+
+        func findReadEntity(name: String, uid: Int64?) throws -> Entity? {
+            if let uid = uid, uid != 0, uid != 1 {
                 if let foundEntity = entitiesReadByUid[uid] {
                     return foundEntity
                 } else if newUidPool.contains(uid) {
@@ -866,7 +884,7 @@ enum IdSync {
                 return entitiesReadByName[name.lowercased()]
             }
         }
-        
+
         func findProperty(entity: Entity, name: String, uid: Int64?) throws -> Property? {
             if let uid = uid, uid != 0, uid != 1 {
                 let filtered = entity.properties?.filter { $0.id.uid == uid } ?? []
@@ -922,7 +940,7 @@ enum IdSync {
             if let entityUid = entityUid, !printUid && !parsedUids.insert(entityUid).inserted {
                 throw Error.NonUniqueModelUID(uid: entityUid, entity: schemaEntity.className)
             }
-            let existingEntity = try findEntity(name: entityName, uid: printUid ? nil : entityUid)
+            let existingEntity = try findReadEntity(name: entityName, uid: printUid ? nil : entityUid)
             if let existingEntity = existingEntity, let properties = existingEntity.properties {
                 schemaEntity.indexes = properties.compactMap { prop in
                     if let indexId = prop.indexId {
