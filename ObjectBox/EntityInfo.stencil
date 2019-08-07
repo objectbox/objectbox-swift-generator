@@ -209,7 +209,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     {% for prop in entity.properties %}
     {% if prop.isObjectId %}
             {{ prop.propertyName }}: entityId{% elif prop.isRelation %}
-            {{ prop.propertyName }}: {{ prop.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}, store: store){{ prop.conversionSuffix }}{% elif prop.isToManyRelation and prop.toManyRelation.backlinkProperty == "" %}
+            {{ prop.propertyName }}: {{ prop.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}, store: store){{ prop.conversionSuffix }}{% elif prop.isToManyRelation and not prop.toManyRelation.backlinkProperty %}
             {{ prop.propertyName }}: {{ prop.toManyRelation.relationType }}.relation(
                             sourceBox: store.box(for: {{ prop.toManyRelation.relationType }}.OwningType.self),
                             sourceId: entityId,
