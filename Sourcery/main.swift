@@ -157,7 +157,6 @@ func runCLI() {
 
             configuration.validate()
 
-            let start = CFAbsoluteTimeGetCurrent()
             let sourcery = Sourcery(verbose: verboseLogging,
                                     watcherEnabled: watcherEnabled,
                                     cacheDisabled: disableCache,
@@ -172,7 +171,7 @@ func runCLI() {
                 RunLoop.current.run()
                 _ = keepAlive
             } else {
-                Log.info("Processing time \(CFAbsoluteTimeGetCurrent() - start) seconds")
+                Log.info("Done.")
             }
         } catch {
             ObjectBoxGenerator.printError(error)
