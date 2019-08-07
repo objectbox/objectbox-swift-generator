@@ -137,7 +137,11 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endfor %}
 
         {% for prop in entity.properties where prop.isRelation %}
+        {% if not entity.isValueType %}
         propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
+        {% else %}
+        propertyCollector.collectImmutable(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
+        {% endif %}
         {% endfor %}
 
         {% if entity.hasStringProperties or entity.hasByteVectorProperties %}
