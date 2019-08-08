@@ -137,11 +137,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endfor %}
 
         {% for prop in entity.properties where prop.isRelation %}
-        {% if not entity.isValueType %}
-        propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
-        {% else %}
-        propertyCollector.collectImmutable(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
-        {% endif %}
+        propertyCollector.collect{% if entity.isValueType %}Immutable{% endif %}(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
         {% endfor %}
 
         {% if entity.hasStringProperties or entity.hasByteVectorProperties %}
@@ -181,11 +177,9 @@ extension ObjectBox.Property where E == {{ entity.className }} {
             entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
           {% endif %}
         {% endfor %}
-        {% if entity.relations.count != 0 %}
-          {% for relation in entity.relations %}
+        {% for relation in entity.relations %}
             entity.{{ relation.property.name }}.attach(to: store.box(for: {{ relation.relationTargetType }}.self))
-          {% endfor %}
-        {% endif %}
+        {% endfor %}
         }
     }
   {% endif %}
