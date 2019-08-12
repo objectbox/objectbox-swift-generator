@@ -57,12 +57,14 @@ extension {{ entity.className }} {
     {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
     
     {% endfor %}
-    
     {% for prop in entity.properties where prop.isRelation %}
     {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>> { return Property(propertyId: {{ prop.modelId.id }}) }
-    
-    {% endfor %}
 
+    {% endfor %}
+    {% for prop in entity.properties where prop.isToManyRelation %}
+    {{ visibility }} static var {{ prop.propertyName }}: SynthesizedProperty<{{entity.className}}, {{ prop.toManyRelation.relationTargetType }}> { return SynthesizedProperty(.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }})) }
+
+    {% endfor %}
     {% if not entity.isValueType %}
     {% if entity.idProperty.propertyType == "UInt64" %}
     fileprivate func __setId(identifier: ObjectBox.EntityId) {
@@ -84,12 +86,15 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     ///
     ///     box.query { {% if prop.isObjectId %}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertyType == "Bool" %}.{{ prop.propertyName }} == true{% else %}.{{ prop.propertyName }} > 1234{% endif %} }
 
-    static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
 
     {% endfor %}
-
     {% for prop in entity.properties where prop.isRelation %}
-    static var {{ prop.propertyName }}: Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>> { return Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>>(propertyId: {{ prop.modelId.id }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>> { return Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>>(propertyId: {{ prop.modelId.id }}) }
+
+    {% endfor %}
+    {% for prop in entity.properties where prop.isToManyRelation %}
+    {{ visibility }} static var {{ prop.propertyName }}: SynthesizedProperty<{{entity.className}}, {{ prop.toManyRelation.relationTargetType }}> { return SynthesizedProperty(.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }})) }
 
     {% endfor %}
 }

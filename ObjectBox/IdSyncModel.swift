@@ -540,7 +540,8 @@ enum IdSync {
     class SchemaToManyRelation: SchemaRelation {
         var relationOwnerType: String = ""
         var backlinkProperty: String?
-        
+        var backlinkPropertyId: IdUid?
+
         init(name: String, type: String, targetType: String, ownerType: String)
         {
             self.relationOwnerType = ownerType
@@ -807,10 +808,11 @@ enum IdSync {
                                     } else if let backlinkProperty = currRelation.backlinkProperty {
                                         // It is a backlink for a to-one relation?
                                         if let targetEntity = try? findEntity(name: currRelation.relationTargetType, uid: nil),
-                                            let _ = try? findProperty(entity: targetEntity,
+                                            let counterpart = try? findProperty(entity: targetEntity,
                                                                       name: backlinkProperty,
                                                                       uid: nil) {
                                             // All is well, the backlink has a counterpart.
+                                            currRelation.backlinkPropertyId = counterpart.id
                                         } else {
                                             print("warning: couldn't find backlink relation \(currRelation.relationName) on \(existingEntity.name)")
                                         }
