@@ -146,7 +146,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--disableCache --sources /Users/uli/Programming/objectbox-swift/ios-framework/CodeGenTests/ToolTestProject38.swift --debug-parsetree /Users/uli/Downloads/debug-parsetree.txt"
+            argument = "--disableCache --sources /Users/uli/Programming/objectbox-swift/ios-framework/CodeGenTests/ToolTestProject40.swift --debug-parsetree /Users/uli/Downloads/debug-parsetree.txt"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

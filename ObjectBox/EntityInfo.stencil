@@ -62,8 +62,8 @@ extension {{ entity.className }} {
 
     {% endfor %}
     {% for prop in entity.properties where prop.isToManyRelation %}
-    {{ visibility }} static var {{ prop.propertyName }}: SynthesizedProperty<{{entity.className}}, {{ prop.toManyRelation.relationTargetType }}> { return SynthesizedProperty(.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }})) }
-
+    {{ visibility }} static var {{ prop.propertyName }}: SynthesizedProperty<{{entity.className}}, {{ prop.toManyRelation.relationTargetType }}> { return SynthesizedProperty({% if prop.toManyRelation.backlinkPropertyId %}.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }}){% else %}.relationId({{ prop.toManyRelation.modelId.id }}){% endif %}) }
+    
     {% endfor %}
     {% if not entity.isValueType %}
     {% if entity.idProperty.propertyType == "UInt64" %}
@@ -94,7 +94,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
     {% endfor %}
     {% for prop in entity.properties where prop.isToManyRelation %}
-    {{ visibility }} static var {{ prop.propertyName }}: SynthesizedProperty<{{entity.className}}, {{ prop.toManyRelation.relationTargetType }}> { return SynthesizedProperty(.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }})) }
+    {{ visibility }} static var {{ prop.propertyName }}: SynthesizedProperty<{{entity.className}}, {{ prop.toManyRelation.relationTargetType }}> { return SynthesizedProperty({% if prop.toManyRelation.backlinkPropertyId %}.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }}){% else %}.relationId({{ prop.toManyRelation.modelId.id }}){% endif %}) }
 
     {% endfor %}
 }
