@@ -37,7 +37,6 @@ extension {{ entity.className }}: ObjectBox.EntityInspectable {
         try entityBuilder.addToOneRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }})
         {% endfor %}
         {% for tmRelation in entity.toManyRelations where not tmRelation.backlinkProperty %}
-        // {{ tmRelation.relationName }}
         try entityBuilder.addToManyRelation(id: {{ tmRelation.modelId.id }}, uid: {{ tmRelation.modelId.uid }},
                                             targetId: {{ tmRelation.targetId.id }}, targetUid: {{ tmRelation.targetId.uid }})
         {% endfor %}
@@ -62,10 +61,14 @@ extension {{ entity.className }} {
 
     {% endfor %}
     {% for prop in entity.properties where prop.isToManyRelation %}
-    {{ visibility }} static var {{ prop.propertyName }}: SynthesizedProperty<{{entity.className}}, {{ prop.toManyRelation.relationTargetType }}> { return SynthesizedProperty({% if prop.toManyRelation.backlinkPropertyId %}.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }}){% else %}.relationId({{ prop.toManyRelation.modelId.id }}){% endif %}) }
-    
+    /// Use `{{entity.className}}.{{ prop.propertyName }}` to refer to this ToMany relation property in queries,
+    /// like when using `QueryBuilder.and(property:, conditions:)`.
+
+    {{ visibility }} static var {{ prop.propertyName }}: ToManyProperty<{{entity.className}}, {{ prop.toManyRelation.relationTargetType }}> { return ToManyProperty({% if prop.toManyRelation.backlinkPropertyId %}.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }}){% else %}{% if prop.toManyRelation.backlinkProperty %}.backlinkRelationId{% else %}.relationId{% endif %}({{ prop.toManyRelation.modelId.id }}){% endif %}) }
+
     {% endfor %}
     {% if not entity.isValueType %}
+
     {% if entity.idProperty.propertyType == "UInt64" %}
     fileprivate func __setId(identifier: ObjectBox.EntityId) {
         self.{{ entity.idProperty.propertyName }} = UInt64(identifier)
@@ -94,7 +97,10 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
     {% endfor %}
     {% for prop in entity.properties where prop.isToManyRelation %}
-    {{ visibility }} static var {{ prop.propertyName }}: SynthesizedProperty<{{entity.className}}, {{ prop.toManyRelation.relationTargetType }}> { return SynthesizedProperty({% if prop.toManyRelation.backlinkPropertyId %}.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }}){% else %}.relationId({{ prop.toManyRelation.modelId.id }}){% endif %}) }
+    /// Use `.{{ prop.propertyName }}` to refer to this ToMany relation property in queries, like when using
+    /// `QueryBuilder.and(property:, conditions:)`.
+
+    {{ visibility }} static var {{ prop.propertyName }}: ToManyProperty<{{entity.className}}, {{ prop.toManyRelation.relationTargetType }}> { return ToManyProperty({% if prop.toManyRelation.backlinkPropertyId %}.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }}){% else %}{% if prop.toManyRelation.backlinkProperty %}.backlinkRelationId{% else %}.relationId{% endif %}({{ prop.toManyRelation.modelId.id }}){% endif %}) }
 
     {% endfor %}
 }

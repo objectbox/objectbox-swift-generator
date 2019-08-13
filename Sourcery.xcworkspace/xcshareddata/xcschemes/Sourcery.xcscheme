@@ -134,19 +134,15 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--sources /Users/uli/Downloads/SourceryTest/Test.swift --output /Users/uli/Downloads/SourceryTest/example.generated.swift --model-json /Users/uli/Downloads/SourceryTest/testmodel.json"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "--xcode-project /Users/uli/Programming/github-objectbox-swift/Example/NotesExample.xcodeproj --xcode-target NotesExample-iOS --disableCache --model-json /Users/uli/Programming/github-objectbox-swift/Example/model.json"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--xcode-project /Users/uli/Programming/objectbox-swift/ios-framework/CodeGenTests/ToolTestProject.xcodeproj --xcode-target ToolTestProject32 --disableCache --debug-parsetree /Users/uli/Programming/objectbox-swift/ios-framework/CodeGenTests/generated/parsetree.txt"
+            argument = "--xcode-project ${PROJECT_DIR}/../../ios-framework/CodeGenTests/ToolTestProject.xcodeproj --xcode-target ToolTestProject32 --disableCache --debug-parsetree ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/parsetree.txt"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--disableCache --sources /Users/uli/Programming/objectbox-swift/ios-framework/CodeGenTests/ToolTestProject40.swift --debug-parsetree /Users/uli/Downloads/debug-parsetree.txt"
+            argument = "--disableCache --sources ${PROJECT_DIR}/../../ios-framework/CodeGenTests/ToolTestProject40.swift --debug-parsetree ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/debug-parsetree.txt --output ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/EntityInfo.generated.swift"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

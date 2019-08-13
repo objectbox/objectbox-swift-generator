@@ -539,7 +539,7 @@ enum IdSync {
     
     class SchemaToManyRelation: SchemaRelation {
         var relationOwnerType: String = ""
-        var backlinkProperty: String?
+        var backlinkProperty: String? // Only set on the actual backlink, NIL for the real standalone relation.
         var backlinkPropertyId: IdUid?
 
         init(name: String, type: String, targetType: String, ownerType: String)
@@ -550,7 +550,11 @@ enum IdSync {
         
         override public var debugDescription: String {
             get {
-                return "SchemaToManyRelation {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\trelationName = \(relationName)\n\t\t\trelationType = \(relationType)\n\t\t\trelationTargetType = \(relationTargetType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\trelationOwnerType = \(relationOwnerType)\n\t\t\tbacklinkProperty = \(String(describing: backlinkProperty))\n\t\t}\n"
+                var extraVars = ""
+                if let backlinkPropertyId = backlinkPropertyId {
+                    extraVars.append("\n\t\tbacklinkPropertyId = \(backlinkPropertyId)")
+                }
+                return "SchemaToManyRelation {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\trelationName = \(relationName)\n\t\t\trelationType = \(relationType)\n\t\t\trelationTargetType = \(relationTargetType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\trelationOwnerType = \(relationOwnerType)\n\t\t\tbacklinkProperty = \(String(describing: backlinkProperty))\(extraVars)\n\t\t}\n"
             }
         }
     }
