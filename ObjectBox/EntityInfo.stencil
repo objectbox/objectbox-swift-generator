@@ -103,7 +103,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
     {{ visibility }} func setEntityId(of entity: EntityType, to entityId: ObjectBox.EntityId) {
         {% if entity.isValueType %}
-        fatalError("Use the struct variants of the put methods on entities of struct {{ entity.className }}.")
+        // Use the struct variants of the put methods on entities of struct {{ entity.className }}.
         {% else %}
         entity.__setId(identifier: entityId)
         {% endif %}
@@ -137,7 +137,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endfor %}
 
         {% for prop in entity.properties where prop.isRelation %}
-        propertyCollector.collect{% if entity.isValueType %}Immutable{% endif %}(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
+        propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
         {% endfor %}
 
         {% if entity.hasStringProperties or entity.hasByteVectorProperties %}
@@ -261,13 +261,13 @@ extension ObjectBox.Box where E == {{ entity.className }} {
 
     /// Puts the {{ entity.className }} in the box (aka persisting it) returning a copy with the ID updated to the ID it
     /// has been assigned.
-    /// If you know the entity has already been persisted, you can use putImmutable() to avoid the cost of the copy.
+    /// If you know the entity has already been persisted, you can use put() to avoid the cost of the copy.
     ///
     /// - Parameter entity: Object to persist.
     /// - Returns: The stored object. If `entity`'s id is 0, an ID is generated.
     /// - Throws: ObjectBoxError errors for database write errors.
     func put(struct entity: {{ entity.className }}) throws -> {{ entity.className }} {
-        let entityId: Id<{{ entity.className }}> = try self.putImmutable(entity)
+        let entityId: Id<{{ entity.className }}> = try self.put(entity)
 
         return {{ entity.className }}(
         {% for prop in entity.properties %}
@@ -282,14 +282,14 @@ extension ObjectBox.Box where E == {{ entity.className }} {
 
     /// Puts the {{ entity.className }}s in the box (aka persisting it) returning copies with their IDs updated to the
     /// IDs they've been assigned.
-    /// If you know all entities have already been persisted, you can use putImmutable() to avoid the cost of the
+    /// If you know all entities have already been persisted, you can use put() to avoid the cost of the
     /// copies.
     ///
     /// - Parameter entities: Objects to persist.
     /// - Returns: The stored objects. If any entity's id is 0, an ID is generated.
     /// - Throws: ObjectBoxError errors for database write errors.
     func put(structs entities: [{{ entity.className }}]) throws -> [{{ entity.className }}] {
-        let entityIds: [Id<{{ entity.className }}>] = try self.putImmutable(entities)
+        let entityIds: [Id<{{ entity.className }}>] = try self.put(entities)
         var newEntities = Array<{{ entity.className }}>()
 
         for i in 0 ..< min(entities.count, entityIds.count) {
