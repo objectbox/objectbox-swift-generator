@@ -101,7 +101,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
     override {{ visibility }} required init() {}
 
-    {{ visibility }} func setEntityId(of entity: EntityType, to entityId: ObjectBox.EntityId) {
+    {{ visibility }} func setEntityIdUnlessStruct(of entity: EntityType, to entityId: ObjectBox.EntityId) {
         {% if entity.isValueType %}
         // Use the struct variants of the put methods on entities of struct {{ entity.className }}.
         {% else %}
