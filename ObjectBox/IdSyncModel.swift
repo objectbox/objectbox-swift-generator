@@ -16,7 +16,10 @@ enum IdSync {
         var id: Int32 = 0
         var uid: Int64 = 0
         
-        init() {}
+        init(id: Int32 = 0, uid: Int64 = 0) {
+            self.id = id
+            self.uid = uid
+        }
         
         init(string: String) {
             let parts = string.components(separatedBy: ":")
@@ -122,13 +125,15 @@ enum IdSync {
         }
     }
     
-    class Relation: Codable {
+    class Relation: Codable, CustomDebugStringConvertible {
         var id = IdUid()
         var name = ""
+        var targetId: IdUid?
         
         private enum CodingKeys: String, CodingKey {
             case id
             case name
+            case targetId
         }
         
         init(name: String, id: IdUid) {
@@ -140,6 +145,10 @@ enum IdSync {
             if id.uid == uid { return true }
             
             return false
+        }
+        
+        var debugDescription: String {
+            return "Relation(\(id), \(name), \(String(describing: targetId)))"
         }
     }
     
@@ -505,7 +514,9 @@ enum IdSync {
         var relationName: String = ""
         var relationType: String = ""
         var relationTargetType: String = ""
+        var targetId: IdUid?
         var dbName: String?
+        var isToManyBacklink: Bool = false
 
         init(name: String, type: String, targetType: String)
         {
@@ -564,6 +575,8 @@ enum IdSync {
 
         private var entitiesBySchemaEntity = Dictionary<SchemaEntity, Entity>()
         private var propertiesBySchemaProperty = Dictionary<SchemaProperty, Property>()
+        
+        private var entities = [Entity]()
 
         init(jsonFile: URL) throws {
             self.jsonFile = jsonFile
@@ -745,14 +758,21 @@ enum IdSync {
                 throw Error.SyncMayOnlyBeCalledOnce
             }
             
-            let entities = (try schema.entities.map { try syncEntity($0) }).sorted { $0.id.id < $1.id.id }
+            entities = (try schema.entities.map { try syncEntity($0) }).sorted { $0.id.id < $1.id.id }
+            for currEntity in entities {
+                entitiesReadByName[currEntity.name.lowercased()] = currEntity
+                entitiesReadByUid[currEntity.id.uid] = currEntity
+            }
             try updateRelatedTargetsOfProperties(entities: entities, schema: schema)
             updateRetiredUids(entities)
-            try writeModel(entities)
             
             schema.lastEntityId = lastEntityId
             schema.lastIndexId = lastIndexId
             schema.lastRelationId = lastRelationId
+        }
+        
+        func write() throws {
+            try writeModel(entities)
         }
         
         func updateRelatedTargetsOfProperties(entities: [Entity], schema: Schema) throws {
@@ -1012,6 +1032,15 @@ enum IdSync {
                 
                 relations.append(relation)
             }
+            
+            try schemaEntity.toManyRelations.forEach { schemaRelation in
+                let relation = try syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
+                if relation.id.id > lastRelationId.id {
+                    lastRelationId.id = relation.id.id
+                }
+                
+                relations.append(relation)
+            }
             relations.sort { $0.id.id < $1.id.id }
 
             return relations
@@ -1049,9 +1078,22 @@ enum IdSync {
             }
             
             let relation = Relation(name: name, id: sourceId)
+            if let existingEntity = existingEntity {
+                appendOrUpdate(relation, inPossiblyNilArray: &existingEntity.relations)
+            }
             
             schemaRelation.modelId = relation.id
             return relation
+        }
+        
+        func appendOrUpdate(_ element: Relation, inPossiblyNilArray array: inout [Relation]?) {
+            guard array != nil else { array = [element]; return }
+            
+            if let idx = array?.firstIndex(where: { $0.name == element.name }) {
+                array?[idx] = element
+            } else {
+                array?.append(element)
+            }
         }
         
         func newUid(_ candidate: Int64?) throws -> Int64 {

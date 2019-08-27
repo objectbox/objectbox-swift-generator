@@ -34,8 +34,12 @@ extension {{ entity.className }}: ObjectBox.EntityInspectable {
         try entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
         {% endfor %}
         {% for prop in entity.properties where prop.isRelation %}
-
         try entityBuilder.addToOneRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }})
+        {% endfor %}
+        {% for tmRelation in entity.toManyRelations where not tmRelation.backlinkProperty %}
+        // {{ tmRelation.relationName }}
+        try entityBuilder.addToManyRelation(id: {{ tmRelation.modelId.id }}, uid: {{ tmRelation.modelId.uid }},
+                                            targetId: {{ tmRelation.targetId.id }}, targetUid: {{ tmRelation.targetId.uid }})
         {% endfor %}
 
         try entityBuilder.lastProperty(id: {{ entity.lastPropertyId.id }}, uid: {{ entity.lastPropertyId.uid }})
@@ -143,6 +147,31 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endif %}
     }
 
+  {% if entity.toManyRelations.count != 0 %}
+    {{ visibility }} func postPut(fromEntity entity: EntityType, id: EntityId, store: Store) {
+        if entityId(of: entity) == 0 { // Written for first time? Attach ToMany relations:
+        {% for tmRelation in entity.toManyRelations %}
+          {% if not tmRelation.backlinkProperty %}
+            let {{ tmRelation.relationName }} = {{ tmRelation.relationType }}.relation(
+                sourceBox: store.box(for: {{ tmRelation.relationType }}.OwningType.self),
+                sourceId: Id<{{ tmRelation.relationType }}.OwningType>(id),
+                targetBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
+                relationId: {{ tmRelation.modelId.id }})
+            {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
+            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
+          {% elif tmRelation.backlinkProperty and tmRelation.isToManyBacklink %}
+            let {{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
+                sourceBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
+                targetId: Id<{{ tmRelation.relationType }}.OwningType>(id),
+                targetBox: store.box(for: {{ tmRelation.relationType }}.OwningType.self),
+                relationId: {{ tmRelation.modelId.id }})
+            {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
+            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
+          {% endif %}
+        {% endfor %}
+        }
+    }
+  {% endif %}
     {{ visibility }} func createEntity(entityReader: EntityReader, store: Store) -> EntityType {
     {% if entity.isValueType %}
         let entityId: {{ entity.idProperty.propertyType }} = {{ entity.idProperty.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ entity.idProperty.modelId.id }}){{ entity.idProperty.conversionSuffix }}
@@ -150,11 +179,21 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     {% for prop in entity.properties %}
     {% if prop.isObjectId %}
             {{ prop.propertyName }}: entityId{% elif prop.isRelation %}
-            {{ prop.propertyName }}: {{ prop.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}, store: store){{ prop.conversionSuffix }}{% elif prop.isToManyRelation %}
+            {{ prop.propertyName }}: {{ prop.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}, store: store){{ prop.conversionSuffix }}{% elif prop.isToManyRelation and prop.toManyRelation.backlinkProperty == "" %}
+            {{ prop.propertyName }}: {{ prop.toManyRelation.relationType }}.relation(
+                            sourceBox: store.box(for: {{ prop.toManyRelation.relationType }}.OwningType.self),
+                            sourceId: entityId,
+                            targetBox: store.box(for: {{ prop.toManyRelation.relationType }}.ReferencedType.self),
+                            relationId: {{ prop.toManyRelation.modelId.id }}){% elif prop.isToManyRelation and prop.toManyRelation.isToManyBacklink %}
             {{ prop.propertyName }}: {{ prop.toManyRelation.relationType }}.backlink(
-                                        sourceBox: store.box(for: {{ prop.toManyRelation.relationType }}.Source.self),
-                                        sourceProperty: {{ prop.toManyRelation.relationType }}.Source.{{ prop.toManyRelation.backlinkProperty }},
-                                        targetId: entityId){% else %}
+                            sourceBox: store.box(for: {{ prop.toManyRelation.relationType }}.ReferencedType.self),
+                            targetId: entityId,
+                            targetBox: store.box(for: {{ prop.toManyRelation.relationType }}.OwningType.self),
+                            relationId: {{ prop.toManyRelation.modelId.id }}){% elif prop.isToManyRelation %}
+            {{ prop.propertyName }}: {{ prop.toManyRelation.relationType }}.backlink(
+                            sourceBox: store.box(for: {{ prop.toManyRelation.relationType }}.ReferencedType.self),
+                            sourceProperty: {{ prop.toManyRelation.relationType }}.ReferencedType.{{ prop.toManyRelation.backlinkProperty }},
+                            targetId: entityId){% else %}
             {{ prop.propertyName }}: {{ prop.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}){{ prop.conversionSuffix }}{% endif %}{% if not prop.isLast %}, {% endif %}
     {% endfor %}
         )
@@ -168,15 +207,27 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     {% for prop in entity.properties where prop.isRelation %}
         entity.{{ prop.propertyName }} = entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}, store: store)
     {% endfor %}
-
     {% for tmRelation in entity.toManyRelations %}
+      {% if not tmRelation.backlinkProperty %}
+        entity.{{ tmRelation.relationName }} = {{ tmRelation.relationType }}.relation(
+            sourceBox: store.box(for: {{ tmRelation.relationType }}.OwningType.self),
+            sourceId: entity.id,
+            targetBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
+            relationId: {{ tmRelation.modelId.id }})
+      {% elif tmRelation.isToManyBacklink %}
         entity.{{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
-                sourceBox: store.box(for: {{ tmRelation.relationType }}.Source.self),
-                sourceProperty: {{ tmRelation.relationType }}.Source.{{ tmRelation.backlinkProperty }},
-                targetId: entity.id)
+            sourceBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
+            targetId: entity.id,
+            targetBox: store.box(for: {{ tmRelation.relationType }}.OwningType.self),
+            relationId: {{ tmRelation.modelId.id }})
+      {% else %}
+        entity.{{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
+            sourceBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
+            sourceProperty: {{ tmRelation.relationType }}.ReferencedType.{{ tmRelation.backlinkProperty }},
+            targetId: entity.id)
+      {% endif %}
     {% endfor %}
     {% endif %}
-
         return entity
     }
 }

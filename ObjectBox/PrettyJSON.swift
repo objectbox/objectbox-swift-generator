@@ -37,10 +37,10 @@ class PrettyJSON {
     func encode(_ model: IdSync.IdSyncModel) -> Data {
         var output = """
 {
-  "_note1" : "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
-  "_note2" : "ObjectBox manages crucial IDs for your object model. See docs for details.",
-  "_note3" : "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
-  "entities" : [
+  "_note1": "\(escapeName(model._note1 ?? "KEEP THIS FILE! Check it into a version control system (VCS) like git."))",
+  "_note2": "\(escapeName(model._note2 ?? "ObjectBox manages crucial IDs for your object model. See docs for details."))",
+  "_note3": "\(escapeName(model._note3 ?? "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs."))",
+  "entities": [
 """
         let modelEntities = model.entities ?? []
         if modelEntities.isEmpty {
@@ -91,8 +91,11 @@ class PrettyJSON {
                         output.append("\n        {")
                         keyValues.append(KeyValue(key: "id", value: relation.id.toString(), quoteValue: true))
                         keyValues.append(KeyValue(key: "name", value: relation.name, quoteValue: true))
+                        if let targetId = relation.targetId {
+                            keyValues.append(KeyValue(key: "targetId", value: targetId.toString(), quoteValue: true))
+                        }
                         relationsToGo -= 1
-                        output.append("\(keyValueString(keyValues, indent: 10))\n        }\(relationsToGo > 0 ? "," : "")")
+                        output.append("\n\(keyValueString(keyValues, indent: 10))\n        }\(relationsToGo > 0 ? "," : "")")
                     }
                     output.append("\n      ]")
                 }
