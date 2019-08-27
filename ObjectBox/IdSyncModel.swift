@@ -152,7 +152,7 @@ enum IdSync {
         }
     }
     
-    class Entity: Codable, Hashable, Equatable {
+    class Entity: Codable, Hashable, Equatable, CustomDebugStringConvertible {
         var id = IdUid()
         var name = ""
         var lastPropertyId: IdUid?
@@ -210,6 +210,10 @@ enum IdSync {
 
         public func hash(into hasher: inout Hasher) {
             name.hash(into: &hasher)
+        }
+
+        var debugDescription: String {
+            return "IdSync.Entity{ \(name), \(id) }"
         }
     }
     
@@ -516,6 +520,7 @@ enum IdSync {
         var relationTargetType: String = ""
         var targetId: IdUid?
         var dbName: String?
+        var property: SchemaProperty?
         var isToManyBacklink: Bool = false
 
         init(name: String, type: String, targetType: String)
@@ -569,8 +574,10 @@ enum IdSync {
         
         let uidHelper = UidHelper()
         
-        private var entitiesReadByUid = Dictionary<Int64, Entity>()
-        private var entitiesReadByName = Dictionary<String, Entity>()
+        private var entitiesReadByUid = Dictionary<Int64, Entity>() // Entities that were in the model.json
+        private var entitiesReadByName = Dictionary<String, Entity>() // Entities that were in the model.json
+        private var entitiesByUid = Dictionary<Int64, Entity>() // Entities in the model.json or seen in code.
+        private var entitiesByName = Dictionary<String, Entity>() // Entities in the model.json or seen in code.
         private var parsedUids = Set<Int64>()
 
         private var entitiesBySchemaEntity = Dictionary<SchemaEntity, Entity>()
@@ -620,11 +627,13 @@ enum IdSync {
                 try uidHelper.addExistingId(entity.id.uid)
                 try entity.properties?.forEach { try uidHelper.addExistingId($0.id.uid) }
                 entitiesReadByUid[entity.id.uid] = entity
+                entitiesByUid[entity.id.uid] = entity
                 let loweredEntityName = entity.name.lowercased()
                 guard !entitiesReadByName.contains(reference: loweredEntityName) else {
                     throw Error.DuplicateEntityName(entity.name)
                 }
                 entitiesReadByName[loweredEntityName] = entity
+                entitiesByName[loweredEntityName] = entity
             }
         }
         
@@ -753,6 +762,69 @@ enum IdSync {
            }
         }
         
+        func ensureRelationsHaveIds(schema: Schema) {
+            schema.entities.forEach { currSchemaEntity in
+                currSchemaEntity.toManyRelations.forEach { currRelation in
+                    if let relatedEntity = schema.entitiesByName[currRelation.relationTargetType] {
+                        if let forwardRelation = relatedEntity.toManyRelations.first(where: { $0.relationName == currRelation.backlinkProperty }) {
+                            currRelation.isToManyBacklink = true
+                            currRelation.modelId = forwardRelation.modelId
+                        }
+                    }
+                }
+            }
+        }
+        
+        func assignBacklinksToToManyRelations(schema: Schema) {
+            schema.entities.forEach { currSchemaEntity in
+                currSchemaEntity.toManyRelations.forEach { currRelation in
+                    if currRelation.backlinkProperty == nil, let relatedEntity = schema.entitiesByName[currRelation.relationTargetType] {
+                        let backlinkCandidates = relatedEntity.properties.filter { $0.isRelation && $0.propertyType == "ToOne<\(currSchemaEntity.className)>" }
+                        
+                        if backlinkCandidates.count == 1 {
+                            currRelation.backlinkProperty = backlinkCandidates[0].propertyName
+                        }
+                    }
+                }
+            }
+        }
+        
+        func assignRelationTargetIds(schema: Schema) {
+            schema.entities.forEach { currSchemaEntity in
+                currSchemaEntity.toManyRelations.forEach { currRelation in
+                    if let relatedEntity = schema.entitiesByName[currRelation.relationTargetType] {
+                        if let id = relatedEntity.modelId, let uid = relatedEntity.modelUid {
+                            currRelation.targetId = IdUid(id: id, uid: uid)
+                            
+                            if !currRelation.isToManyBacklink {
+                                if let existingEntity = try? findEntity(name: currSchemaEntity.className, uid: nil) {
+                                    if let existingRelation = try? findRelation(entity: existingEntity,
+                                                                                name: currRelation.relationName,
+                                                                                uid: nil),
+                                        let targetId = currRelation.targetId {
+                                        // Ensure the codegen can ask a standalone backlink for its relation's ID:
+                                        existingRelation.targetId = targetId
+                                    } else if let backlinkProperty = currRelation.backlinkProperty {
+                                        // It is a backlink for a to-one relation?
+                                        if let targetEntity = try? findEntity(name: currRelation.relationTargetType, uid: nil),
+                                            let _ = try? findProperty(entity: targetEntity,
+                                                                      name: backlinkProperty,
+                                                                      uid: nil) {
+                                            // All is well, the backlink has a counterpart.
+                                        } else {
+                                            print("warning: couldn't find backlink relation \(currRelation.relationName) on \(existingEntity.name)")
+                                        }
+                                    } // else is a unidirectional standalone to-many. That's fine.
+                                } else {
+                                    print("warning: couldn't find entity \(currSchemaEntity.className)")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         func sync(schema: Schema) throws {
             guard entitiesBySchemaEntity.isEmpty && propertiesBySchemaProperty.isEmpty else {
                 throw Error.SyncMayOnlyBeCalledOnce
@@ -760,12 +832,17 @@ enum IdSync {
             
             entities = (try schema.entities.map { try syncEntity($0) }).sorted { $0.id.id < $1.id.id }
             for currEntity in entities {
-                entitiesReadByName[currEntity.name.lowercased()] = currEntity
-                entitiesReadByUid[currEntity.id.uid] = currEntity
+                entitiesByName[currEntity.name.lowercased()] = currEntity
+                entitiesByUid[currEntity.id.uid] = currEntity
             }
             try updateRelatedTargetsOfProperties(entities: entities, schema: schema)
-            updateRetiredUids(entities)
+
+            ensureRelationsHaveIds(schema: schema)
+            assignBacklinksToToManyRelations(schema: schema)
+            assignRelationTargetIds(schema: schema)
             
+            updateRetiredUids(entities)
+
             schema.lastEntityId = lastEntityId
             schema.lastIndexId = lastIndexId
             schema.lastRelationId = lastRelationId
@@ -794,6 +871,20 @@ enum IdSync {
         
         func findEntity(name: String, uid: Int64?) throws -> Entity? {
             if let uid = uid, uid != 0, uid != 1 {
+                if let foundEntity = entitiesByUid[uid] {
+                    return foundEntity
+                } else if newUidPool.contains(uid) {
+                    return nil
+                } else {
+                    throw Error.NoSuchEntity(uid)
+                }
+            } else {
+                return entitiesByName[name.lowercased()]
+            }
+        }
+
+        func findReadEntity(name: String, uid: Int64?) throws -> Entity? {
+            if let uid = uid, uid != 0, uid != 1 {
                 if let foundEntity = entitiesReadByUid[uid] {
                     return foundEntity
                 } else if newUidPool.contains(uid) {
@@ -805,7 +896,7 @@ enum IdSync {
                 return entitiesReadByName[name.lowercased()]
             }
         }
-        
+
         func findProperty(entity: Entity, name: String, uid: Int64?) throws -> Property? {
             if let uid = uid, uid != 0, uid != 1 {
                 let filtered = entity.properties?.filter { $0.id.uid == uid } ?? []
@@ -861,7 +952,7 @@ enum IdSync {
             if let entityUid = entityUid, !printUid && !parsedUids.insert(entityUid).inserted {
                 throw Error.NonUniqueModelUID(uid: entityUid, entity: schemaEntity.className)
             }
-            let existingEntity = try findEntity(name: entityName, uid: printUid ? nil : entityUid)
+            let existingEntity = try findReadEntity(name: entityName, uid: printUid ? nil : entityUid)
             if let existingEntity = existingEntity, let properties = existingEntity.properties {
                 schemaEntity.indexes = properties.compactMap { prop in
                     if let indexId = prop.indexId {
@@ -1024,22 +1115,15 @@ enum IdSync {
         func syncRelations(schemaEntity: SchemaEntity, existingEntity: Entity?) throws -> [Relation] {
             var relations = Array<Relation>()
             
-            try schemaEntity.relations.forEach { schemaRelation in
-                let relation = try syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
-                if relation.id.id > lastRelationId.id {
-                    lastRelationId.id = relation.id.id
-                }
-                
-                relations.append(relation)
-            }
-            
             try schemaEntity.toManyRelations.forEach { schemaRelation in
-                let relation = try syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
-                if relation.id.id > lastRelationId.id {
-                    lastRelationId.id = relation.id.id
+                if schemaRelation.backlinkProperty == nil { // Only add the forward-relations to the relation list.
+                    let relation = try syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
+                    if relation.id.id > lastRelationId.id {
+                        lastRelationId.id = relation.id.id
+                    }
+                    
+                    relations.append(relation)
                 }
-                
-                relations.append(relation)
             }
             relations.sort { $0.id.id < $1.id.id }
 

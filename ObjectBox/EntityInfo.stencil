@@ -103,7 +103,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
     {{ visibility }} func setEntityId(of entity: EntityType, to entityId: ObjectBox.EntityId) {
         {% if entity.isValueType %}
-        fatalError("Use the struct variants of the put methods on entities of struct {{ entity.className }}.")
+        // Use the struct variants of the put methods on entities of struct {{ entity.className }}.
         {% else %}
         entity.__setId(identifier: entityId)
         {% endif %}
@@ -147,7 +147,8 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endif %}
     }
 
-  {% if entity.toManyRelations.count != 0 %}
+  {% if not entity.isValueType %}
+  {% if entity.toManyRelations.count != 0 or entity.relations.count != 0 %}
     {{ visibility }} func postPut(fromEntity entity: EntityType, id: EntityId, store: Store) {
         if entityId(of: entity) == 0 { // Written for first time? Attach ToMany relations:
         {% for tmRelation in entity.toManyRelations %}
@@ -167,8 +168,31 @@ extension ObjectBox.Property where E == {{ entity.className }} {
                 relationId: {{ tmRelation.modelId.id }})
             {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
             entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
+          {% else %}
+            let {{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
+                sourceBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
+                sourceProperty: {{ tmRelation.relationType }}.ReferencedType.{{ tmRelation.backlinkProperty }},
+                targetId: Id<{{ tmRelation.relationType }}.OwningType>(id))
+            {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
+            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
           {% endif %}
         {% endfor %}
+        {% for relation in entity.relations %}
+            entity.{{ relation.property.name }}.attach(to: store.box(for: {{ relation.relationTargetType }}.self))
+        {% endfor %}
+        }
+    }
+  {% endif %}
+  {% endif %}
+  {% if entity.relations.count != 0 %}
+    {{ visibility }} func setToOneRelation(_ propertyId: obx_schema_id, of entity: EntityType, to entityId: EntityId?) {
+        switch propertyId {
+      {% for relation in entity.relations %}
+            case {{ relation.property.modelId.id }}:
+                entity.{{ relation.property.name }}.targetId = (entityId != nil) ? Id<{{ relation.relationTargetType }}>(entityId!) : nil
+      {% endfor %}
+            default:
+                fatalError("Attempt to change nonexistent ToOne relation with ID \(propertyId)")
         }
     }
   {% endif %}
@@ -179,7 +203,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     {% for prop in entity.properties %}
     {% if prop.isObjectId %}
             {{ prop.propertyName }}: entityId{% elif prop.isRelation %}
-            {{ prop.propertyName }}: {{ prop.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}, store: store){{ prop.conversionSuffix }}{% elif prop.isToManyRelation and prop.toManyRelation.backlinkProperty == "" %}
+            {{ prop.propertyName }}: {{ prop.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}, store: store){{ prop.conversionSuffix }}{% elif prop.isToManyRelation and not prop.toManyRelation.backlinkProperty %}
             {{ prop.propertyName }}: {{ prop.toManyRelation.relationType }}.relation(
                             sourceBox: store.box(for: {{ prop.toManyRelation.relationType }}.OwningType.self),
                             sourceId: entityId,
@@ -237,13 +261,13 @@ extension ObjectBox.Box where E == {{ entity.className }} {
 
     /// Puts the {{ entity.className }} in the box (aka persisting it) returning a copy with the ID updated to the ID it
     /// has been assigned.
-    /// If you know the entity has already been persisted, you can use putImmutable() to avoid the cost of the copy.
+    /// If you know the entity has already been persisted, you can use put() to avoid the cost of the copy.
     ///
     /// - Parameter entity: Object to persist.
     /// - Returns: The stored object. If `entity`'s id is 0, an ID is generated.
     /// - Throws: ObjectBoxError errors for database write errors.
     func put(struct entity: {{ entity.className }}) throws -> {{ entity.className }} {
-        let entityId: Id<{{ entity.className }}> = try self.putImmutable(entity)
+        let entityId: Id<{{ entity.className }}> = try self.put(entity)
 
         return {{ entity.className }}(
         {% for prop in entity.properties %}
@@ -258,14 +282,14 @@ extension ObjectBox.Box where E == {{ entity.className }} {
 
     /// Puts the {{ entity.className }}s in the box (aka persisting it) returning copies with their IDs updated to the
     /// IDs they've been assigned.
-    /// If you know all entities have already been persisted, you can use putImmutable() to avoid the cost of the
+    /// If you know all entities have already been persisted, you can use put() to avoid the cost of the
     /// copies.
     ///
     /// - Parameter entities: Objects to persist.
     /// - Returns: The stored objects. If any entity's id is 0, an ID is generated.
     /// - Throws: ObjectBoxError errors for database write errors.
     func put(structs entities: [{{ entity.className }}]) throws -> [{{ entity.className }}] {
-        let entityIds: [Id<{{ entity.className }}>] = try self.putImmutable(entities)
+        let entityIds: [Id<{{ entity.className }}>] = try self.put(entities)
         var newEntities = Array<{{ entity.className }}>()
 
         for i in 0 ..< min(entities.count, entityIds.count) {
