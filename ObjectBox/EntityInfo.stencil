@@ -174,30 +174,22 @@ extension ObjectBox.Property where E == {{ entity.className }} {
                 sourceId: Id<{{ tmRelation.relationType }}.OwningType>(id),
                 targetBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
                 relationId: {{ tmRelation.modelId.id }})
-            if !entity.{{ tmRelation.relationName }}.isEmpty {
-                {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
-            }
-            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
           {% elif tmRelation.backlinkProperty and tmRelation.isToManyBacklink %}
             let {{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
                 sourceBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
                 targetId: Id<{{ tmRelation.relationType }}.OwningType>(id),
                 targetBox: store.box(for: {{ tmRelation.relationType }}.OwningType.self),
                 relationId: {{ tmRelation.modelId.id }})
-            if !entity.{{ tmRelation.relationName }}.isEmpty {
-                {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
-            }
-            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
           {% else %}
             let {{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
                 sourceBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
                 sourceProperty: {{ tmRelation.relationType }}.ReferencedType.{{ tmRelation.backlinkProperty }},
                 targetId: Id<{{ tmRelation.relationType }}.OwningType>(id))
+          {% endif %}
             if !entity.{{ tmRelation.relationName }}.isEmpty {
                 {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
             }
             entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
-          {% endif %}
         {% endfor %}
         {% for relation in entity.relations %}
             entity.{{ relation.property.name }}.attach(to: store.box(for: {{ relation.relationTargetType }}.self))
