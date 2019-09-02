@@ -158,6 +158,11 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endif %}
     }
 
+    {# If a newly created object has an empty array in its ToMany relation, take that as "unloaded" and don't assign an
+    empty array to the relation object when we associate it with a box after writing. Otherwise relations would always
+    cache the empty list, and you couldn't access a relation unless you reset() it first. There is no way to detect
+    whether requesting a lazy property would cause it to be loaded, but since an object that hasn't been written yet
+    can't have ever written its relations, an empty list is identical to "never loaded" for all intents and purposes. #}
   {% if not entity.isValueType %}
   {% if entity.toManyRelations.count != 0 or entity.relations.count != 0 %}
     {{ visibility }} func postPut(fromEntity entity: EntityType, id: EntityId, store: Store) {
