@@ -3,14 +3,36 @@
 cd "`dirname "$0"`"
 MY_DIR="`pwd`"
 
+if [ "$TERM" == "" ]; then
+    SMSO=""
+    RMSO=""
+    BEL=""
+    GREEN=""
+    RMGREEN=""
+    GRAY=""
+    RMGRAY=""
+    RED=""
+    RMRED=""
+else
+    SMSO="$(tput smso)"
+    RMSO="$(tput rmso)"
+    BEL="$(tput bel)"
+    GREEN="$(tput smso; tput setaf 2)"
+    RMGREEN="$(tput rmso; tput sgr0)"
+    GRAY="$(tput smso; tput setaf 7)"
+    RMGRAY="$(tput rmso; tput sgr0)"
+    RED="$(tput setaf 9; tput smso)"
+    RMRED="$(tput rmso; tput sgr0)"
+fi
+
 echo ""
-echo "$(tput smso) Build $(tput rmso)"
+echo "$SMSO Build $RMSO"
 echo ""
 
 xcodebuild -workspace "${MY_DIR}/Sourcery.xcworkspace" -scheme "Sourcery-Release" -configuration Release -quiet CONFIGURATION_BUILD_DIR="${MY_DIR}/bin/build"
 
 echo ""
-echo "$(tput smso) Clean up... $(tput rmso)"
+echo "$SMSO Clean up... $RMSO"
 echo ""
 
 rm -rf "${MY_DIR}/bin/Sourcery.app"
@@ -20,5 +42,5 @@ mv -f "${MY_DIR}/bin/build/"*.dSYM "${MY_DIR}/bin/"
 rm -rf "${MY_DIR}/bin/build"
 
 echo ""
-echo "$(tput smso; tput setaf 2) Done. $(tput sgr0; tput bel)"
+echo "$GREEN Done. $RMGREEN$BEL"
 echo ""
