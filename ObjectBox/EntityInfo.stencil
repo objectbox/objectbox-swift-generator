@@ -158,6 +158,11 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         {% endif %}
     }
 
+    {# If a newly created object has an empty array in its ToMany relation, take that as "unloaded" and don't assign an
+    empty array to the relation object when we associate it with a box after writing. Otherwise relations would always
+    cache the empty list, and you couldn't access a relation unless you reset() it first. There is no way to detect
+    whether requesting a lazy property would cause it to be loaded, but since an object that hasn't been written yet
+    can't have ever written its relations, an empty list is identical to "never loaded" for all intents and purposes. #}
   {% if not entity.isValueType %}
   {% if entity.toManyRelations.count != 0 or entity.relations.count != 0 %}
     {{ visibility }} func postPut(fromEntity entity: EntityType, id: EntityId, store: Store) {
@@ -169,24 +174,22 @@ extension ObjectBox.Property where E == {{ entity.className }} {
                 sourceId: Id<{{ tmRelation.relationType }}.OwningType>(id),
                 targetBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
                 relationId: {{ tmRelation.modelId.id }})
-            {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
-            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
           {% elif tmRelation.backlinkProperty and tmRelation.isToManyBacklink %}
             let {{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
                 sourceBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
                 targetId: Id<{{ tmRelation.relationType }}.OwningType>(id),
                 targetBox: store.box(for: {{ tmRelation.relationType }}.OwningType.self),
                 relationId: {{ tmRelation.modelId.id }})
-            {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
-            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
           {% else %}
             let {{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
                 sourceBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
                 sourceProperty: {{ tmRelation.relationType }}.ReferencedType.{{ tmRelation.backlinkProperty }},
                 targetId: Id<{{ tmRelation.relationType }}.OwningType>(id))
-            {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
-            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
           {% endif %}
+            if !entity.{{ tmRelation.relationName }}.isEmpty {
+                {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
+            }
+            entity.{{ tmRelation.relationName }} = {{ tmRelation.relationName }}
         {% endfor %}
         {% for relation in entity.relations %}
             entity.{{ relation.property.name }}.attach(to: store.box(for: {{ relation.relationTargetType }}.self))
