@@ -44,7 +44,7 @@ class PrettyJSON {
 """
         let modelEntities = model.entities ?? []
         if modelEntities.isEmpty {
-            output.append("]")
+            output.append("],")
         } else {
             var entitiesToGo = modelEntities.count
             for entity in modelEntities {
