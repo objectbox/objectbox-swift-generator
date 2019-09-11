@@ -53,11 +53,11 @@ extension {{ entity.className }} {
     ///
     ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertyType == "Bool" %}{{ entity.className }}.{{ prop.propertyName }} == true{% else %}{{ entity.className }}.{{ prop.propertyName }} > 1234{% endif %} }
     
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}, Void> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
     
     {% endfor %}
     {% for prop in entity.properties where prop.isRelation %}
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>> { return Property(propertyId: {{ prop.modelId.id }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>, {{ prop.propertyType }}.Target> { return Property(propertyId: {{ prop.modelId.id }}) }
 
     {% endfor %}
     {% for prop in entity.properties where prop.isToManyRelation %}
@@ -89,11 +89,11 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     ///
     ///     box.query { {% if prop.isObjectId %}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertyType == "Bool" %}.{{ prop.propertyName }} == true{% else %}.{{ prop.propertyName }} > 1234{% endif %} }
 
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}, Void> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
 
     {% endfor %}
     {% for prop in entity.properties where prop.isRelation %}
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>> { return Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>>(propertyId: {{ prop.modelId.id }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>, {{ prop.propertyType }}.Target> { return Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>>(propertyId: {{ prop.modelId.id }}) }
 
     {% endfor %}
     {% for prop in entity.properties where prop.isToManyRelation %}
