@@ -11,11 +11,7 @@ extension {{ entity.className }}: ObjectBox.__EntityRelatable {
     {{ visibility }} typealias EntityType = {{ entity.className }}
 
     {{ visibility }} var _id: Id<{{ entity.className }}> {
-        {% if entity.idProperty.propertyType == "UInt64" %}
-        return Id<{{ entity.className }}>(self.{{ entity.idProperty.propertyName }})
-        {% else %}
-        return self.{{ entity.idProperty.propertyName }}
-        {% endif %}
+        return Id<{{ entity.className }}>(self.{{ entity.idProperty.propertyName }}.value)
     }
 }
 
@@ -53,7 +49,7 @@ extension {{ entity.className }} {
     ///
     ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertyType == "Bool" %}{{ entity.className }}.{{ prop.propertyName }} == true{% else %}{{ entity.className }}.{{ prop.propertyName }} > 1234{% endif %} }
     
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}, Void> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}, {% if prop.isObjectId %}{{prop.propertyType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.propertyType}}, {% if prop.isObjectId %}{{prop.propertyType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
     
     {% endfor %}
     {% for prop in entity.properties where prop.isRelation %}
@@ -71,7 +67,7 @@ extension {{ entity.className }} {
 
     {% if entity.idProperty.propertyType == "UInt64" %}
     fileprivate func __setId(identifier: ObjectBox.EntityId) {
-        self.{{ entity.idProperty.propertyName }} = UInt64(identifier)
+        self.{{ entity.idProperty.propertyName }} = {{ entity.idProperty.propertyType }}(identifier)
     }
     {% else %}
     fileprivate func __setId(identifier: ObjectBox.EntityId) {
@@ -89,11 +85,11 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     ///
     ///     box.query { {% if prop.isObjectId %}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertyType == "Bool" %}.{{ prop.propertyName }} == true{% else %}.{{ prop.propertyName }} > 1234{% endif %} }
 
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}, Void> { return Property<{{entity.className}}, {{prop.propertyType}}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}, {% if prop.isObjectId %}{{prop.propertyType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.propertyType}}, {% if prop.isObjectId %}{{prop.propertyType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
 
     {% endfor %}
     {% for prop in entity.properties where prop.isRelation %}
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>, {{ prop.propertyType }}.Target> { return Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>>(propertyId: {{ prop.modelId.id }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{ prop.propertyType }}.Target.EntityBindingType.IdType, {{ prop.propertyType }}.Target> { return Property<{{entity.className}}, {{ prop.propertyType }}.Target.EntityBindingType.IdType, {{ prop.propertyType }}.Target>(propertyId: {{ prop.modelId.id }}) }
 
     {% endfor %}
     {% for prop in entity.properties where prop.isToManyRelation %}
@@ -109,6 +105,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 /// Generated service type to handle persisting and reading entity data. Exposed through `{{ entity.className }}.EntityBindingType`.
 {{ visibility }} class {{ entity.className }}Binding: NSObject, ObjectBox.EntityBinding {
     {{ visibility }} typealias EntityType = {{ entity.className }}
+    {{ visibility }} typealias IdType = {{ entity.idProperty.propertyType }}
 
     override {{ visibility }} required init() {}
 
@@ -121,11 +118,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     }
 
     {{ visibility }} func entityId(of entity: EntityType) -> ObjectBox.EntityId {
-        {% if entity.idProperty.propertyType == "UInt64" %}
-        return ObjectBox.EntityId(entity.{{ entity.idProperty.propertyName }})
-        {% else %}
         return entity.{{ entity.idProperty.propertyName }}.value
-        {% endif %}
     }
 
     {{ visibility }} func collect(fromEntity entity: EntityType, id: EntityId, propertyCollector: PropertyCollector, store: Store) {
@@ -171,20 +164,20 @@ extension ObjectBox.Property where E == {{ entity.className }} {
           {% if not tmRelation.backlinkProperty %}
             let {{ tmRelation.relationName }} = {{ tmRelation.relationType }}.relation(
                 sourceBox: store.box(for: {{ tmRelation.relationType }}.OwningType.self),
-                sourceId: Id<{{ tmRelation.relationType }}.OwningType>(id),
+                sourceId: {{ tmRelation.relationType }}.OwningType.EntityBindingType.IdType(id),
                 targetBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
                 relationId: {{ tmRelation.modelId.id }})
           {% elif tmRelation.backlinkProperty and tmRelation.isToManyBacklink %}
             let {{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
                 sourceBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
-                targetId: Id<{{ tmRelation.relationType }}.OwningType>(id),
+                targetId: {{ tmRelation.relationType }}.OwningType.EntityBindingType.IdType(id),
                 targetBox: store.box(for: {{ tmRelation.relationType }}.OwningType.self),
                 relationId: {{ tmRelation.modelId.id }})
           {% else %}
             let {{ tmRelation.relationName }} = {{ tmRelation.relationType }}.backlink(
                 sourceBox: store.box(for: {{ tmRelation.relationType }}.ReferencedType.self),
                 sourceProperty: {{ tmRelation.relationType }}.ReferencedType.{{ tmRelation.backlinkProperty }},
-                targetId: Id<{{ tmRelation.relationType }}.OwningType>(id))
+                targetId: {{ tmRelation.relationType }}.OwningType.EntityBindingType.IdType(id))
           {% endif %}
             if !entity.{{ tmRelation.relationName }}.isEmpty {
                 {{ tmRelation.relationName }}.replace(entity.{{ tmRelation.relationName }})
