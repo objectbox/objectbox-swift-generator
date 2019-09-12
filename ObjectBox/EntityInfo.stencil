@@ -10,8 +10,8 @@ extension {{ entity.className }}: ObjectBox.Entity {}{% endfor %}
 extension {{ entity.className }}: ObjectBox.__EntityRelatable {
     {{ visibility }} typealias EntityType = {{ entity.className }}
 
-    {{ visibility }} var _id: Id<{{ entity.className }}> {
-        return Id<{{ entity.className }}>(self.{{ entity.idProperty.propertyName }}.value)
+    {{ visibility }} var _id: Entity_Id<{{ entity.className }}> {
+        return Entity_Id<{{ entity.className }}>(self.{{ entity.idProperty.propertyName }}.value)
     }
 }
 
@@ -53,7 +53,7 @@ extension {{ entity.className }} {
     
     {% endfor %}
     {% for prop in entity.properties where prop.isRelation %}
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, Id<{{ prop.propertyType }}.Target>, {{ prop.propertyType }}.Target> { return Property(propertyId: {{ prop.modelId.id }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, Entity_Id<{{ prop.propertyType }}.Target>, {{ prop.propertyType }}.Target> { return Property(propertyId: {{ prop.modelId.id }}) }
 
     {% endfor %}
     {% for prop in entity.properties where prop.isToManyRelation %}
@@ -65,13 +65,13 @@ extension {{ entity.className }} {
     {% endfor %}
     {% if not entity.isValueType %}
 
-    {% if entity.idProperty.propertyType == "UInt64" %}
+    {% if entity.idProperty.propertyType == "UInt64" or entity.idProperty.propertyType == "EntityId" %}
     fileprivate func __setId(identifier: ObjectBox.EntityId) {
         self.{{ entity.idProperty.propertyName }} = {{ entity.idProperty.propertyType }}(identifier)
     }
     {% else %}
     fileprivate func __setId(identifier: ObjectBox.EntityId) {
-        self.{{ entity.idProperty.propertyName }} = Id(identifier)
+        self.{{ entity.idProperty.propertyName }} = Entity_Id(identifier)
     }
     {% endif %}
     {% endif %}
@@ -196,7 +196,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         switch propertyId {
       {% for relation in entity.relations %}
             case {{ relation.property.modelId.id }}:
-                entity.{{ relation.property.name }}.targetId = (entityId != nil) ? Id<{{ relation.relationTargetType }}>(entityId!) : nil
+                entity.{{ relation.property.name }}.targetId = (entityId != nil) ? Entity_Id<{{ relation.relationTargetType }}>(entityId!) : nil
       {% endfor %}
             default:
                 fatalError("Attempt to change nonexistent ToOne relation with ID \(propertyId)")
@@ -274,7 +274,7 @@ extension ObjectBox.Box where E == {{ entity.className }} {
     /// - Returns: The stored object. If `entity`'s id is 0, an ID is generated.
     /// - Throws: ObjectBoxError errors for database write errors.
     func put(struct entity: {{ entity.className }}) throws -> {{ entity.className }} {
-        let entityId: Id<{{ entity.className }}> = try self.put(entity)
+        let entityId: Entity_Id<{{ entity.className }}> = try self.put(entity)
 
         return {{ entity.className }}(
         {% for prop in entity.properties %}
@@ -296,7 +296,7 @@ extension ObjectBox.Box where E == {{ entity.className }} {
     /// - Returns: The stored objects. If any entity's id is 0, an ID is generated.
     /// - Throws: ObjectBoxError errors for database write errors.
     func put(structs entities: [{{ entity.className }}]) throws -> [{{ entity.className }}] {
-        let entityIds: [Id<{{ entity.className }}>] = try self.put(entities)
+        let entityIds: [Entity_Id<{{ entity.className }}>] = try self.put(entities)
         var newEntities = Array<{{ entity.className }}>()
 
         for i in 0 ..< min(entities.count, entityIds.count) {
