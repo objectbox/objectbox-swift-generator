@@ -722,7 +722,6 @@ enum IdSync {
         func writeModel(_ entities: [Entity]) throws {
             let model = IdSyncModel(lastEntityId: lastEntityId, lastIndexId: lastIndexId, lastRelationId: lastRelationId, lastSequenceId: lastSequenceId, entities: entities, retiredEntityUids: retiredEntityUids, retiredPropertyUids: retiredPropertyUids, retiredIndexUids: retiredIndexUids, retiredRelationUids: retiredRelationUids)
             try writeModel(model)
-            try validateIds(model)
         }
         
         func writeModel(_ model: IdSyncModel) throws {
@@ -751,7 +750,10 @@ enum IdSync {
             try jsonData.write(to: jsonFile)
         }
         
+        /// Must call this before the actual jsonData.write() to ensure we don't
+        /// write invalid data to a previously valid file and make things worse.
         func validateBeforeWrite(_ model: IdSyncModel) throws {
+            try validateIds(model)
             var entityNames = Set<String>()
             try model.entities?.forEach { currEntity in
                 if !entityNames.insert(currEntity.name.lowercased()).inserted {
