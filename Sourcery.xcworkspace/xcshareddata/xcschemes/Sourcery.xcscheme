@@ -138,11 +138,11 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--xcode-project ${PROJECT_DIR}/../../ios-framework/CodeGenTests/ToolTestProject.xcodeproj --xcode-target ToolTestProject32 --disableCache --debug-parsetree ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/parsetree.txt"
+            argument = "--xcode-project ${PROJECT_DIR}/../../ios-framework/CodeGenTests/ToolTestProject.xcodeproj --xcode-target ToolTestProject32 --disableCache --debug-parsetree ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/parsetree.txt --model-json ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/model.json"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--disableCache --sources ${PROJECT_DIR}/../../ios-framework/CodeGenTests/ToolTestProject40.swift --debug-parsetree ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/debug-parsetree.txt --output ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/EntityInfo.generated.swift"
+            argument = "--disableCache --sources ${PROJECT_DIR}/../../ios-framework/CodeGenTests/ToolTestProject40.swift --debug-parsetree ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/debug-parsetree.txt --output ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/EntityInfo.generated.swift --model-json ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/model.json"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
