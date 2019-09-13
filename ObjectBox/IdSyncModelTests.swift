@@ -81,7 +81,7 @@ class IdSyncTests: XCTestCase {
         entity.className = "FirstEntity"
         let prop = IdSync.SchemaProperty()
         prop.propertyName = "identifikationsNummer"
-        prop.propertyType = "Entity_Id<FirstEntity>"
+        prop.propertyType = "EntityId<FirstEntity>"
         prop.entityName = "FirstEntity"
         entity.properties.append(prop)
         schemaData.entities.append(entity)
@@ -129,7 +129,7 @@ class IdSyncTests: XCTestCase {
         entity.className = "FirstEntity"
         let prop = IdSync.SchemaProperty()
         prop.propertyName = "id"
-        prop.propertyType = "Entity_Id<FirstEntity>"
+        prop.propertyType = "EntityId<FirstEntity>"
         prop.entityName = "FirstEntity"
         entity.properties.append(prop)
         let prop2 = IdSync.SchemaProperty()
@@ -143,7 +143,7 @@ class IdSyncTests: XCTestCase {
         entity2.className = "SecondEntity"
         let prop3 = IdSync.SchemaProperty()
         prop3.propertyName = "id"
-        prop3.propertyType = "Entity_Id<SecondEntity>"
+        prop3.propertyType = "EntityId<SecondEntity>"
         prop3.entityName = "SecondEntity"
         entity2.properties.append(prop3)
         let prop4 = IdSync.SchemaProperty()

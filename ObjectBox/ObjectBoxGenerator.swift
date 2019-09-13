@@ -43,7 +43,7 @@ enum ObjectBoxGenerator {
         "UInt32": .int,
         "Int64": .long,
         "UInt64": .long,
-        "EntityId": .long,
+        "Id": .long,
         "Int": .long,
         "UInt": .long,
         "Float": .float,
@@ -140,9 +140,9 @@ enum ObjectBoxGenerator {
             case .DuplicateIdAnnotation(let entity, let found, let existing):
                 Log.error("Entity \(entity) has both \(found) and \(existing) annotated as 'objectId'. There can only be one.")
             case .MissingIdOnEntity(let entity):
-                Log.error("Entity \(entity) needs an ID property of type Entity_Id<\(entity)>.")
+                Log.error("Entity \(entity) needs an ID property of type EntityId<\(entity)>.")
             case .AmbiguousIdOnEntity(let entity, let properties):
-                Log.error("Entity \(entity) has several properties of type Entity_Id<\(entity)>, but no entity ID. Please designate one as this entity's ID using an '// objectbox: objectId' annotation. Candidates are: \(properties.joined(separator: ", "))")
+                Log.error("Entity \(entity) has several properties of type EntityId<\(entity)>, but no entity ID. Please designate one as this entity's ID using an '// objectbox: objectId' annotation. Candidates are: \(properties.joined(separator: ", "))")
             case .MissingBacklinkOnToManyRelation(let entity, let relation):
                 Log.error("Missing backlink on to-many relation \(relation) of entity \(entity)")
             case .convertAnnotationMissingType(let name, let entity):
@@ -162,7 +162,7 @@ enum ObjectBoxGenerator {
         
         while let currPropTypeReadOnly = currPropType, !isBuiltIn {
             isBuiltIn = (builtInTypes + builtInUnsignedTypes).firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
-            if !isBuiltIn && currPropTypeReadOnly.unwrappedTypeName.hasPrefix("Entity_Id<") {
+            if !isBuiltIn && currPropTypeReadOnly.unwrappedTypeName.hasPrefix("EntityId<") {
                 isBuiltIn = true
             }
             currPropType = currPropTypeReadOnly.actualTypeName
@@ -214,7 +214,9 @@ enum ObjectBoxGenerator {
         while let currPropTypeReadOnly = currPropType {
             if let entityType = typeMappings[currPropTypeReadOnly.unwrappedTypeName] {
                 return entityType
-            } else if currPropTypeReadOnly.name.hasPrefix("Entity_Id<") {
+            } else if currPropTypeReadOnly.name.hasPrefix("EntityId<") {
+                return .long
+            } else if currPropTypeReadOnly.name.hasPrefix("Id") {
                 return .long
             } else if currPropTypeReadOnly.name.hasPrefix("ToOne<") {
                 return .relation
@@ -352,10 +354,10 @@ enum ObjectBoxGenerator {
                 }
             }
         } else {
-            let isId = fullTypeName == "EntityId"
-                || (fullTypeName.hasPrefix("Entity_Id<") && fullTypeName.hasSuffix(">"))
-            if isId {
-                let templateTypesString = fullTypeName.drop(first: "Entity_Id<".count, last: 1)
+            if fullTypeName == "Id" {
+                schemaEntity.idCandidates.append(schemaProperty)
+            } else if fullTypeName.hasPrefix("EntityId<") && fullTypeName.hasSuffix(">") {
+                let templateTypesString = fullTypeName.drop(first: "EntityId<".count, last: 1)
                 let templateTypes = templateTypesString.split(separator: ",")
                 let idType = templateTypes[0]
                 if idType == currType.localName {
