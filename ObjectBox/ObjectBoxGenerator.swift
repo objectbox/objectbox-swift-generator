@@ -140,7 +140,8 @@ enum ObjectBoxGenerator {
             case .DuplicateIdAnnotation(let entity, let found, let existing):
                 Log.error("Entity \(entity) has both \(found) and \(existing) annotated as 'objectId'. There can only be one.")
             case .MissingIdOnEntity(let entity):
-                Log.error("Entity \(entity) needs an ID property of type EntityId<\(entity)>.")
+                Log.error("Entity \(entity) needs an ID property of type Id or EntityId<\(entity)>, "
+                    + "or an annotated ID property of type Int64 or UInt64.")
             case .AmbiguousIdOnEntity(let entity, let properties):
                 Log.error("Entity \(entity) has several properties of type EntityId<\(entity)>, but no entity ID. Please designate one as this entity's ID using an '// objectbox: objectId' annotation. Candidates are: \(properties.joined(separator: ", "))")
             case .MissingBacklinkOnToManyRelation(let entity, let relation):
@@ -344,7 +345,8 @@ enum ObjectBoxGenerator {
 
         if let objectIdAnnotationValue = currIVar.annotations["objectId"] {
             if let existingIdProperty = schemaEntity.idProperty {
-                throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: currIVar.name, existing: existingIdProperty.propertyName)
+                throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: currIVar.name,
+                                                  existing: existingIdProperty.propertyName)
             }
             schemaProperty.isObjectId = true
             schemaEntity.idProperty = schemaProperty
