@@ -436,7 +436,7 @@ enum ObjectBoxGenerator {
         var schemaProperties = Array<IdSync.SchemaProperty>()
         try currType.variables.forEach { currIVar in
             warnIfAnnotations(otherThan: ObjectBoxGenerator.validPropertyAnnotationNames,
-                              in: Set(currType.annotations.keys), of: currType.name)
+                              in: Set(currIVar.annotations.keys), of: currIVar.name)
             guard !currIVar.annotations.contains(reference: "transient") else { return } // Exits only this iteration of the foreach block
             guard !currIVar.isStatic else { return } // Exits only this iteration of the foreach block
             guard !currIVar.isComputed else { return } // Exits only this iteration of the foreach block
