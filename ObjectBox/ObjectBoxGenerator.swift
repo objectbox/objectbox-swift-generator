@@ -394,7 +394,7 @@ enum ObjectBoxGenerator {
         if schemaProperty.isObjectId {
             schemaProperty.entityFlags.insert(.id)
         }
-        if schemaProperty.isUnsignedType {
+        if !schemaProperty.isObjectId && schemaProperty.isUnsignedType {
             schemaProperty.entityFlags.insert(.unsigned)
         }
         if schemaProperty.isUniqueIndex {
