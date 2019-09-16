@@ -61,16 +61,16 @@ enum ObjectBoxGenerator {
     private static var validPropertyAnnotationNames = Set([
         "uid",
         "backlink",
-        "nameInDb",
+        "name",
         "convert",
         "index",
         "unique",
-        "objectId",
+        "id",
         "transient"
     ])
     private static var validTypeAnnotationNames = Set([
         "uid",
-        "nameInDb",
+        "name",
         "entity",
         "Entity"
     ])
@@ -296,7 +296,7 @@ enum ObjectBoxGenerator {
             schemaEntity.hasByteVectorProperties = true
         }
         schemaProperty.unwrappedPropertyType = currIVar.unwrappedTypeName
-        schemaProperty.dbName = currIVar.annotations["nameInDb"] as? String
+        schemaProperty.dbName = currIVar.annotations["name"] as? String
         if let dbNameIsEmpty = schemaProperty.dbName?.isEmpty, dbNameIsEmpty { schemaProperty.dbName = nil }
         schemaProperty.name = schemaProperty.dbName ?? schemaProperty.propertyName
         if let propertyUidObject = currIVar.annotations["uid"], let propertyUid = (propertyUidObject as? NSNumber)?.int64Value {
@@ -359,7 +359,7 @@ enum ObjectBoxGenerator {
             }
         }
 
-        if let objectIdAnnotationValue = currIVar.annotations["objectId"] {
+        if let objectIdAnnotationValue = currIVar.annotations["id"] {
             if let existingIdProperty = schemaEntity.idProperty {
                 throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: currIVar.name, existing: existingIdProperty.propertyName)
             }
@@ -428,7 +428,7 @@ enum ObjectBoxGenerator {
         schemaEntity.className = currType.localName
         schemaEntity.isValueType = currType.kind == "struct"
         schemaEntity.modelUid = currType.annotations["uid"] as? Int64
-        schemaEntity.dbName = currType.annotations["nameInDb"] as? String
+        schemaEntity.dbName = currType.annotations["name"] as? String
         if let dbNameIsEmpty = schemaEntity.dbName?.isEmpty, dbNameIsEmpty { schemaEntity.dbName = nil }
         schemaEntity.name = schemaEntity.dbName ?? schemaEntity.className
         schemaEntity.isEntitySubclass = isEntityBased
