@@ -1,5 +1,5 @@
 //
-//  ObjectBoxFilters.swift
+//  ObjectBoxGenerator.swift
 //  Sourcery
 //
 //  Created by Uli Kusterer on 29.11.18.
@@ -58,7 +58,24 @@ enum ObjectBoxGenerator {
         "Array<UInt8>": .byteVector,
         "[UInt8]": .byteVector,
     ]
-    private static var entities = Array<IdSync.SchemaEntity>()
+    private static var validPropertyAnnotationNames = Set([
+        "uid",
+        "backlink",
+        "nameInDb",
+        "convert",
+        "index",
+        "unique",
+        "objectId",
+        "transient"
+    ])
+    private static var validTypeAnnotationNames = Set([
+        "uid",
+        "nameInDb",
+        "entity",
+        "Entity"
+    ])
+
+    private static var entities = [IdSync.SchemaEntity]()
     private static var lastEntityId = IdSync.IdUid()
     private static var lastIndexId = IdSync.IdUid()
     private static var lastRelationId = IdSync.IdUid()
@@ -418,6 +435,8 @@ enum ObjectBoxGenerator {
         
         var schemaProperties = Array<IdSync.SchemaProperty>()
         try currType.variables.forEach { currIVar in
+            warnIfAnnotations(otherThan: ObjectBoxGenerator.validPropertyAnnotationNames,
+                              in: Set(currType.annotations.keys), of: currType.name)
             guard !currIVar.annotations.contains(reference: "transient") else { return } // Exits only this iteration of the foreach block
             guard !currIVar.isStatic else { return } // Exits only this iteration of the foreach block
             guard !currIVar.isComputed else { return } // Exits only this iteration of the foreach block
@@ -468,14 +487,28 @@ enum ObjectBoxGenerator {
         schemaData.entitiesByName[schemaEntity.className] = schemaEntity
     }
     
+    static func warnIfAnnotations(otherThan validAnnotations: Set<String>,
+                                  in annotations: Set<String>, of name: String) {
+        let unknownAnnotations = annotations.filter {
+            !validAnnotations.contains($0)
+        }
+        if unknownAnnotations.count > 0 {
+            print("warning: \(name) has unknown annotations \(unknownAnnotations.joined(separator: ",")).")
+        }
+    }
+    
     /* Process the parsed syntax tree, possibly annotating or otherwise
         extending it. */
     static func process(parsingResult result: inout Sourcery.ParsingResult) throws {
         let schemaData = IdSync.Schema()
         
         try result.types.all.forEach { currType in
+            warnIfAnnotations(otherThan: ObjectBoxGenerator.validTypeAnnotationNames,
+                              in: Set(currType.annotations.keys), of: currType.name)
             let isEntityBased = currType.inheritedTypes.contains("Entity")
-            if isEntityBased || currType.annotations["Entity"] != nil {
+            // The annotation should be lowercase "entity", but given the protocol is uppercase, we allow that too,
+            // as a convenience for users who use both and get their case mixed up:
+            if isEntityBased || currType.annotations["entity"] != nil || currType.annotations["Entity"] != nil {
                 try processOneEntityType(currType, entityBased: isEntityBased, into: schemaData)
             }
         }
