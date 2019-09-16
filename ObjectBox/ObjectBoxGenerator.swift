@@ -155,18 +155,24 @@ enum ObjectBoxGenerator {
         } else if let filterError = error as? ObjectBoxGenerator.Error {
             switch( filterError ) {
             case .DuplicateIdAnnotation(let entity, let found, let existing):
-                Log.error("Entity \(entity) has both \(found) and \(existing) annotated as 'objectId'. There can only be one.")
+                Log.error("Entity \(entity) has both \(found) and \(existing) annotated as '// objectbox: id'. "
+                    + "There can only be one.")
             case .MissingIdOnEntity(let entity):
                 Log.error("Entity \(entity) needs an ID property of type Id or EntityId<\(entity)>, "
                     + "or an annotated ID property of type Int64 or UInt64.")
             case .AmbiguousIdOnEntity(let entity, let properties):
-                Log.error("Entity \(entity) has several properties of type EntityId<\(entity)>, but no entity ID. Please designate one as this entity's ID using an '// objectbox: objectId' annotation. Candidates are: \(properties.joined(separator: ", "))")
+                Log.error("Entity \(entity) has several properties of type EntityId<\(entity)>, but no entity ID. "
+                    + "Please designate one as this entity's ID using an '// objectbox: id' annotation. "
+                    + "Candidates are: \(properties.joined(separator: ", "))")
             case .MissingBacklinkOnToManyRelation(let entity, let relation):
                 Log.error("Missing backlink on to-many relation \(relation) of entity \(entity)")
             case .convertAnnotationMissingType(let name, let entity):
-                Log.error("Must specify a dbType in '// objectbox: convert = { \"dbType\": \"TYPE HERE\" }' annotation of property \(name) of entity \(entity)")
+                Log.error("Must specify a dbType in '// objectbox: convert = { \"dbType\": \"TYPE HERE\" }' annotation"
+                    + " of property \(name) of entity \(entity)")
             case .convertAnnotationMissingConverterOrDefault(let name, let entity):
-                Log.error("Must specify a converter or default in '// objectbox: convert = { \"dbType\": \"TYPE HERE\", \"default\": \"DEFAULT HERE\" }' annotation of property \(name) of entity \(entity)")
+                Log.error("Must specify a converter or default in '// objectbox: convert = { "
+                    + "\"dbType\": \"TYPE HERE\", \"default\": \"DEFAULT HERE\" }' annotation of "
+                    + "property \(name) of entity \(entity)")
             }
         } else {
             Log.error("\(error)")
