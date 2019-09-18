@@ -782,20 +782,6 @@ enum IdSync {
             }
         }
         
-        func assignBacklinksToToManyRelations(schema: Schema) {
-            schema.entities.forEach { currSchemaEntity in
-                currSchemaEntity.toManyRelations.forEach { currRelation in
-                    if currRelation.backlinkProperty == nil, let relatedEntity = schema.entitiesByName[currRelation.relationTargetType] {
-                        let backlinkCandidates = relatedEntity.properties.filter { $0.isRelation && $0.propertyType == "ToOne<\(currSchemaEntity.className)>" }
-                        
-                        if backlinkCandidates.count == 1 {
-                            currRelation.backlinkProperty = backlinkCandidates[0].propertyName
-                        }
-                    }
-                }
-            }
-        }
-        
         func assignRelationTargetIds(schema: Schema) {
             schema.entities.forEach { currSchemaEntity in
                 currSchemaEntity.toManyRelations.forEach { currRelation in
@@ -846,7 +832,6 @@ enum IdSync {
             try updateRelatedTargetsOfProperties(entities: entities, schema: schema)
 
             ensureRelationsHaveIds(schema: schema)
-            assignBacklinksToToManyRelations(schema: schema)
             assignRelationTargetIds(schema: schema)
             
             updateRetiredUids(entities)
