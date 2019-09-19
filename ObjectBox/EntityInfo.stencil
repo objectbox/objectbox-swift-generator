@@ -60,7 +60,7 @@ extension {{ entity.className }} {
     /// Use `{{entity.className}}.{{ prop.propertyName }}` to refer to this ToMany relation property in queries,
     /// like when using `QueryBuilder.and(property:, conditions:)`.
 
-    {{ visibility }} static var {{ prop.propertyName }}: ToManyProperty<{{entity.className}}, {{ prop.toManyRelation.relationTargetType }}> { return ToManyProperty({% if prop.toManyRelation.backlinkPropertyId %}.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }}){% else %}{% if prop.toManyRelation.backlinkProperty %}.backlinkRelationId{% else %}.relationId{% endif %}({{ prop.toManyRelation.modelId.id }}){% endif %}) }
+    {{ visibility }} static var {{ prop.propertyName }}: ToManyProperty<{{ prop.toManyRelation.relationTargetType }}> { return ToManyProperty({% if prop.toManyRelation.backlinkPropertyId %}.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }}){% else %}{% if prop.toManyRelation.backlinkProperty %}.backlinkRelationId{% else %}.relationId{% endif %}({{ prop.toManyRelation.modelId.id }}){% endif %}) }
 
     {% endfor %}
     {% if not entity.isValueType %}
@@ -96,7 +96,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     /// Use `.{{ prop.propertyName }}` to refer to this ToMany relation property in queries, like when using
     /// `QueryBuilder.and(property:, conditions:)`.
 
-    {{ visibility }} static var {{ prop.propertyName }}: ToManyProperty<{{entity.className}}, {{ prop.toManyRelation.relationTargetType }}> { return ToManyProperty({% if prop.toManyRelation.backlinkPropertyId %}.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }}){% else %}{% if prop.toManyRelation.backlinkProperty %}.backlinkRelationId{% else %}.relationId{% endif %}({{ prop.toManyRelation.modelId.id }}){% endif %}) }
+    {{ visibility }} static var {{ prop.propertyName }}: ToManyProperty<{{ prop.toManyRelation.relationTargetType }}> { return ToManyProperty({% if prop.toManyRelation.backlinkPropertyId %}.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }}){% else %}{% if prop.toManyRelation.backlinkProperty %}.backlinkRelationId{% else %}.relationId{% endif %}({{ prop.toManyRelation.modelId.id }}){% endif %}) }
 
     {% endfor %}
 }
