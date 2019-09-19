@@ -269,7 +269,7 @@ enum ObjectBoxGenerator {
                 let templateTypesString = fullTypeName.drop(first: "ToMany<".count, last: 1)
                 let templateTypes = templateTypesString.split(separator: ",")
                 let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-                let myType = templateTypes[1].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+                let myType = currType.name
                 
                 let relation = IdSync.SchemaToManyRelation(name: currIVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
                 if let propertyUid = currIVar.annotations["uid"] as? Int64 {
