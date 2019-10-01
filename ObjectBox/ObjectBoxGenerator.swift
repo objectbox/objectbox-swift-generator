@@ -286,6 +286,7 @@ enum ObjectBoxGenerator {
         let schemaProperty = IdSync.SchemaProperty()
         schemaProperty.entityName = currType.localName
         schemaProperty.propertyName = currIVar.name
+        schemaProperty.isMutable = currIVar.isMutable
         schemaProperty.propertyType = fullTypeName
         schemaProperty.entityType = entityType(for: currIVar.typeName)
         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
