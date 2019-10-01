@@ -1,5 +1,13 @@
 import Foundation
 
+internal class XCSwiftPackageProductDependency: PBXObject {
+    
+}
+
+internal class XCRemoteSwiftPackageReference: PBXObject {
+    
+}
+
 /// Class that represents a project element.
 public class PBXObject: Decodable, Equatable {
 
@@ -83,6 +91,10 @@ public class PBXObject: Decodable, Equatable {
             return try decoder.decode(PBXRezBuildPhase.self, from: data)
         case PBXBuildRule.isa:
             return try decoder.decode(PBXBuildRule.self, from: data)
+        case XCSwiftPackageProductDependency.isa:
+            return XCSwiftPackageProductDependency()
+        case XCRemoteSwiftPackageReference.isa:
+            return XCRemoteSwiftPackageReference()
         default:
             throw PBXObjectError.unknownElement(isa)
         }
