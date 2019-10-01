@@ -286,7 +286,6 @@ enum ObjectBoxGenerator {
         let schemaProperty = IdSync.SchemaProperty()
         schemaProperty.entityName = currType.localName
         schemaProperty.propertyName = currIVar.name
-        schemaProperty.isMutable = currIVar.isMutable
         schemaProperty.propertyType = fullTypeName
         schemaProperty.entityType = entityType(for: currIVar.typeName)
         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
@@ -544,10 +543,5 @@ enum ObjectBoxGenerator {
         objectsDictionary["lastEntityId"] = ObjectBoxGenerator.lastEntityId
         objectsDictionary["lastIndexId"] = ObjectBoxGenerator.lastIndexId
         objectsDictionary["lastRelationId"] = ObjectBoxGenerator.lastRelationId
-    }
-    
-    /* Add any filters we define (think function call that receives input data): */
-    static func addExtensions(_ ext: Stencil.Extension) {
-        
     }
 }

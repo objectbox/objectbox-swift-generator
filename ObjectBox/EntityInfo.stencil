@@ -63,14 +63,14 @@ extension {{ entity.className }} {
     {{ visibility }} static var {{ prop.propertyName }}: ToManyProperty<{{ prop.toManyRelation.relationTargetType }}> { return ToManyProperty({% if prop.toManyRelation.backlinkPropertyId %}.valuePropertyId({{ prop.toManyRelation.backlinkPropertyId.id }}){% else %}{% if prop.toManyRelation.backlinkProperty %}.backlinkRelationId{% else %}.relationId{% endif %}({{ prop.toManyRelation.modelId.id }}){% endif %}) }
 
     {% endfor %}
-    {% if entity.idProperty.isMutable %}
+    {% if not entity.isValueType %}
 
     {% if entity.idProperty.propertyType == "UInt64" or entity.idProperty.propertyType == "Id" %}
-    fileprivate{% if entity.isValueType %} mutating{% endif %} func __setId(identifier: ObjectBox.Id) {
+    fileprivate func __setId(identifier: ObjectBox.Id) {
         self.{{ entity.idProperty.propertyName }} = {{ entity.idProperty.propertyType }}(identifier)
     }
     {% else %}
-    fileprivate{% if entity.isValueType %} mutating{% endif %} func __setId(identifier: ObjectBox.Id) {
+    fileprivate func __setId(identifier: ObjectBox.Id) {
         self.{{ entity.idProperty.propertyName }} = EntityId(identifier)
     }
     {% endif %}
@@ -109,15 +109,13 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
     override {{ visibility }} required init() {}
 
-    {% if entity.isValueType and entity.idProperty.isMutable %}
-    {{ visibility }} func setStructEntityId(of entity: inout EntityType, to entityId: ObjectBox.Id) {
-        entity.__setId(identifier: entityId)
-    }
-    {% elif not entity.isValueType %}
     {{ visibility }} func setEntityIdUnlessStruct(of entity: EntityType, to entityId: ObjectBox.Id) {
+        {% if entity.isValueType %}
+        // Use the struct variants of the put methods on entities of struct {{ entity.className }}.
+        {% else %}
         entity.__setId(identifier: entityId)
+        {% endif %}
     }
-    {% endif %}
 
     {{ visibility }} func entityId(of entity: EntityType) -> ObjectBox.Id {
         return entity.{{ entity.idProperty.propertyName }}.value

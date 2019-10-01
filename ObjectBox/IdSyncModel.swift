@@ -219,13 +219,10 @@ enum IdSync {
     
     // Our file format that gets serialized to JSON and back:
     class IdSyncModel: Codable {
-        /// Version we write out.
-        static let modelVersion: Int64 = 5
-        /// v4 should be able to read the v5 files we produce, we just added fields.
-        static let modelVersionParserMinimum: Int64 = 4
-        /// Minimum we can read (what Swift binding used during beta).
-        static let modelVersionMin: Int64 = 4
-
+        
+        static let modelVersion: Int64 = 5 // !! When upgrading always check modelVersionParserMinimum !!
+        static let modelVersionParserMinimum: Int64 = 5
+        
         /** "Comments" in the JSON file */
         var _note1: String? = "KEEP THIS FILE! Check it into a version control system (VCS) like git."
         var _note2: String? = "ObjectBox manages crucial IDs for your object model. See docs for details."
@@ -233,7 +230,7 @@ enum IdSync {
         
         var version: Int64 = 1
         var modelVersion: Int64 = IdSyncModel.modelVersion
-        /** Declare JSONs we produce are backward compatible with which older parsers. */
+        /** Specify backward compatibility with older parsers.*/
         var modelVersionParserMinimum: Int64 = IdSyncModel.modelVersionParserMinimum
         var lastEntityId: IdUid?
         var lastIndexId: IdUid?
@@ -476,7 +473,6 @@ enum IdSync {
         var entityType = EntityPropertyType.unknown
         var entityFlags: EntityPropertyFlag = []
         var name: String = ""
-        var isMutable = true
         var flagsList: String = ""
         var converterName: String = ""
         var conversionPrefix: String = "" // If converting, "converterName.convert(", but if you don't give a converter it's "converterName(rawValue: "
@@ -605,12 +601,10 @@ enum IdSync {
             
             modelRead = model ?? IdSyncModel()
             
-            if modelRead.modelVersion < IdSyncModel.modelVersionMin {
+            if modelRead.modelVersion < IdSyncModel.modelVersionParserMinimum {
                 throw Error.IncompatibleVersion(found: modelRead.modelVersion, expected: IdSyncModel.modelVersionParserMinimum)
-            } else if modelRead.modelVersion > modelRead.modelVersion {
-                if modelRead.modelVersionParserMinimum > IdSyncModel.modelVersion {
-                    throw Error.IncompatibleVersion(found: modelRead.modelVersion, expected: IdSyncModel.modelVersionParserMinimum)
-                }
+            } else if modelRead.modelVersion < IdSyncModel.modelVersion {
+                throw Error.IncompatibleVersion(found: modelRead.modelVersion, expected: IdSyncModel.modelVersionParserMinimum)
             }
             
             lastEntityId = modelRead.lastEntityId ?? IdUid()

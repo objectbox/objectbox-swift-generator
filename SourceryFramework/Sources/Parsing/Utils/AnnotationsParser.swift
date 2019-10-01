@@ -10,7 +10,9 @@ public typealias Annotations = [String: NSObject]
 
 /// Parser for annotations
 public struct AnnotationsParser {
-
+    
+    public static var annotationPrefix: String = "sourcery"
+    
     private enum AnnotationType {
         case begin(Annotations)
         case annotations(Annotations)

@@ -2,7 +2,7 @@
 // DO NOT EDIT
 
 // swiftlint:disable line_length
-// swiftlint:disable variable_name
+// swiftlint:disable identifier_name
 
 import Foundation
 #if os(iOS) || os(tvOS) || os(watchOS)

@@ -61,13 +61,11 @@
 		47635CB121DA348000B2D5A1 /* SourceryUtils.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47635C9821DA32E800B2D5A1 /* SourceryUtils.framework */; };
 		524A2EA71FFD3C40001CD8F9 /* BytesRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524A2EA61FFD3C40001CD8F9 /* BytesRange.swift */; };
 		52F79EA11EE9F017006D3546 /* ConfigurationSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F79EA01EE9F017006D3546 /* ConfigurationSpec.swift */; };
-		5509A54021BA839D00FBC0DC /* IdSyncModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5509A53F21BA839D00FBC0DC /* IdSyncModelTests.swift */; };
-		5509A54221BA881E00FBC0DC /* IdSyncModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */; };
-		550E5E3C22D389B200DA91EB /* PrettyJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 550E5E3B22D389B200DA91EB /* PrettyJSON.swift */; };
-		550E5E3D22D3A11C00DA91EB /* PrettyJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 550E5E3B22D389B200DA91EB /* PrettyJSON.swift */; };
-		55BE9BFC21B051D30017F77D /* ObjectBoxGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BE9BFB21B051D30017F77D /* ObjectBoxGenerator.swift */; };
-		55BE9BFF21B527FE0017F77D /* IdSyncModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */; };
-		55BE9C0521B97EA40017F77D /* EntityInfo.stencil in Resources */ = {isa = PBXBuildFile; fileRef = 55BE9C0421B97EA40017F77D /* EntityInfo.stencil */; };
+		557357142343690D00B1D367 /* EntityInfo.stencil in Resources */ = {isa = PBXBuildFile; fileRef = 5573570D2343690D00B1D367 /* EntityInfo.stencil */; };
+		557357152343690D00B1D367 /* ObjectBoxGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5573570F2343690D00B1D367 /* ObjectBoxGenerator.swift */; };
+		557357162343690D00B1D367 /* PrettyJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557357112343690D00B1D367 /* PrettyJSON.swift */; };
+		557357172343690D00B1D367 /* IdSyncModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557357122343690D00B1D367 /* IdSyncModel.swift */; };
+		557357192343698500B1D367 /* IdSyncModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 557357132343690D00B1D367 /* IdSyncModelTests.swift */; };
 		60CC7E378065D25B8D555BCF /* Pods_SourceryFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB592E6C7511363520AB29E8 /* Pods_SourceryFramework.framework */; };
 		6359E6651FE409250015AF8F /* FileParser+SubscriptsSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6359E6641FE409250015AF8F /* FileParser+SubscriptsSpec.swift */; };
 		635AB26E201F2E5300342C13 /* SourcerySwift.h in Headers */ = {isa = PBXBuildFile; fileRef = 635AB26C201F2E5300342C13 /* SourcerySwift.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -283,14 +281,13 @@
 		47635CA821DA338200B2D5A1 /* Sha.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Sha.swift; sourceTree = "<group>"; };
 		524A2EA61FFD3C40001CD8F9 /* BytesRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BytesRange.swift; path = SourceryRuntime/Sources/BytesRange.swift; sourceTree = SOURCE_ROOT; };
 		52F79EA01EE9F017006D3546 /* ConfigurationSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConfigurationSpec.swift; sourceTree = "<group>"; };
-		5509A53F21BA839D00FBC0DC /* IdSyncModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdSyncModelTests.swift; sourceTree = "<group>"; };
-		550E5E3B22D389B200DA91EB /* PrettyJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrettyJSON.swift; sourceTree = "<group>"; };
-		554C6B5B2264EC260058F272 /* OBXProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OBXProperty.h; sourceTree = "<group>"; };
-		55BE9BFB21B051D30017F77D /* ObjectBoxGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectBoxGenerator.swift; sourceTree = "<group>"; };
-		55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdSyncModel.swift; sourceTree = "<group>"; };
-		55BE9C0021B5435C0017F77D /* Sourcery-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Sourcery-Bridging-Header.h"; sourceTree = "<group>"; };
-		55BE9C0421B97EA40017F77D /* EntityInfo.stencil */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = EntityInfo.stencil; sourceTree = "<group>"; };
-		5AA7705271110DE49D7FE9EC /* Pods-SourcerySwift.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SourcerySwift.release.xcconfig"; path = "Pods/Target Support Files/Pods-SourcerySwift/Pods-SourcerySwift.release.xcconfig"; sourceTree = "<group>"; };
+		5573570D2343690D00B1D367 /* EntityInfo.stencil */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = EntityInfo.stencil; sourceTree = "<group>"; };
+		5573570E2343690D00B1D367 /* Sourcery-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Sourcery-Bridging-Header.h"; sourceTree = "<group>"; };
+		5573570F2343690D00B1D367 /* ObjectBoxGenerator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ObjectBoxGenerator.swift; sourceTree = "<group>"; };
+		557357102343690D00B1D367 /* OBXProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OBXProperty.h; sourceTree = "<group>"; };
+		557357112343690D00B1D367 /* PrettyJSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrettyJSON.swift; sourceTree = "<group>"; };
+		557357122343690D00B1D367 /* IdSyncModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IdSyncModel.swift; sourceTree = "<group>"; };
+		557357132343690D00B1D367 /* IdSyncModelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IdSyncModelTests.swift; sourceTree = "<group>"; };
 		5604A535F0309987C243C660 /* Pods-SourceryUtils.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SourceryUtils.debug.xcconfig"; path = "Target Support Files/Pods-SourceryUtils/Pods-SourceryUtils.debug.xcconfig"; sourceTree = "<group>"; };
 		6359E6641FE409250015AF8F /* FileParser+SubscriptsSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileParser+SubscriptsSpec.swift"; sourceTree = "<group>"; };
 		635AB26A201F2E5300342C13 /* SourcerySwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SourcerySwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -576,16 +573,16 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		55BE9BFA21B051AB0017F77D /* ObjectBox */ = {
+		5573570C2343690D00B1D367 /* ObjectBox */ = {
 			isa = PBXGroup;
 			children = (
-				55BE9BFB21B051D30017F77D /* ObjectBoxGenerator.swift */,
-				550E5E3B22D389B200DA91EB /* PrettyJSON.swift */,
-				55BE9BFE21B527FE0017F77D /* IdSyncModel.swift */,
-				5509A53F21BA839D00FBC0DC /* IdSyncModelTests.swift */,
-				55BE9C0021B5435C0017F77D /* Sourcery-Bridging-Header.h */,
-				554C6B5B2264EC260058F272 /* OBXProperty.h */,
-				55BE9C0421B97EA40017F77D /* EntityInfo.stencil */,
+				5573570D2343690D00B1D367 /* EntityInfo.stencil */,
+				5573570E2343690D00B1D367 /* Sourcery-Bridging-Header.h */,
+				5573570F2343690D00B1D367 /* ObjectBoxGenerator.swift */,
+				557357102343690D00B1D367 /* OBXProperty.h */,
+				557357112343690D00B1D367 /* PrettyJSON.swift */,
+				557357122343690D00B1D367 /* IdSyncModel.swift */,
+				557357132343690D00B1D367 /* IdSyncModelTests.swift */,
 			);
 			path = ObjectBox;
 			sourceTree = "<group>";
@@ -726,7 +723,7 @@
 			isa = PBXGroup;
 			children = (
 				0054C4FA224964BA007F9AA7 /* Package.swift */,
-				55BE9BFA21B051AB0017F77D /* ObjectBox */,
+				5573570C2343690D00B1D367 /* ObjectBox */,
 				CD754C8D1D853F000082B512 /* Sourcery */,
 				CD754C9D1D853F000082B512 /* SourceryTests */,
 				64E201A41EAE8FBF00EAD8A2 /* SourceryRuntime */,
@@ -1257,7 +1254,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				55BE9C0521B97EA40017F77D /* EntityInfo.stencil in Resources */,
+				557357142343690D00B1D367 /* EntityInfo.stencil in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1635,19 +1632,18 @@
 			buildActionMask = 2147483647;
 			files = (
 				CD9C459D1DFAF76D00161C2C /* main.swift in Sources */,
+				557357152343690D00B1D367 /* ObjectBoxGenerator.swift in Sources */,
 				094415C81E78A46A00ABE04A /* Configuration.swift in Sources */,
+				557357172343690D00B1D367 /* IdSyncModel.swift in Sources */,
 				E291DCA363FD8EBF0455C712 /* Sourcery.swift in Sources */,
 				C894A1B01E19326C0098327C /* SwiftTemplate.swift in Sources */,
 				63CC359520246CCB0017D839 /* Xcode+Extensions.swift in Sources */,
-				55BE9BFC21B051D30017F77D /* ObjectBoxGenerator.swift in Sources */,
-				E291DF1320ACA969F7A8CBAE /* AnnotationsParser.swift in Sources */,
 				E291D8DB06EC63770326562B /* Type+Stencil.swift in Sources */,
 				CDBEC15C1E242B9E0090E881 /* StencilTemplate.swift in Sources */,
 				6393BC98201B57620044E8CC /* JavaScriptTemplate.swift in Sources */,
+				557357162343690D00B1D367 /* PrettyJSON.swift in Sources */,
 				E291D33EA3BB6FC777B3950E /* FolderWatcher.swift in Sources */,
 				E291D9FBE0B751C3C898E5B6 /* Array+Parallel.swift in Sources */,
-				55BE9BFF21B527FE0017F77D /* IdSyncModel.swift in Sources */,
-				550E5E3C22D389B200DA91EB /* PrettyJSON.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1662,7 +1658,6 @@
 				E291D8BB621560C275813B1F /* SourcerySpec.swift in Sources */,
 				09B1DD321E2147C4009228EE /* TypeNameSpec.swift in Sources */,
 				09346DC81E02195300D6358C /* StructSpec.swift in Sources */,
-				5509A54221BA881E00FBC0DC /* IdSyncModel.swift in Sources */,
 				E291D4E250805568DBC33F7E /* TypeSpec.swift in Sources */,
 				E291D48FD07450FD0A09D92E /* EnumSpec.swift in Sources */,
 				097E11F71E0EF63100FEB751 /* MethodSpec.swift in Sources */,
@@ -1675,7 +1670,7 @@
 				E291D1C26BD65C6E109966AF /* CustomMatchers.swift in Sources */,
 				E291DCD43D41B7F8D7AAF7B9 /* DiffableSpec.swift in Sources */,
 				E291D90EC943AC5CBA99899A /* ComposerSpec.swift in Sources */,
-				5509A54021BA839D00FBC0DC /* IdSyncModelTests.swift in Sources */,
+				557357192343698500B1D367 /* IdSyncModelTests.swift in Sources */,
 				E291D7114BA1479EC337A070 /* FileParserSpec.swift in Sources */,
 				E291DF22F03C87C646576942 /* AnnotationsParserSpec.swift in Sources */,
 				09B1DD3E1E21ADD2009228EE /* VariableSpec.swift in Sources */,
@@ -1685,7 +1680,6 @@
 				52F79EA11EE9F017006D3546 /* ConfigurationSpec.swift in Sources */,
 				E291D52FDFF7CF446E239C13 /* TemplateAnnotationsParserSpec.swift in Sources */,
 				E291D5115BBE9AB32275F38F /* VerifierSpec.swift in Sources */,
-				550E5E3D22D3A11C00DA91EB /* PrettyJSON.swift in Sources */,
 				6359E6651FE409250015AF8F /* FileParser+SubscriptsSpec.swift in Sources */,
 				6393BC92201B50910044E8CC /* JavaScriptTemplateSpecs.swift in Sources */,
 			);
@@ -1901,7 +1895,6 @@
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -1932,7 +1925,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = Pixle.SourcerySwift;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -1964,7 +1956,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -1994,7 +1985,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = Pixle.SourceryJS;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -2020,7 +2010,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -2046,7 +2035,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = Pixel.SourceryRuntime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
 			};
@@ -2167,7 +2155,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_SWIFT_FLAGS = "-D DEBUG";
@@ -2220,7 +2208,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -2232,8 +2220,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = C5B9C02D428F3FEC20C3D943 /* Pods-Sourcery.debug.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 0.17.0;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2242,10 +2230,9 @@
 				);
 				INFOPLIST_FILE = Sourcery/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = io.objectbox.swift.generator;
+				PRODUCT_BUNDLE_IDENTIFIER = Pixle.Sourcery;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "ObjectBox/Sourcery-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
 				SYMROOT = build;
 			};
 			name = Debug;
@@ -2254,9 +2241,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F3C3A7B6CE0BCA036E0835CE /* Pods-Sourcery.release.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_CODE_COVERAGE = NO;
-				CLANG_ENABLE_MODULES = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 0.17.0;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2265,10 +2252,9 @@
 				);
 				INFOPLIST_FILE = Sourcery/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = io.objectbox.swift.generator;
+				PRODUCT_BUNDLE_IDENTIFIER = Pixle.Sourcery;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "ObjectBox/Sourcery-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
 				SYMROOT = build;
 			};
 			name = Release;
@@ -2285,8 +2271,6 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = Pixle.SourceryTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "ObjectBox/Sourcery-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sourcery.app/Contents/MacOS/Sourcery";
 			};
 			name = Debug;
@@ -2304,8 +2288,6 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = Pixle.SourceryTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "ObjectBox/Sourcery-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sourcery.app/Contents/MacOS/Sourcery";
 			};
 			name = Release;
