@@ -1,6 +1,7 @@
 import Quick
 import Nimble
 @testable import Sourcery
+@testable import SourceryFramework
 @testable import SourceryRuntime
 
 class FileParserAttributesSpec: QuickSpec {
@@ -12,7 +13,7 @@ class FileParserAttributesSpec: QuickSpec {
 
             func parse(_ code: String) -> [Type] {
                 guard let parserResult = try? FileParser(contents: code).parse() else { fail(); return [] }
-                return Composer().uniqueTypes(parserResult)
+                return Composer.uniqueTypes(parserResult)
             }
 
             it("extracts type attributes") {

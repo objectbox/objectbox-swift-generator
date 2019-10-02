@@ -1,4 +1,4 @@
-// Generated using Sourcery 0.15.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 0.16.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable line_length
@@ -23,6 +23,7 @@ import AppKit
 
 
 
+
 class AnnotatedProtocolMock: AnnotatedProtocol {
 
     //MARK: - sayHelloWith
@@ -32,11 +33,13 @@ class AnnotatedProtocolMock: AnnotatedProtocol {
         return sayHelloWithNameCallsCount > 0
     }
     var sayHelloWithNameReceivedName: String?
+    var sayHelloWithNameReceivedInvocations: [String] = []
     var sayHelloWithNameClosure: ((String) -> Void)?
 
     func sayHelloWith(name: String) {
         sayHelloWithNameCallsCount += 1
         sayHelloWithNameReceivedName = name
+        sayHelloWithNameReceivedInvocations.append(name)
         sayHelloWithNameClosure?(name)
     }
 
@@ -64,11 +67,13 @@ class BasicProtocolMock: BasicProtocol {
         return saveConfigurationCallsCount > 0
     }
     var saveConfigurationReceivedConfiguration: String?
+    var saveConfigurationReceivedInvocations: [String] = []
     var saveConfigurationClosure: ((String) -> Void)?
 
     func save(configuration: String) {
         saveConfigurationCallsCount += 1
         saveConfigurationReceivedConfiguration = configuration
+        saveConfigurationReceivedInvocations.append(configuration)
         saveConfigurationClosure?(configuration)
     }
 
@@ -82,11 +87,13 @@ class ClosureProtocolMock: ClosureProtocol {
         return setClosureCallsCount > 0
     }
     var setClosureReceivedClosure: (() -> Void)?
+    var setClosureReceivedInvocations: [(() -> Void)] = []
     var setClosureClosure: ((@escaping () -> Void) -> Void)?
 
     func setClosure(_ closure: @escaping () -> Void) {
         setClosureCallsCount += 1
         setClosureReceivedClosure = closure
+        setClosureReceivedInvocations.append(closure)
         setClosureClosure?(closure)
     }
 
@@ -100,11 +107,13 @@ class CurrencyPresenterMock: CurrencyPresenter {
         return showSourceCurrencyCallsCount > 0
     }
     var showSourceCurrencyReceivedCurrency: String?
+    var showSourceCurrencyReceivedInvocations: [String] = []
     var showSourceCurrencyClosure: ((String) -> Void)?
 
     func showSourceCurrency(_ currency: String) {
         showSourceCurrencyCallsCount += 1
         showSourceCurrencyReceivedCurrency = currency
+        showSourceCurrencyReceivedInvocations.append(currency)
         showSourceCurrencyClosure?(currency)
     }
 
@@ -123,12 +132,31 @@ class ExtendableProtocolMock: ExtendableProtocol {
         return reportMessageCallsCount > 0
     }
     var reportMessageReceivedMessage: String?
+    var reportMessageReceivedInvocations: [String] = []
     var reportMessageClosure: ((String) -> Void)?
 
     func report(message: String) {
         reportMessageCallsCount += 1
         reportMessageReceivedMessage = message
+        reportMessageReceivedInvocations.append(message)
         reportMessageClosure?(message)
+    }
+
+}
+class ImplicitlyUnwrappedOptionalReturnValueProtocolMock: ImplicitlyUnwrappedOptionalReturnValueProtocol {
+
+    //MARK: - implicitReturn
+
+    var implicitReturnCallsCount = 0
+    var implicitReturnCalled: Bool {
+        return implicitReturnCallsCount > 0
+    }
+    var implicitReturnReturnValue: String!
+    var implicitReturnClosure: (() -> String?)?
+
+    func implicitReturn() -> String! {
+        implicitReturnCallsCount += 1
+        return implicitReturnClosure.map({ $0() }) ?? implicitReturnReturnValue
     }
 
 }
@@ -137,10 +165,12 @@ class InitializationProtocolMock: InitializationProtocol {
     //MARK: - init
 
     var initIntParameterStringParameterOptionalParameterReceivedArguments: (intParameter: Int, stringParameter: String, optionalParameter: String?)?
+    var initIntParameterStringParameterOptionalParameterReceivedInvocations: [(intParameter: Int, stringParameter: String, optionalParameter: String?)] = []
     var initIntParameterStringParameterOptionalParameterClosure: ((Int, String, String?) -> Void)?
 
     required init(intParameter: Int, stringParameter: String, optionalParameter: String?) {
         initIntParameterStringParameterOptionalParameterReceivedArguments = (intParameter: intParameter, stringParameter: stringParameter, optionalParameter: optionalParameter)
+        initIntParameterStringParameterOptionalParameterReceivedInvocations.append((intParameter: intParameter, stringParameter: stringParameter, optionalParameter: optionalParameter))
         initIntParameterStringParameterOptionalParameterClosure?(intParameter, stringParameter, optionalParameter)
     }
     //MARK: - start
@@ -179,12 +209,14 @@ class ReservedWordsProtocolMock: ReservedWordsProtocol {
         return continueWithCallsCount > 0
     }
     var continueWithReceivedMessage: String?
+    var continueWithReceivedInvocations: [String] = []
     var continueWithReturnValue: String!
     var continueWithClosure: ((String) -> String)?
 
     func `continue`(with message: String) -> String {
         continueWithCallsCount += 1
         continueWithReceivedMessage = message
+        continueWithReceivedInvocations.append(message)
         return continueWithClosure.map({ $0(message) }) ?? continueWithReturnValue
     }
 
@@ -198,11 +230,13 @@ class SameShortMethodNamesProtocolMock: SameShortMethodNamesProtocol {
         return startCarOfCallsCount > 0
     }
     var startCarOfReceivedArguments: (car: String, model: String)?
+    var startCarOfReceivedInvocations: [(car: String, model: String)] = []
     var startCarOfClosure: ((String, String) -> Void)?
 
     func start(car: String, of model: String) {
         startCarOfCallsCount += 1
         startCarOfReceivedArguments = (car: car, model: model)
+        startCarOfReceivedInvocations.append((car: car, model: model))
         startCarOfClosure?(car, model)
     }
 
@@ -213,12 +247,34 @@ class SameShortMethodNamesProtocolMock: SameShortMethodNamesProtocol {
         return startPlaneOfCallsCount > 0
     }
     var startPlaneOfReceivedArguments: (plane: String, model: String)?
+    var startPlaneOfReceivedInvocations: [(plane: String, model: String)] = []
     var startPlaneOfClosure: ((String, String) -> Void)?
 
     func start(plane: String, of model: String) {
         startPlaneOfCallsCount += 1
         startPlaneOfReceivedArguments = (plane: plane, model: model)
+        startPlaneOfReceivedInvocations.append((plane: plane, model: model))
         startPlaneOfClosure?(plane, model)
+    }
+
+}
+class SingleOptionalParameterFunctionMock: SingleOptionalParameterFunction {
+
+    //MARK: - send
+
+    var sendMessageCallsCount = 0
+    var sendMessageCalled: Bool {
+        return sendMessageCallsCount > 0
+    }
+    var sendMessageReceivedMessage: String?
+    var sendMessageReceivedInvocations: [String?] = []
+    var sendMessageClosure: ((String?) -> Void)?
+
+    func send(message: String?) {
+        sendMessageCallsCount += 1
+        sendMessageReceivedMessage = message
+        sendMessageReceivedInvocations.append(message)
+        sendMessageClosure?(message)
     }
 
 }

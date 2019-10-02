@@ -3,6 +3,7 @@ import Nimble
 import PathKit
 import SourceKittenFramework
 @testable import Sourcery
+@testable import SourceryFramework
 @testable import SourceryRuntime
 
 class FileParserSubscriptsSpec: QuickSpec {
@@ -12,7 +13,7 @@ class FileParserSubscriptsSpec: QuickSpec {
             describe("parseSubscript") {
                 func parse(_ code: String) -> [Type] {
                     guard let parserResult = try? FileParser(contents: code).parse() else { fail(); return [] }
-                    return Composer().uniqueTypes(parserResult)
+                    return Composer.uniqueTypes(parserResult)
                 }
 
                 it("extracts subscripts properly") {

@@ -207,8 +207,12 @@ struct Configuration {
     let forceParse: [String]
     let args: [String: NSObject]
 
-    init(path: Path, relativePath: Path) throws {
-        guard let dict = try Yams.load(yaml: path.read()) as? [String: Any] else {
+    init(
+        path: Path,
+        relativePath: Path,
+        env: [String: String] = [:]
+    ) throws {
+        guard let dict = try Yams.load(yaml: path.read(), .default, Constructor.sourceryContructor(env: env)) as? [String: Any] else {
             throw Configuration.Error.invalidFormat(message: "Expected dictionary.")
         }
 
@@ -273,5 +277,59 @@ struct Configuration {
         self.cacheBasePath = cacheBasePath
         self.forceParse = forceParse
         self.args = args
+    }
+}
+
+// Copied from https://github.com/realm/SwiftLint/blob/0.29.2/Source/SwiftLintFramework/Models/YamlParser.swift
+// and https://github.com/SwiftGen/SwiftGen/blob/6.1.0/Sources/SwiftGenKit/Utils/YAML.swift
+
+private extension Constructor {
+    static func sourceryContructor(env: [String: String]) -> Constructor {
+        return Constructor(customScalarMap(env: env))
+    }
+
+    static func customScalarMap(env: [String: String]) -> ScalarMap {
+        var map = defaultScalarMap
+        map[.str] = String.constructExpandingEnvVars(env: env)
+        return map
+    }
+}
+
+private extension String {
+    static func constructExpandingEnvVars(env: [String: String]) -> (_ scalar: Node.Scalar) -> String? {
+        return { (scalar: Node.Scalar) -> String? in
+            scalar.string.expandingEnvVars(env: env)
+        }
+    }
+
+    func expandingEnvVars(env: [String: String]) -> String? {
+        // check if entry has an env variable
+        guard let match = self.range(of: #"\$\{(.)\w+\}"#, options: .regularExpression) else {
+            return self
+        }
+
+        // get the env variable as "${ENV_VAR}"
+        let key = String(self[match])
+
+        // get the env variable as "ENV_VAR" - note missing $ and brackets
+        let keyString = String(key[2..<key.count-1])
+
+        guard let value = env[keyString] else { return "" }
+
+        return self.replacingOccurrences(of: key, with: value)
+    }
+}
+
+private extension StringProtocol {
+    subscript(bounds: CountableClosedRange<Int>) -> SubSequence {
+        let start = index(startIndex, offsetBy: bounds.lowerBound)
+        let end = index(start, offsetBy: bounds.count)
+        return self[start..<end]
+    }
+
+    subscript(bounds: CountableRange<Int>) -> SubSequence {
+        let start = index(startIndex, offsetBy: bounds.lowerBound)
+        let end = index(start, offsetBy: bounds.count)
+        return self[start..<end]
     }
 }

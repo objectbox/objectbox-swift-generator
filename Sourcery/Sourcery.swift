@@ -5,15 +5,13 @@
 
 import Foundation
 import PathKit
-import SwiftTryCatch
+import SourceryFramework
+import SourceryUtils
 import SourceryRuntime
 import SourceryJS
-import xcproj
-
-#if SWIFT_PACKAGE
-#else
 import SourcerySwift
-#endif
+import TryCatch
+import xcproj
 
 class Sourcery {
     public static let version: String = inUnitTests ? "Major.Minor.Patch" : Version.current.value
@@ -40,9 +38,6 @@ class Sourcery {
     fileprivate var fileAnnotatedContent: [Path: [String]] = [:]
 
     /// Creates Sourcery processor
-    ///
-    /// - Parameter verbose: Whether to turn on verbose logs.
-    /// - Parameter arguments: Additional arguments to pass to templates.
     init(verbose: Bool = false, watcherEnabled: Bool = false, cacheDisabled: Bool = false, cacheBasePath: Path? = nil, prune: Bool = false, arguments: [String: NSObject] = [:]) {
         self.verbose = verbose
         self.arguments = arguments
@@ -80,7 +75,7 @@ class Sourcery {
             case let .sources(paths):
                 result = try self.parse(from: paths.include, exclude: paths.exclude, forceParse: forceParse, modules: nil)
             case let .projects(projects):
-                var paths = [Path]()
+                var paths: [Path] = []
                 var modules = [String]()
                 projects.forEach { project in
                     project.targets.forEach { target in
@@ -166,7 +161,7 @@ class Sourcery {
     }
 
     private func topPaths(from paths: [Path]) -> [Path] {
-        var top = [(Path, [Path])]()
+        var top: [(Path, [Path])] = []
         paths.forEach { path in
             // See if its already contained by the topDirectories
             guard top.first(where: { (_, children) -> Bool in
@@ -214,13 +209,8 @@ class Sourcery {
     fileprivate func templates(from: Paths) throws -> [Template] {
         return try templatePaths(from: from).compactMap {
             if $0.extension == "swifttemplate" {
-                #if SWIFT_PACKAGE
-                    Log.warning("Skipping template \($0). Swift templates are not supported when using Sourcery built with Swift Package Manager yet. Please use only Stencil or EJS templates. See https://github.com/krzysztofzablocki/Sourcery/issues/244 for details.")
-                    return nil
-                #else
-                    let cachePath = cachesDir(sourcePath: $0)
-                    return try SwiftTemplate(path: $0, cachePath: cachePath, version: type(of: self).version)
-                #endif
+                let cachePath = cachesDir(sourcePath: $0)
+                return try SwiftTemplate(path: $0, cachePath: cachePath, version: type(of: self).version)
             } else if $0.extension == "ejs" {
                 guard EJSTemplate.ejsPath != nil else {
                     Log.warning("Skipping template \($0). JavaScript templates require EJS path to be set manually when using Sourcery built with Swift Package Manager. Use `--ejsPath` command line argument to set it.")
@@ -242,16 +232,17 @@ class Sourcery {
 // MARK: - Parsing
 
 extension Sourcery {
-    typealias ParsingResult = (types: Types, inlineRanges: [(file: String, ranges: [String: NSRange])])
+    typealias ParsingResult = (types: Types, inlineRanges: [(file: String, ranges: [String: NSRange], indentations: [String: String])])
 
     fileprivate func parse(from: [Path], exclude: [Path] = [], forceParse: [String] = [], modules: [String]?) throws -> ParsingResult {
         if let modules = modules {
             precondition(from.count == modules.count, "There should be module for each file to parse")
         }
 
+        let startScan = currentTimestamp()
         Log.info("Scanning sources...")
 
-        var inlineRanges = [(file: String, ranges: [String: NSRange])]()
+        var inlineRanges = [(file: String, ranges: [String: NSRange], indentations: [String: String])]()
         var allResults = [FileParserResult]()
 
         try from.enumerated().forEach { index, from in
@@ -275,6 +266,7 @@ extension Sourcery {
                 .filter {
                     let result = Verifier.canParse(content: $0.contents,
                                                    path: $0.path,
+                                                   generationMarker: Sourcery.generationMarker,
                                                    forceParse: forceParse)
                     if result == .containsConflictMarkers {
                         throw Error.containsMergeConflictMarkers
@@ -302,18 +294,23 @@ extension Sourcery {
             allResults.append(contentsOf: results)
         }
 
+        Log.benchmark("\tloadOrParse: \(currentTimestamp() - startScan)")
+
         let parserResult = allResults.reduce(FileParserResult(path: nil, module: nil, types: [], typealiases: [])) { acc, next in
             acc.typealiases += next.typealiases
             acc.types += next.types
 
             // swiftlint:disable:next force_unwrapping
-            inlineRanges.append((next.path!, next.inlineRanges))
+            inlineRanges.append((next.path!, next.inlineRanges, next.inlineIndentations))
             return acc
         }
 
-        //! All files have been scanned, time to join extensions with base class
-        let types = Composer().uniqueTypes(parserResult)
+        let uniqueTypeStart = currentTimestamp()
 
+        //! All files have been scanned, time to join extensions with base class
+        let types = Composer.uniqueTypes(parserResult)
+
+        Log.benchmark("\tcombiningTypes: \(currentTimestamp() - uniqueTypeStart)\n\ttotal: \(currentTimestamp() - startScan)")
         Log.info("Found \(types.count) types.")
         return (Types(types: types), inlineRanges)
     }
@@ -329,8 +326,8 @@ extension Sourcery {
         let artifacts = cachesPath + "\(pathString.hash).srf"
 
         guard artifacts.exists,
-              let contentSha = parser.initialContents.sha256(),
-              let unarchived = load(artifacts: artifacts.string, contentSha: contentSha) else {
+            let modifiedDate = parser.modifiedDate,
+            let unarchived = load(artifacts: artifacts.string, modifiedDate: modifiedDate) else {
 
             let result = try parser.parse()
 
@@ -347,13 +344,16 @@ extension Sourcery {
         return unarchived
     }
 
-    private func load(artifacts: String, contentSha: String) -> FileParserResult? {
+    private func load(artifacts: String, modifiedDate: Date) -> FileParserResult? {
         var unarchivedResult: FileParserResult?
         SwiftTryCatch.try({
-                              if let unarchived = NSKeyedUnarchiver.unarchiveObject(withFile: artifacts) as? FileParserResult, unarchived.sourceryVersion == Sourcery.version, unarchived.contentSha == contentSha {
-                                  unarchivedResult = unarchived
-                              }
-                          }, catch: { _ in
+
+            if let unarchived = NSKeyedUnarchiver.unarchiveObject(withFile: artifacts) as? FileParserResult {
+                if unarchived.sourceryVersion == Sourcery.version, unarchived.modifiedDate == modifiedDate {
+                    unarchivedResult = unarchived
+                }
+            }
+        }, catch: { _ in
             Log.warning("Failed to unarchive \(artifacts) due to error, re-parsing")
         }, finallyBlock: {})
 
@@ -365,9 +365,12 @@ extension Sourcery {
 extension Sourcery {
 
     fileprivate func generate(source: Source, templatePaths: Paths, output: Output, parsingResult: ParsingResult) throws {
+        let generationStart = currentTimestamp()
+
         Log.info("Loading templates...")
         let allTemplates = try templates(from: templatePaths)
         Log.info("Loaded \(allTemplates.count) templates.")
+        Log.benchmark("\tLoading took \(currentTimestamp() - generationStart)")
 
         Log.info("Generating code...")
         status = ""
@@ -393,14 +396,19 @@ extension Sourcery {
             }
         }
 
+        try fileAnnotatedContent.forEach { (path, contents) in
+            try self.output(result: contents.joined(separator: "\n"), to: path)
+
+            if let linkTo = output.linkTo {
+                link(path, to: linkTo)
+            }
+        }
+
         if let linkTo = output.linkTo {
             try linkTo.project.writePBXProj(path: linkTo.projectPath)
         }
 
-        try fileAnnotatedContent.forEach { (path, contents) in
-            try self.output(result: contents.joined(separator: "\n"), to: path)
-        }
-
+        Log.benchmark("\tGeneration took \(currentTimestamp() - generationStart)")
         Log.info("Finished.")
     }
 
@@ -417,7 +425,7 @@ extension Sourcery {
                     try groupPath.mkpath()
                 }
             } catch {
-                Log.warning("Failed to create a folter for group '\(fileGroup.name ?? "")'. \(error)")
+                Log.warning("Failed to create a folder for group '\(fileGroup.name ?? "")'. \(error)")
             }
         } else {
             fileGroup = linkTo.project.rootGroup
@@ -451,14 +459,21 @@ extension Sourcery {
 
     private func generate(_ template: Template, forParsingResult parsingResult: ParsingResult, outputPath: Path) throws -> String {
         guard watcherEnabled else {
+            let generationStart = currentTimestamp()
             let result = try Generator.generate(parsingResult.types, template: template, arguments: self.arguments)
+            Log.benchmark("\tGenerating \(template.sourcePath.lastComponent) took \(currentTimestamp() - generationStart)")
+
             return try processRanges(in: parsingResult, result: result, outputPath: outputPath)
         }
 
         var result: String = ""
         SwiftTryCatch.try({
-                              result = (try? Generator.generate(parsingResult.types, template: template, arguments: self.arguments)) ?? ""
-                          }, catch: { error in
+            do {
+                result = try Generator.generate(parsingResult.types, template: template, arguments: self.arguments)
+            } catch {
+                Log.error(error)
+            }
+        }, catch: { error in
             result = error?.description ?? ""
         }, finallyBlock: {})
 
@@ -466,6 +481,10 @@ extension Sourcery {
     }
 
     private func processRanges(in parsingResult: ParsingResult, result: String, outputPath: Path) throws -> String {
+        let start = currentTimestamp()
+        defer {
+            Log.benchmark("\t\tProcessing Ranges took \(currentTimestamp() - start)")
+        }
         var result = result
         result = processFileRanges(for: parsingResult, in: result, outputPath: outputPath)
         result = try processInlineRanges(for: parsingResult, in: result)
@@ -479,18 +498,18 @@ extension Sourcery {
             range: NSRange,
             filePath: Path,
             rangeInFile: NSRange,
-            toInsert: String
+            toInsert: String,
+            indentation: String
         )
 
         try annotatedRanges
-            .map { (key: $0, range: $1) }
-            .compactMap { (key, ranges) -> MappedInlineAnnotations? in
-                let range = ranges[0]
+            .map { (key: $0, range: $1[0].range) }
+            .compactMap { (key, range) -> MappedInlineAnnotations? in
                 let generatedBody = contents.bridge().substring(with: range)
 
-                if let (filePath, inlineRanges) = parsingResult.inlineRanges.first(where: { $0.ranges[key] != nil }) {
+                if let (filePath, inlineRanges, inlineIndentations) = parsingResult.inlineRanges.first(where: { $0.ranges[key] != nil }) {
                     // swiftlint:disable:next force_unwrapping
-                    return MappedInlineAnnotations(range, Path(filePath), inlineRanges[key]!, generatedBody)
+                    return MappedInlineAnnotations(range, Path(filePath), inlineRanges[key]!, generatedBody, inlineIndentations[key] ?? "")
                 }
 
                 guard key.hasPrefix("auto:") else {
@@ -502,17 +521,23 @@ extension Sourcery {
 
                 guard let definition = parsingResult.types.types.first(where: { $0.name == autoTypeName }),
                     let path = definition.path,
-                    let rangeInFile = try definition.rangeToAppendBody() else {
+                    let contents = try? path.read(.utf8),
+                    let bodyRange = definition.bodyRange(contents) else {
                         rangesToReplace.remove(range)
                         return nil
                 }
-                return MappedInlineAnnotations(range, path, rangeInFile, toInsert)
+                let bodyEndRange = NSRange(location: NSMaxRange(bodyRange), length: 0)
+                let bodyEndLineRange = contents.bridge().lineRange(for: bodyEndRange)
+                let rangeInFile = NSRange(location: max(bodyRange.location, bodyEndLineRange.location), length: 0)
+                return MappedInlineAnnotations(range, path, rangeInFile, toInsert, "")
             }
             .sorted { lhs, rhs in
                 return lhs.rangeInFile.location > rhs.rangeInFile.location
-            }.forEach { (_, path, rangeInFile, toInsert) in
+            }.forEach { (arg) in
+
+                let (_, path, rangeInFile, toInsert, indentation) = arg
                 let content = try path.read(.utf8)
-                let updated = content.bridge().replacingCharacters(in: rangeInFile, with: toInsert)
+                let updated = content.bridge().replacingCharacters(in: rangeInFile, with: indent(toInsert: toInsert, indentation: indentation))
                 try writeIfChanged(updated, to: path)
         }
 
@@ -532,7 +557,7 @@ extension Sourcery {
             .annotatedRanges
             .map { ($0, $1) }
             .forEach({ (filePath, ranges) in
-                let generatedBody = ranges.map(contents.bridge().substring(with:)).joined(separator: "\n")
+                let generatedBody = ranges.map { contents.bridge().substring(with: $0.range) }.joined(separator: "\n")
                 let path = outputPath + (Path(filePath).extension == nil ? "\(filePath).generated.swift" : filePath)
                 var fileContents = fileAnnotatedContent[path] ?? []
                 fileContents.append(generatedBody)
@@ -550,6 +575,22 @@ extension Sourcery {
         if existing != content {
             try path.write(content)
         }
+    }
+
+    private func indent(toInsert: String, indentation: String) -> String {
+        guard indentation.isEmpty == false else {
+            return toInsert
+        }
+        let lines = toInsert.components(separatedBy: "\n")
+        return lines.enumerated()
+            .map { index, line in
+                guard !line.isEmpty else {
+                    return line
+                }
+
+                return index == lines.count - 1 ? line : indentation + line
+            }
+            .joined(separator: "\n")
     }
 
     internal func generatedPath(`for` templatePath: Path) -> Path {

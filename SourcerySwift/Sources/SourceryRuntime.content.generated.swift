@@ -193,7 +193,7 @@ import Foundation
         }
     }
 
-    // sourcery:inline:Attribute.AutoCoding
+// sourcery:inline:Attribute.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let name: String = aDecoder.decode(forKey: "name") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["name"])); fatalError() }; self.name = name
@@ -207,7 +207,7 @@ import Foundation
             aCoder.encode(self.arguments, forKey: "arguments")
             aCoder.encode(self._description, forKey: "_description")
         }
-        // sourcery:end
+// sourcery:end
 
 }
 
@@ -236,7 +236,7 @@ import Foundation
         self.init(offset: range.offset, length: range.length)
     }
 
-    // sourcery:inline:BytesRange.AutoCoding
+// sourcery:inline:BytesRange.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             self.offset = aDecoder.decodeInt64(forKey: "offset")
@@ -248,7 +248,7 @@ import Foundation
             aCoder.encode(self.offset, forKey: "offset")
             aCoder.encode(self.length, forKey: "length")
         }
-    // sourcery:end
+// sourcery:end
 }
 
 """),
@@ -297,7 +297,7 @@ import Foundation
         )
     }
 
-    // sourcery:inline:Class.AutoCoding
+// sourcery:inline:Class.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             super.init(coder: aDecoder)
@@ -307,13 +307,13 @@ import Foundation
         override public func encode(with aCoder: NSCoder) {
             super.encode(with: aCoder)
         }
-        // sourcery:end
+// sourcery:end
 }
 
 """),
     .init(name: "Coding.generated.swift", content:
 """
-// Generated using Sourcery 0.15.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace trailing_newline
@@ -427,7 +427,7 @@ public protocol Definition: AnyObject {
 """),
     .init(name: "Description.generated.swift", content:
 """
-// Generated using Sourcery 0.15.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace
@@ -526,7 +526,8 @@ extension FileParserResult {
         string += "types = \\(String(describing: self.types)), "
         string += "typealiases = \\(String(describing: self.typealiases)), "
         string += "inlineRanges = \\(String(describing: self.inlineRanges)), "
-        string += "contentSha = \\(String(describing: self.contentSha)), "
+        string += "inlineIndentations = \\(String(describing: self.inlineIndentations)), "
+        string += "modifiedDate = \\(String(describing: self.modifiedDate)), "
         string += "sourceryVersion = \\(String(describing: self.sourceryVersion))"
         return string
     }
@@ -722,7 +723,7 @@ extension Variable {
 """),
     .init(name: "Diffable.generated.swift", content:
 """
-// Generated using Sourcery 0.15.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 import Foundation
@@ -855,7 +856,8 @@ extension FileParserResult: Diffable {
         results.append(contentsOf: DiffableResult(identifier: "types").trackDifference(actual: self.types, expected: castObject.types))
         results.append(contentsOf: DiffableResult(identifier: "typealiases").trackDifference(actual: self.typealiases, expected: castObject.typealiases))
         results.append(contentsOf: DiffableResult(identifier: "inlineRanges").trackDifference(actual: self.inlineRanges, expected: castObject.inlineRanges))
-        results.append(contentsOf: DiffableResult(identifier: "contentSha").trackDifference(actual: self.contentSha, expected: castObject.contentSha))
+        results.append(contentsOf: DiffableResult(identifier: "inlineIndentations").trackDifference(actual: self.inlineIndentations, expected: castObject.inlineIndentations))
+        results.append(contentsOf: DiffableResult(identifier: "modifiedDate").trackDifference(actual: self.modifiedDate, expected: castObject.modifiedDate))
         results.append(contentsOf: DiffableResult(identifier: "sourceryVersion").trackDifference(actual: self.sourceryVersion, expected: castObject.sourceryVersion))
         return results
     }
@@ -1332,7 +1334,7 @@ import Foundation
         self.init(localName: name, externalName: name, typeName: typeName, type: type, annotations: annotations)
     }
 
-    // sourcery:inline:AssociatedValue.AutoCoding
+// sourcery:inline:AssociatedValue.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             self.localName = aDecoder.decode(forKey: "localName")
@@ -1350,7 +1352,7 @@ import Foundation
             aCoder.encode(self.type, forKey: "type")
             aCoder.encode(self.annotations, forKey: "annotations")
         }
-        // sourcery:end
+// sourcery:end
 
 }
 
@@ -1387,7 +1389,7 @@ import Foundation
         self.annotations = annotations
     }
 
-    // sourcery:inline:EnumCase.AutoCoding
+// sourcery:inline:EnumCase.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let name: String = aDecoder.decode(forKey: "name") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["name"])); fatalError() }; self.name = name
@@ -1403,7 +1405,7 @@ import Foundation
             aCoder.encode(self.associatedValues, forKey: "associatedValues")
             aCoder.encode(self.annotations, forKey: "annotations")
         }
-        // sourcery:end
+// sourcery:end
 }
 
 /// Defines Swift enum
@@ -1481,7 +1483,7 @@ import Foundation
         }
     }
 
-    // sourcery:inline:Enum.AutoCoding
+// sourcery:inline:Enum.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let cases: [EnumCase] = aDecoder.decode(forKey: "cases") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["cases"])); fatalError() }; self.cases = cases
@@ -1499,13 +1501,13 @@ import Foundation
             aCoder.encode(self.hasRawType, forKey: "hasRawType")
             aCoder.encode(self.rawType, forKey: "rawType")
         }
-     // sourcery:end
+// sourcery:end
 }
 
 """),
     .init(name: "Equality.generated.swift", content:
 """
-// Generated using Sourcery 0.15.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace
@@ -1615,7 +1617,8 @@ extension FileParserResult {
         if self.types != rhs.types { return false }
         if self.typealiases != rhs.typealiases { return false }
         if self.inlineRanges != rhs.inlineRanges { return false }
-        if self.contentSha != rhs.contentSha { return false }
+        if self.inlineIndentations != rhs.inlineIndentations { return false }
+        if self.modifiedDate != rhs.modifiedDate { return false }
         if self.sourceryVersion != rhs.sourceryVersion { return false }
         return true
     }
@@ -1933,47 +1936,46 @@ public extension String {
 
     /// :nodoc:
     func components(separatedBy delimiter: String, excludingDelimiterBetween between: (open: String, close: String)) -> [String] {
+        return self.components(separatedBy: delimiter, excludingDelimiterBetween: (between.open.map { String($0) }, between.close.map { String($0) }))
+    }
+
+    /// :nodoc:
+    func components(separatedBy delimiter: String, excludingDelimiterBetween between: (open: [String], close: [String])) -> [String] {
         var boundingCharactersCount: Int = 0
         var quotesCount: Int = 0
         var item = ""
         var items = [String]()
         var matchedDelimiter = (alreadyMatched: "", leftToMatch: delimiter)
 
-        for char in self {
-            if between.open.contains(char) {
-                if !(boundingCharactersCount == 0 && String(char) == delimiter) {
+        var i = self.startIndex
+        while i < self.endIndex {
+            var offset = 1
+            defer {
+                i = self.index(i, offsetBy: offset)
+            }
+            let currentlyScanned = self[i..<(self.index(i, offsetBy: delimiter.count, limitedBy: self.endIndex) ?? self.endIndex)]
+            if let openString = between.open.first(where: { String(self[i...]).starts(with: $0) }) {
+                if !(boundingCharactersCount == 0 && String(self[i]) == delimiter) {
                     boundingCharactersCount += 1
                 }
-            } else if between.close.contains(char) {
+                offset = openString.count
+            } else if let closeString = between.close.first(where: { String(self[i...]).starts(with: $0) }) {
                 // do not count `->`
-                if !(char == ">" && item.last == "-") {
+                if !(self[i] == ">" && item.last == "-") {
                     boundingCharactersCount = max(0, boundingCharactersCount - 1)
                 }
+                offset = closeString.count
             }
-            if char == "\\"" {
+            if self[i] == "\\"" {
                 quotesCount += 1
             }
 
-            guard boundingCharactersCount == 0 && quotesCount % 2 == 0 else {
-                item.append(char)
-                continue
-            }
-
-            if char == matchedDelimiter.leftToMatch.first {
-                matchedDelimiter.alreadyMatched.append(char)
-                matchedDelimiter.leftToMatch = String(matchedDelimiter.leftToMatch.dropFirst())
-                if matchedDelimiter.leftToMatch.isEmpty {
-                    items.append(item)
-                    item = ""
-                    matchedDelimiter = (alreadyMatched: "", leftToMatch: delimiter)
-                }
+            if currentlyScanned == delimiter && boundingCharactersCount == 0 && quotesCount % 2 == 0 {
+                items.append(item)
+                item = ""
+                i = self.index(i, offsetBy: delimiter.count - 1)
             } else {
-                if matchedDelimiter.alreadyMatched.isEmpty {
-                    item.append(char)
-                } else {
-                    item.append(matchedDelimiter.alreadyMatched)
-                    matchedDelimiter = (alreadyMatched: "", leftToMatch: delimiter)
-                }
+                item += self[i..<self.index(i, offsetBy: offset)]
             }
         }
         items.append(item)
@@ -2015,23 +2017,25 @@ import Foundation
     }
     public var typealiases = [Typealias]()
     public var inlineRanges = [String: NSRange]()
+    public var inlineIndentations = [String: String]()
 
-    public var contentSha: String?
+    public var modifiedDate: Date
     public var sourceryVersion: String
 
-    public init(path: String?, module: String?, types: [Type], typealiases: [Typealias] = [], inlineRanges: [String: NSRange] = [:], contentSha: String = "", sourceryVersion: String = "") {
+    public init(path: String?, module: String?, types: [Type], typealiases: [Typealias] = [], inlineRanges: [String: NSRange] = [:], inlineIndentations: [String: String] = [:], modifiedDate: Date = Date(), sourceryVersion: String = "") {
         self.path = path
         self.module = module
         self.types = types
         self.typealiases = typealiases
         self.inlineRanges = inlineRanges
-        self.contentSha = contentSha
+        self.inlineIndentations = inlineIndentations
+        self.modifiedDate = modifiedDate
         self.sourceryVersion = sourceryVersion
 
         types.forEach { type in type.module = module }
     }
 
-    // sourcery:inline:FileParserResult.AutoCoding
+// sourcery:inline:FileParserResult.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             self.path = aDecoder.decode(forKey: "path")
@@ -2039,7 +2043,8 @@ import Foundation
             guard let types: [Type] = aDecoder.decode(forKey: "types") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["types"])); fatalError() }; self.types = types
             guard let typealiases: [Typealias] = aDecoder.decode(forKey: "typealiases") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["typealiases"])); fatalError() }; self.typealiases = typealiases
             guard let inlineRanges: [String: NSRange] = aDecoder.decode(forKey: "inlineRanges") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["inlineRanges"])); fatalError() }; self.inlineRanges = inlineRanges
-            self.contentSha = aDecoder.decode(forKey: "contentSha")
+            guard let inlineIndentations: [String: String] = aDecoder.decode(forKey: "inlineIndentations") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["inlineIndentations"])); fatalError() }; self.inlineIndentations = inlineIndentations
+            guard let modifiedDate: Date = aDecoder.decode(forKey: "modifiedDate") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["modifiedDate"])); fatalError() }; self.modifiedDate = modifiedDate
             guard let sourceryVersion: String = aDecoder.decode(forKey: "sourceryVersion") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["sourceryVersion"])); fatalError() }; self.sourceryVersion = sourceryVersion
         }
 
@@ -2050,16 +2055,17 @@ import Foundation
             aCoder.encode(self.types, forKey: "types")
             aCoder.encode(self.typealiases, forKey: "typealiases")
             aCoder.encode(self.inlineRanges, forKey: "inlineRanges")
-            aCoder.encode(self.contentSha, forKey: "contentSha")
+            aCoder.encode(self.inlineIndentations, forKey: "inlineIndentations")
+            aCoder.encode(self.modifiedDate, forKey: "modifiedDate")
             aCoder.encode(self.sourceryVersion, forKey: "sourceryVersion")
         }
-        // sourcery:end
+// sourcery:end
 }
 
 """),
     .init(name: "JSExport.generated.swift", content:
 """
-// Generated using Sourcery 0.15.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace trailing_newline
@@ -2256,6 +2262,7 @@ extension GenericTypeParameter: GenericTypeParameterAutoJSExport {}
     var isFinal: Bool { get }
     var isMutating: Bool { get }
     var isGeneric: Bool { get }
+    var isOptional: Bool { get }
     var annotations: [String: NSObject] { get }
     var definedInTypeName: TypeName? { get }
     var actualDefinedInTypeName: TypeName? { get }
@@ -2516,6 +2523,7 @@ public enum Log {
     }
 
     public static var level: Level = .warnings
+    public static var logBenchmarks: Bool = false
 
     public static func error(_ message: Any) {
         log(level: .errors, "error: \\(message)")
@@ -2535,6 +2543,11 @@ public enum Log {
 
     public static func info(_ message: Any) {
         log(level: .info, message)
+    }
+
+    public static func benchmark(_ message: Any) {
+        guard logBenchmarks else { return }
+        print(message)
     }
 
     private static func log(level logLevel: Level, _ message: Any) {
@@ -2610,7 +2623,7 @@ public typealias SourceryMethod = Method
         self.`inout` = isInout
     }
 
-    // sourcery:inline:MethodParameter.AutoCoding
+// sourcery:inline:MethodParameter.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             self.argumentLabel = aDecoder.decode(forKey: "argumentLabel")
@@ -2632,7 +2645,7 @@ public typealias SourceryMethod = Method
             aCoder.encode(self.defaultValue, forKey: "defaultValue")
             aCoder.encode(self.annotations, forKey: "annotations")
         }
-        // sourcery:end
+// sourcery:end
 }
 
 /// Describes method
@@ -2722,7 +2735,7 @@ public typealias SourceryMethod = Method
 
     // sourcery: skipEqaulitey, skipDescription, skipCoding, skipJSExport
     /// :nodoc:
-    @available(*, deprecated: 0.7, message: "Use isConvenienceInitializer instead") public var isConvenienceInitialiser: Bool {
+    @available(*, deprecated, message: "Use isConvenienceInitializer instead") public var isConvenienceInitialiser: Bool {
         return attributes[Attribute.Identifier.convenience.name] != nil
     }
 
@@ -2818,7 +2831,7 @@ public typealias SourceryMethod = Method
         self.definedInTypeName = definedInTypeName
     }
 
-    // sourcery:inline:Method.AutoCoding
+// sourcery:inline:Method.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let name: String = aDecoder.decode(forKey: "name") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["name"])); fatalError() }; self.name = name
@@ -2856,7 +2869,7 @@ public typealias SourceryMethod = Method
             aCoder.encode(self.definedInType, forKey: "definedInType")
             aCoder.encode(self.attributes, forKey: "attributes")
         }
-     // sourcery:end
+// sourcery:end
 }
 
 """),
@@ -2945,7 +2958,7 @@ public typealias SourceryProtocol = Protocol
         super.extend(type)
     }
 
-    // sourcery:inline:Protocol.AutoCoding
+// sourcery:inline:Protocol.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             super.init(coder: aDecoder)
@@ -2955,7 +2968,7 @@ public typealias SourceryProtocol = Protocol
         override public func encode(with aCoder: NSCoder) {
             super.encode(with: aCoder)
         }
-        // sourcery:end
+// sourcery:end
 }
 
 """),
@@ -3008,7 +3021,7 @@ import Foundation
         )
     }
 
-    // sourcery:inline:Struct.AutoCoding
+// sourcery:inline:Struct.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             super.init(coder: aDecoder)
@@ -3018,7 +3031,7 @@ import Foundation
         override public func encode(with aCoder: NSCoder) {
             super.encode(with: aCoder)
         }
-        // sourcery:end
+// sourcery:end
 }
 
 """),
@@ -3121,7 +3134,7 @@ import Foundation
         self.definedInTypeName = definedInTypeName
     }
 
-    // sourcery:inline:Subscript.AutoCoding
+// sourcery:inline:Subscript.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let parameters: [MethodParameter] = aDecoder.decode(forKey: "parameters") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["parameters"])); fatalError() }; self.parameters = parameters
@@ -3147,7 +3160,7 @@ import Foundation
             aCoder.encode(self.definedInType, forKey: "definedInType")
             aCoder.encode(self.attributes, forKey: "attributes")
         }
-    // sourcery:end
+// sourcery:end
 
 }
 
@@ -3176,7 +3189,7 @@ import Foundation
         self.argument = arguments
     }
 
-    // sourcery:inline:TemplateContext.AutoCoding
+// sourcery:inline:TemplateContext.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let types: Types = aDecoder.decode(forKey: "types") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["types"])); fatalError() }; self.types = types
@@ -3188,7 +3201,7 @@ import Foundation
             aCoder.encode(self.types, forKey: "types")
             aCoder.encode(self.argument, forKey: "argument")
         }
-    // sourcery:end
+// sourcery:end
 
     public var stencilContext: [String: Any] {
         return [
@@ -3238,7 +3251,7 @@ extension ProcessInfo {
         self.types = types
     }
 
-    // sourcery:inline:Types.AutoCoding
+// sourcery:inline:Types.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let types: [Type] = aDecoder.decode(forKey: "types") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["types"])); fatalError() }; self.types = types
@@ -3248,7 +3261,7 @@ extension ProcessInfo {
         public func encode(with aCoder: NSCoder) {
             aCoder.encode(self.types, forKey: "types")
         }
-    // sourcery:end
+// sourcery:end
 
     // sourcery: skipDescription, skipEquality, skipCoding
     /// :nodoc:
@@ -3680,7 +3693,7 @@ import Foundation
         type.implements.forEach { self.implements[$0.key] = $0.value }
     }
 
-    // sourcery:inline:Type.AutoCoding
+// sourcery:inline:Type.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             self.module = aDecoder.decode(forKey: "module")
@@ -3732,7 +3745,7 @@ import Foundation
             aCoder.encode(self.attributes, forKey: "attributes")
             aCoder.encode(self.__path, forKey: "__path")
         }
-    // sourcery:end
+// sourcery:end
 }
 
 extension Type {
@@ -3933,7 +3946,7 @@ public protocol Typed {
         return name
     }
 
-    // sourcery:inline:TypeName.AutoCoding
+// sourcery:inline:TypeName.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let name: String = aDecoder.decode(forKey: "name") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["name"])); fatalError() }; self.name = name
@@ -3965,7 +3978,7 @@ public protocol Typed {
             aCoder.encode(self.dictionary, forKey: "dictionary")
             aCoder.encode(self.closure, forKey: "closure")
         }
-        // sourcery:end
+// sourcery:end
 
     // MARK: - LosslessStringConvertible
 
@@ -3997,7 +4010,7 @@ public protocol Typed {
         self.type = type
     }
 
-    // sourcery:inline:GenericTypeParameter.AutoCoding
+// sourcery:inline:GenericTypeParameter.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let typeName: TypeName = aDecoder.decode(forKey: "typeName") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["typeName"])); fatalError() }; self.typeName = typeName
@@ -4010,7 +4023,7 @@ public protocol Typed {
             aCoder.encode(self.type, forKey: "type")
         }
 
-    // sourcery:end
+// sourcery:end
 }
 
 /// Descibes Swift generic type
@@ -4027,7 +4040,7 @@ public protocol Typed {
         self.typeParameters = typeParameters
     }
 
-    // sourcery:inline:GenericType.AutoCoding
+// sourcery:inline:GenericType.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let name: String = aDecoder.decode(forKey: "name") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["name"])); fatalError() }; self.name = name
@@ -4040,7 +4053,7 @@ public protocol Typed {
             aCoder.encode(self.typeParameters, forKey: "typeParameters")
         }
 
-    // sourcery:end
+// sourcery:end
 }
 
 /// Describes tuple type element
@@ -4063,7 +4076,7 @@ public protocol Typed {
         self.type = type
     }
 
-    // sourcery:inline:TupleElement.AutoCoding
+// sourcery:inline:TupleElement.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let name: String = aDecoder.decode(forKey: "name") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["name"])); fatalError() }; self.name = name
@@ -4077,7 +4090,7 @@ public protocol Typed {
             aCoder.encode(self.typeName, forKey: "typeName")
             aCoder.encode(self.type, forKey: "type")
         }
-     // sourcery:end
+// sourcery:end
 }
 
 /// Describes tuple type
@@ -4095,7 +4108,7 @@ public protocol Typed {
         self.elements = elements
     }
 
-    // sourcery:inline:TupleType.AutoCoding
+// sourcery:inline:TupleType.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let name: String = aDecoder.decode(forKey: "name") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["name"])); fatalError() }; self.name = name
@@ -4107,7 +4120,7 @@ public protocol Typed {
             aCoder.encode(self.name, forKey: "name")
             aCoder.encode(self.elements, forKey: "elements")
         }
-     // sourcery:end
+// sourcery:end
 }
 
 /// Describes array type
@@ -4130,7 +4143,7 @@ public protocol Typed {
         self.elementType = elementType
     }
 
-    // sourcery:inline:ArrayType.AutoCoding
+// sourcery:inline:ArrayType.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let name: String = aDecoder.decode(forKey: "name") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["name"])); fatalError() }; self.name = name
@@ -4144,7 +4157,7 @@ public protocol Typed {
             aCoder.encode(self.elementTypeName, forKey: "elementTypeName")
             aCoder.encode(self.elementType, forKey: "elementType")
         }
-    // sourcery:end
+// sourcery:end
 }
 
 /// Describes dictionary type
@@ -4176,7 +4189,7 @@ public protocol Typed {
         self.keyType = keyType
     }
 
-    // sourcery:inline:DictionaryType.AutoCoding
+// sourcery:inline:DictionaryType.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let name: String = aDecoder.decode(forKey: "name") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["name"])); fatalError() }; self.name = name
@@ -4194,7 +4207,7 @@ public protocol Typed {
             aCoder.encode(self.keyTypeName, forKey: "keyTypeName")
             aCoder.encode(self.keyType, forKey: "keyType")
         }
-    // sourcery:end
+// sourcery:end
 }
 
 /// Describes closure type
@@ -4248,7 +4261,7 @@ public protocol Typed {
         self.`throws` = `throws`
     }
 
-    // sourcery:inline:ClosureType.AutoCoding
+// sourcery:inline:ClosureType.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let name: String = aDecoder.decode(forKey: "name") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["name"])); fatalError() }; self.name = name
@@ -4266,7 +4279,7 @@ public protocol Typed {
             aCoder.encode(self.returnType, forKey: "returnType")
             aCoder.encode(self.`throws`, forKey: "`throws`")
         }
-    // sourcery:end
+// sourcery:end
 
 }
 
@@ -4313,7 +4326,7 @@ import Foundation
         self.parentName = parent?.name
     }
 
-    // sourcery:inline:Typealias.AutoCoding
+// sourcery:inline:Typealias.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let aliasName: String = aDecoder.decode(forKey: "aliasName") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["aliasName"])); fatalError() }; self.aliasName = aliasName
@@ -4331,13 +4344,13 @@ import Foundation
             aCoder.encode(self.parent, forKey: "parent")
             aCoder.encode(self.parentName, forKey: "parentName")
         }
-        // sourcery:end
+// sourcery:end
 }
 
 """),
     .init(name: "Typed.generated.swift", content:
 """
-// Generated using Sourcery 0.15.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace
@@ -4541,7 +4554,7 @@ public typealias SourceryVariable = Variable
         self.definedInTypeName = definedInTypeName
     }
 
-    // sourcery:inline:Variable.AutoCoding
+// sourcery:inline:Variable.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let name: String = aDecoder.decode(forKey: "name") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["name"])); fatalError() }; self.name = name
@@ -4573,7 +4586,7 @@ public typealias SourceryVariable = Variable
             aCoder.encode(self.definedInTypeName, forKey: "definedInTypeName")
             aCoder.encode(self.definedInType, forKey: "definedInType")
         }
-        // sourcery:end
+// sourcery:end
 }
 
 """),

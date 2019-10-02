@@ -9,6 +9,7 @@
 import Foundation
 import PathKit
 import SourceryRuntime
+import SourceryUtils
 
 private enum Delimiters {
     static let open = "<%"
@@ -18,6 +19,7 @@ private enum Delimiters {
 private struct ProcessResult {
     let output: String
     let error: String
+    let exitCode: Int32
 }
 
 open class SwiftTemplate {
@@ -52,7 +54,7 @@ open class SwiftTemplate {
 
         let commands = try SwiftTemplate.parseCommands(in: sourcePath)
 
-        var includedFiles = [Path]()
+        var includedFiles: [Path] = []
         var outputFile = [String]()
         for command in commands {
             switch command {
@@ -191,6 +193,9 @@ open class SwiftTemplate {
 
         let serializedContextPath = buildDir + "context.bin"
         let data = NSKeyedArchiver.archivedData(withRootObject: context)
+        if !buildDir.exists {
+            try buildDir.mkpath()
+        }
         try serializedContextPath.write(data)
 
         let result = try Process.runCommand(path: binaryPath.description,
@@ -233,7 +238,7 @@ open class SwiftTemplate {
                                                        arguments: arguments,
                                                        currentDirectoryPath: buildDir)
 
-        if !compilationResult.error.isEmpty {
+        if compilationResult.exitCode != 0 || !compilationResult.error.isEmpty {
             throw compilationResult.output
         }
 
@@ -326,7 +331,7 @@ private extension Process {
         let output = String(data: outputData, encoding: .utf8) ?? ""
         let error = String(data: errorData, encoding: .utf8) ?? ""
 
-        return ProcessResult(output: output, error: error)
+        return ProcessResult(output: output, error: error, exitCode: task.terminationStatus)
     }
 }
 

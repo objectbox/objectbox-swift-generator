@@ -1,0 +1,8 @@
+sources:
+- "${SOURCE_PATH}"
+templates:
+- "Templates"
+output: "Output"
+args:
+    serverUrl: ${serverUrl}
+    serverPort: ${serverPort}

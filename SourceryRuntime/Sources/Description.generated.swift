@@ -1,4 +1,4 @@
-// Generated using Sourcery 0.15.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace
@@ -97,7 +97,8 @@ extension FileParserResult {
         string += "types = \(String(describing: self.types)), "
         string += "typealiases = \(String(describing: self.typealiases)), "
         string += "inlineRanges = \(String(describing: self.inlineRanges)), "
-        string += "contentSha = \(String(describing: self.contentSha)), "
+        string += "inlineIndentations = \(String(describing: self.inlineIndentations)), "
+        string += "modifiedDate = \(String(describing: self.modifiedDate)), "
         string += "sourceryVersion = \(String(describing: self.sourceryVersion))"
         return string
     }

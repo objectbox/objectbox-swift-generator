@@ -11,10 +11,12 @@ import Quick
 import Nimble
 import PathKit
 @testable import Sourcery
+import SourceryFramework
 @testable import SourceryRuntime
 @testable import SourcerySwift
 
 class SwiftTemplateTests: QuickSpec {
+    // swiftlint:disable function_body_length
     override func spec() {
         describe("SwiftTemplate") {
             let outputDir: Path = {
@@ -131,7 +133,7 @@ class SwiftTemplateTests: QuickSpec {
                     }
                     .to(throwError(closure: { (error) in
                         let path = Path.cleanTemporaryDir(name: "build").parent() + "SwiftTemplate/version/Sources/SwiftTemplate/main.swift"
-                        expect("\(error)").to(contain("\(path):9:11: error: expected expression in list of expressions\nprint(\"\\( )\", terminator: \"\");\n          ^\n"))
+                        expect("\(error)").to(contain("\(path):9:11: error: missing argument for parameter #1 in call\nprint(\"\\( )\", terminator: \"\");\n          ^\n"))
                     }))
             }
 
@@ -153,6 +155,33 @@ class SwiftTemplateTests: QuickSpec {
                     .to(throwError(closure: { (error) in
                         expect("\(error)").to(contain("\(templatePath): Fatal error: Index out of range\n"))
                     }))
+            }
+
+            context("with existing cache") {
+                expect { try Sourcery(cacheDisabled: false).processFiles(.sources(Paths(include: [Stubs.sourceDirectory])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+
+                expect((try? (outputDir + Sourcery().generatedPath(for: templatePath)).read(.utf8))).to(equal(expectedResult))
+
+                context("and missing build dir") {
+                    guard let buildDir = NSURL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("SwiftTemplate").map({ Path($0.path) }) else {
+                        fail("Could not create buildDir path")
+                        return
+                    }
+                    if buildDir.exists {
+                        do {
+                            try buildDir.delete()
+                        } catch {
+                            fail("Failed to delete \(buildDir)")
+                        }
+                    }
+
+                    it("generates the code") {
+                        expect { try Sourcery(cacheDisabled: false).processFiles(.sources(Paths(include: [Stubs.sourceDirectory])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+
+                        let result = (try? (outputDir + Sourcery().generatedPath(for: templatePath)).read(.utf8))
+                        expect(result).to(equal(expectedResult))
+                    }
+                }
             }
         }
 
