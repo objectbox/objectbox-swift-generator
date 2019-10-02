@@ -183,8 +183,6 @@ public struct AnnotationsParser {
                 }
     }
 
-    static var annotationPrefix = "sourcery"
-
     private static func searchForAnnotations(commentLine: String) -> AnnotationType {
         let comment = commentLine.trimmingPrefix("///").trimmingPrefix("//").trimmingPrefix("/**").trimmingPrefix("/*").trimmingPrefix("*").stripped()
 
