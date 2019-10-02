@@ -476,6 +476,7 @@ enum IdSync {
         var entityType = EntityPropertyType.unknown
         var entityFlags: EntityPropertyFlag = []
         var name: String = ""
+        var isMutable = true
         var flagsList: String = ""
         var converterName: String = ""
         var conversionPrefix: String = "" // If converting, "converterName.convert(", but if you don't give a converter it's "converterName(rawValue: "
