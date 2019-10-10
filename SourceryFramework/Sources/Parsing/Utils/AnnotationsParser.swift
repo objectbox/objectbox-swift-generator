@@ -10,7 +10,9 @@ public typealias Annotations = [String: NSObject]
 
 /// Parser for annotations
 public struct AnnotationsParser {
-
+    
+    public static var annotationPrefix: String = "sourcery"
+    
     private enum AnnotationType {
         case begin(Annotations)
         case annotations(Annotations)
@@ -180,8 +182,6 @@ public struct AnnotationsParser {
                                 blockAnnotations: annotationsBlock ?? [:])
                 }
     }
-
-    static var annotationPrefix = "sourcery"
 
     private static func searchForAnnotations(commentLine: String) -> AnnotationType {
         let comment = commentLine.trimmingPrefix("///").trimmingPrefix("//").trimmingPrefix("/**").trimmingPrefix("/*").trimmingPrefix("*").stripped()

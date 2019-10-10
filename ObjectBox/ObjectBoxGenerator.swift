@@ -544,9 +544,4 @@ enum ObjectBoxGenerator {
         objectsDictionary["lastIndexId"] = ObjectBoxGenerator.lastIndexId
         objectsDictionary["lastRelationId"] = ObjectBoxGenerator.lastRelationId
     }
-    
-    /* Add any filters we define (think function call that receives input data): */
-    static func addExtensions(_ ext: Stencil.Extension) {
-        
-    }
 }

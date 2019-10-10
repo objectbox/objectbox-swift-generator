@@ -112,6 +112,8 @@ final public class PBXProj: Decodable {
             case let object as PBXReferenceProxy: referenceProxies.append(object, reference: reference)
             case let object as PBXRezBuildPhase: carbonResourcesBuildPhases.append(object, reference: reference)
             case let object as PBXBuildRule: buildRules.append(object, reference: reference)
+            case let object as XCSwiftPackageProductDependency: print("note: ignoring XCSwiftPackageProductDependency")
+            case let object as XCRemoteSwiftPackageReference: print("note: ignoring XCRemoteSwiftPackageReference")
             default: fatalError("Unhandled PBXObject type for \(object), this is likely a bug / todo")
             }
         }

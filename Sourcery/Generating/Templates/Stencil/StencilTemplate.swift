@@ -99,8 +99,6 @@ final class StencilTemplate: StencilSwiftKit.StencilSwiftTemplate, SourceryFrame
 
         ext.registerBoolFilterWithArguments("annotated", filter: { (a: Annotated, annotation) in a.isAnnotated(with: annotation) })
 
-        ObjectBoxGenerator.addExtensions(ext)
-
         var extensions = stencilSwiftEnvironment().extensions
         extensions.append(ext)
         let loader = templatePath.map({ FileSystemLoader(paths: [$0.parent()]) })
