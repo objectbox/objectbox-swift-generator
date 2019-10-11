@@ -3,7 +3,7 @@
 //  Sourcery
 //
 //  Created by Uli Kusterer on 11.10.19.
-//  Copyright © 2019 Pixle. All rights reserved.
+//  Copyright © 2019 ObjectBox. All rights reserved.
 //
 
 import Foundation
