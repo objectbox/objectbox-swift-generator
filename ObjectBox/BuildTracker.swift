@@ -13,6 +13,8 @@ class BuildTracker {
     /// Key under which we save the time of last successful send to preferences so we don't send more often than daily.
     private static let lastSuccessfulSendTimeDefaultsKey = "OBXLastSuccessfulSendTime"
     
+    /// Send at most once per day, but use 23 hours so we don't skip a day on a DST change or early work start:
+    private static let hoursBetweenBuildMessages = TimeInterval(23.0)
     /// Base URL we append our tracking data to to send it out:
     private static let baseURL = "https://api.mixpanel.com/track/?ip=1&data="
     /// Token to include with all events:
@@ -108,8 +110,8 @@ class BuildTracker {
             UserDefaults.standard.set(buildCount, forKey: BuildTracker.buildCountDefaultsKey)
             
             let lastSuccessfulSendTime = UserDefaults.standard.double(forKey: BuildTracker.lastSuccessfulSendTimeDefaultsKey)
-            // Send at most once per day, but use 23 hours so we don't skip a day on a DST change or early work start:
-            guard (Date().timeIntervalSinceReferenceDate - lastSuccessfulSendTime) > (3600.0 * 23.0) else {
+            let nowSeconds = Date().timeIntervalSinceReferenceDate
+            guard (nowSeconds - lastSuccessfulSendTime) > (3600.0 * BuildTracker.hoursBetweenBuildMessages) else {
                 return
             }
             
