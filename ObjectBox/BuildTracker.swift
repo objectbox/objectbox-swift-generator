@@ -99,7 +99,8 @@ class BuildTracker {
     /// Quote and escape the given string for use in a JSON file.
     func quoted(_ string: String) -> String {
         return "\"" + string.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
-            .replacingOccurrences(of: "\r", with: "\\r").replacingOccurrences(of: "\n", with: "\\n") + "\""
+            .replacingOccurrences(of: "\r", with: "\\r").replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\t", with: "\\t") + "\""
     }
     
     /// Send the build statistics request at startup, unless user asked not to:
