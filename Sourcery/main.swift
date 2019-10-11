@@ -202,8 +202,7 @@ func runCLI() {
 
             configuration.validate()
 
-            ObjectBoxGenerator.verbose = verboseLogging
-            try ObjectBoxGenerator.startup(statistics: !noStatistics)
+            try ObjectBoxGenerator.startup(statistics: !noStatistics, verbose: verboseLogging)
 
             let sourcery = Sourcery(verbose: verboseLogging,
                                     watcherEnabled: watcherEnabled,
