@@ -1,26 +1,24 @@
-//
-//  BuildTracker.swift
-//  Sourcery
-//
-//  Created by Uli Kusterer on 11.10.19.
-//  Copyright © 2019 ObjectBox. All rights reserved.
-//
-
 import Foundation
 
+/// Object used for sending anonymous statistics about ObjectBox usage.
+/// Keep data sparsity and abuse potential in mind before you add anything to this.
 class BuildTracker {
     var verbose: Bool = false
     var statistics: Bool = true
 
-    /// UUID as string identifying this installation.
+    /// Key under which we save the UUID identifying this installation as a string to preferences.
     private static let installationIDDefaultsKey = "OBXInstallationID"
-    /// Number of builds since last successful send.
+    /// Key under which we save the number of builds since last successful send to preferences.
     private static let buildCountDefaultsKey = "OBXBuildCount"
-    /// Number of builds since last successful send.
+    /// Key under which we save the time of last successful send to preferences so we don't send more often than daily.
     private static let lastSuccessfulSendTimeDefaultsKey = "OBXLastSuccessfulSendTime"
+    
+    /// Base URL we append our tracking data to to send it out:
+    private static let baseURL = "https://api.mixpanel.com/track/?data="
     /// Token to include with all events:
     private static let eventToken = "46d62a7c8def175e66900b3da09d698c"
 
+    /// Build a JSON string containing the information we send to Mixpanel.
     func eventData(name: String, uniqueID: String? = nil, properties: String = "") -> String {
         let locale = Locale.current
         let country = BuildTracker.countryMappings[locale.regionCode?.uppercased() ?? "?"] ?? "?"
@@ -33,10 +31,11 @@ class BuildTracker {
         return eventInfo
     }
     
+    /// Build a URL request for the given properties, unique ID and event name and send them out asynchronously.
     func sendEvent(name: String, uniqueID: String? = nil, properties: String = "") {
         // Attach statistics to URL:
         let eventInfo = eventData(name: name, uniqueID: uniqueID, properties: properties)
-        var urlString = "https://api.mixpanel.com/track/?data="
+        var urlString = BuildTracker.baseURL
         let base64EncodedProperties = (eventInfo.data(using: .utf8)?.base64EncodedString() ?? "")
             .trimmingCharacters(in: CharacterSet(charactersIn: "="))
         guard base64EncodedProperties.count > 0 else {
@@ -71,6 +70,7 @@ class BuildTracker {
         task.resume()
     }
     
+    /// Return a string identifying any CI system we may be running under right now.
     func checkCI() -> String? {
         // https://docs.travis-ci.com/user/environment-variables/#Default-Environment-Variables
         if ProcessInfo.processInfo.environment["CI"] == "true" {
@@ -94,11 +94,13 @@ class BuildTracker {
         return nil
     }
     
+    /// Quote and escape the given string for use in a JSON file.
     func quoted(_ string: String) -> String {
         return "\"" + string.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
             .replacingOccurrences(of: "\r", with: "\\r").replacingOccurrences(of: "\n", with: "\\n") + "\""
     }
     
+    /// Send the build statistics request at startup, unless user asked not to:
     func startup() throws {
         if statistics {
             var buildCount = (UserDefaults.standard.object(forKey: BuildTracker.buildCountDefaultsKey) as? Int) ?? 0
@@ -145,6 +147,7 @@ class BuildTracker {
         }
     }
 
+    /// Allow mapping from 2-character to 3-character country codes.
     private static let countryMappings = [
         "AF": "AFG", //  Afghanistan
         "AX": "ALA", //  Åland Islands
@@ -396,6 +399,7 @@ class BuildTracker {
         "ZM": "ZMB", //  Zambia
         "ZW": "ZWE", //  Zimbabwe        "?": "?"
     ]
+    /// Allow mapping from 2-character to 3-character language codes.
     private static let languageMappings = [
         "ab": "abk", // Abkhazian
         "aa": "aar", // Afar
