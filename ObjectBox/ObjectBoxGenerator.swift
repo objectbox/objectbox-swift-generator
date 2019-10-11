@@ -532,7 +532,8 @@ enum ObjectBoxGenerator {
         // Attach statistics to URL:
         let eventInfo = eventData(name: name, uniqueID: uniqueID, properties: properties)
         var urlString = "https://api.mixpanel.com/track/?data="
-        let base64EncodedProperties = eventInfo.data(using: .utf8)?.base64EncodedString() ?? ""
+        let base64EncodedProperties = (eventInfo.data(using: .utf8)?.base64EncodedString() ?? "")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "="))
         guard base64EncodedProperties.count > 0 else {
             print("warning: Couldn't base64-encode statistics. This does not affect your generated code.")
             return
