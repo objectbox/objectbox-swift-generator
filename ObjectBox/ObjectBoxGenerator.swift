@@ -28,6 +28,8 @@ enum ObjectBoxGenerator {
     static var modelJsonFile: URL?
     static var classVisibility = "internal"
     static var debugDataURL: URL?
+    static var verbose: Bool = false
+    
     static var builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate",
                                "TimeInterval", "NSTimeInterval", "Data", "NSData", "Array<UInt8>", "[UInt8]"]
     static var builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
@@ -79,6 +81,15 @@ enum ObjectBoxGenerator {
     private static var lastEntityId = IdSync.IdUid()
     private static var lastIndexId = IdSync.IdUid()
     private static var lastRelationId = IdSync.IdUid()
+    
+    /// UUID as string identifying this installation.
+    private static let installationIDDefaultsKey = "OBXInstallationID"
+    /// Number of builds since last successful send.
+    private static let buildCountDefaultsKey = "OBXBuildCount"
+    /// Number of builds since last successful send.
+    private static let lastSuccessfulSendTimeDefaultsKey = "OBXLastSuccessfulSendTime"
+    /// Token to include with all events:
+    private static let eventToken = "46d62a7c8def175e66900b3da09d698c"
 
     static func printError(_ error: Swift.Error) {
         if let obxError = error as? IdSync.Error {
@@ -502,6 +513,97 @@ enum ObjectBoxGenerator {
         }
         if unknownAnnotations.count > 0 {
             print("warning: \(name) has unknown annotations \(unknownAnnotations.joined(separator: ",")).")
+        }
+    }
+    
+    static func eventData(name: String, uniqueID: String? = nil, properties: String = "") -> String {
+        let uniqueIDJSON = (uniqueID != nil) ? ", \"distinct_id\": \"\(uniqueID!)\"" : ""
+        let eventInfo = "{ \"event\": \"\(name)\", \"properties\": { \"token\": \"\(ObjectBoxGenerator.eventToken)\""
+            + "\((properties.count > 0) ? (", " + properties) : "") }\(uniqueIDJSON) }"
+        return eventInfo
+    }
+    
+    static func sendEvent(name: String, uniqueID: String? = nil, properties: String = "") {
+        // Attach statistics to URL:
+        let eventInfo = eventData(name: name, uniqueID: uniqueID, properties: properties)
+        var urlString = "https://api.mixpanel.com/track/?data="
+        let base64EncodedProperties = eventInfo.data(using: .utf8)?.base64EncodedString() ?? ""
+        guard base64EncodedProperties.count > 0 else {
+            print("warning: Couldn't base64-encode statistics. This does not affect your generated code.")
+            return
+        }
+        urlString.append(base64EncodedProperties)
+        
+        if verbose {
+            print("Trying to send statistics: <<\(eventInfo)>>")
+        }
+        
+        // Actually send them off:
+        let task = URLSession.shared.dataTask(with: URL(string: urlString)!) { data, response, error in
+            guard error == nil, let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                if verbose {
+                    print("Couldn't send statistics: \((response as? HTTPURLResponse)?.statusCode ?? 0) "
+                        + "\(error?.localizedDescription ?? "<no error description>")")
+                }
+                return
+            }
+            
+            // Successfully sent? Reset counter and remember when we last sent so we don't call home too often:
+            UserDefaults.standard.set(0, forKey: ObjectBoxGenerator.buildCountDefaultsKey)
+            UserDefaults.standard.set(Date().timeIntervalSinceReferenceDate, forKey: ObjectBoxGenerator.lastSuccessfulSendTimeDefaultsKey)
+            
+            if verbose {
+                print("Successfully sent statistics.")
+            }
+        }
+        task.resume()
+    }
+    
+    static func quoted(_ string: String) -> String {
+        return "\"" + string.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\r", with: "\\r").replacingOccurrences(of: "\n", with: "\\n") + "\""
+    }
+    
+    static func startup(statistics: Bool) throws {
+        if statistics {
+            var buildCount = (UserDefaults.standard.object(forKey: ObjectBoxGenerator.buildCountDefaultsKey) as? Int) ?? 0
+            buildCount += 1
+            UserDefaults.standard.set(buildCount, forKey: ObjectBoxGenerator.buildCountDefaultsKey)
+            
+            let lastSuccessfulSendTime = UserDefaults.standard.double(forKey: ObjectBoxGenerator.lastSuccessfulSendTimeDefaultsKey)
+            // Send at most once per day, but use 23 hours so we don't skip a day on a DST change or early work start:
+            guard (Date().timeIntervalSinceReferenceDate - lastSuccessfulSendTime) > (3600.0 * 23.0) else {
+                return
+            }
+            
+            // Give installation a unique identifier so we can get a rough idea of how many people use this:
+            let existingInstallationID = UserDefaults.standard.string(forKey: ObjectBoxGenerator.installationIDDefaultsKey)
+            let installationUID = existingInstallationID ?? UUID().uuidString
+            if existingInstallationID == nil {
+                UserDefaults.standard.set(installationUID, forKey: ObjectBoxGenerator.installationIDDefaultsKey)
+            }
+            
+            // Grab some info from Xcode-set environment variables, if available:
+            let minSysVersion: String
+            if let deploymentTargetVarName = ProcessInfo.processInfo.environment["DEPLOYMENT_TARGET_CLANG_ENV_NAME"] {
+                minSysVersion = quoted(ProcessInfo.processInfo.environment[deploymentTargetVarName] ?? "?")
+            } else {
+                minSysVersion = "\"?\""
+            }
+            let architectures = quoted(ProcessInfo.processInfo.environment["ARCHS"] ?? "?")
+            let moduleName = ProcessInfo.processInfo.environment["PRODUCT_MODULE_NAME"] ?? "?"
+            let destPlatform = quoted(ProcessInfo.processInfo.environment["SDK_NAME"] ?? "?")
+            let version = ProcessInfo.processInfo.operatingSystemVersion
+            let xcodeVersion = quoted(ProcessInfo.processInfo.environment["XCODE_VERSION_ACTUAL"] ?? "?")
+            let myVersion = quoted(Sourcery.version)
+            let properties = "\"BuildOS\": \"macOS\", "
+                + "\"BuildOSVersion\": \"\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)\", "
+                + "\"BuildCount\": \(buildCount), \"AppHash\": \"\(moduleName.sha1())\", "
+                + "\"Platform\": \(destPlatform), \"Architectures\": \(architectures), "
+                + "\"MinimumOSVersion\": \(minSysVersion), \"Xcode\": \(xcodeVersion), "
+                + "\"Version\": \(myVersion)"
+            
+            sendEvent(name: "Build", uniqueID: installationUID, properties: properties)
         }
     }
     
