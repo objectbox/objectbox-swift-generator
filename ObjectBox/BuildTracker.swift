@@ -14,7 +14,7 @@ class BuildTracker {
     private static let lastSuccessfulSendTimeDefaultsKey = "OBXLastSuccessfulSendTime"
     
     /// Base URL we append our tracking data to to send it out:
-    private static let baseURL = "https://api.mixpanel.com/track/?data="
+    private static let baseURL = "https://api.mixpanel.com/track/?ip=1&data="
     /// Token to include with all events:
     private static let eventToken = "46d62a7c8def175e66900b3da09d698c"
 
@@ -25,7 +25,7 @@ class BuildTracker {
         let language = BuildTracker.languageMappings[locale.languageCode?.lowercased() ?? "?"] ?? "?"
         let uniqueIDJSON = (uniqueID != nil) ? ", \"distinct_id\": \"\(uniqueID!)\"" : ""
         let eventInfo = "{ \"event\": \(quoted(name)), \"properties\": { "
-            + "\"token\": \(quoted(BuildTracker.eventToken)), \"ip\": true, \"Tool\": \"Sourcery\", "
+            + "\"token\": \(quoted(BuildTracker.eventToken)), \"Tool\": \"Sourcery\", "
             + "\"c\": \(quoted(country)), \"lang\": \(quoted(language))"
             + "\(uniqueIDJSON)\((properties.count > 0) ? (", " + properties) : "") } }"
         return eventInfo
