@@ -15,6 +15,8 @@ class BuildTracker {
     
     /// Send at most once per day, but use 23 hours so we don't skip a day on a DST change or early work start:
     private static let hoursBetweenBuildMessages = TimeInterval(23.0)
+    /// 1 hour expressed in seconds:
+    private static let hourInSeconds = TimeInterval(3600.0)
     /// Base URL we append our tracking data to to send it out:
     private static let baseURL = "https://api.mixpanel.com/track/?data="
     /// Token to include with all events:
@@ -117,9 +119,9 @@ class BuildTracker {
             
             let lastSuccessfulSendTime = UserDefaults.standard.double(forKey: BuildTracker.lastSuccessfulSendTimeDefaultsKey)
             let nowSeconds = Date().timeIntervalSinceReferenceDate
-            guard (nowSeconds - lastSuccessfulSendTime) > (3600.0 * BuildTracker.hoursBetweenBuildMessages) else {
-                return
-            }
+            let timeSinceLastSend = nowSeconds - lastSuccessfulSendTime
+            let minTimeBetweenSends = BuildTracker.hourInSeconds * BuildTracker.hoursBetweenBuildMessages
+            guard timeSinceLastSend > minTimeBetweenSends else { return }
             
             // Give installation a unique identifier so we can get a rough idea of how many people use this:
             let existingInstallationID = UserDefaults.standard.string(forKey: BuildTracker.installationIDDefaultsKey)
@@ -163,6 +165,7 @@ class BuildTracker {
     }
 
     /// Allow mapping from 2-character to 3-character country codes.
+    /// (ISO 3166-1)
     private static let countryMappings = [
         "AF": "AFG", //  Afghanistan
         "AX": "ALA", //  Åland Islands
@@ -415,6 +418,7 @@ class BuildTracker {
         "ZW": "ZWE" //  Zimbabwe
     ]
     /// Allow mapping from 2-character to 3-character language codes.
+    /// (ISO 639-2)
     private static let languageMappings = [
         "ab": "abk", // Abkhazian
         "aa": "aar", // Afar
