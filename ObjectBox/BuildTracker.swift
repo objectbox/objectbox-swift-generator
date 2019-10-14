@@ -16,30 +16,42 @@ class BuildTracker {
     /// Send at most once per day, but use 23 hours so we don't skip a day on a DST change or early work start:
     private static let hoursBetweenBuildMessages = TimeInterval(23.0)
     /// Base URL we append our tracking data to to send it out:
-    private static let baseURL = "https://api.mixpanel.com/track/?ip=1&data="
+    private static let baseURL = "https://api.mixpanel.com/track/?data="
     /// Token to include with all events:
     private static let eventToken = "46d62a7c8def175e66900b3da09d698c"
 
     /// Build a JSON string containing the information we send to Mixpanel.
-    func eventData(name: String, uniqueID: String? = nil, properties: String = "") -> String {
+    func eventDictionary(name: String, uniqueID: String? = nil, properties: [String: Any] = [:]) -> [String: Any] {
         let locale = Locale.current
-        let country = BuildTracker.countryMappings[locale.regionCode?.uppercased() ?? "?"] ?? "?"
-        let language = BuildTracker.languageMappings[locale.languageCode?.lowercased() ?? "?"] ?? "?"
-        let uniqueIDJSON = (uniqueID != nil) ? ", \"distinct_id\": \"\(uniqueID!)\"" : ""
-        let eventInfo = "{ \"event\": \(quoted(name)), \"properties\": { "
-            + "\"token\": \(quoted(BuildTracker.eventToken)), \"Tool\": \"Sourcery\", "
-            + "\"c\": \(quoted(country)), \"lang\": \(quoted(language))"
-            + "\(uniqueIDJSON)\((properties.count > 0) ? (", " + properties) : "") } }"
+        let country = BuildTracker.countryMappings[locale.regionCode?.uppercased() ?? ""] ?? ""
+        let language = BuildTracker.languageMappings[locale.languageCode?.lowercased() ?? ""] ?? ""
+        
+        var eventInfo = [String: Any]()
+        var eventProperties = [String: Any]()
+        eventInfo["event"] = name
+        eventProperties["token"] = BuildTracker.eventToken
+        eventProperties["Tool"] = "Sourcery"
+        eventProperties["c"] = country
+        eventProperties["lang"] = language
+        if let uniqueID = uniqueID {
+            eventProperties["distinct_id"] = uniqueID
+        }
+        eventProperties.merge(properties) { _, new in return new } // Merge, preferring new value if both are set.
+        eventInfo["properties"] = eventProperties
         return eventInfo
     }
     
     /// Build a URL request for the given properties, unique ID and event name and send them out asynchronously.
-    func sendEvent(name: String, uniqueID: String? = nil, properties: String = "") {
+    func sendEvent(name: String, uniqueID: String? = nil, properties: [String: Any] = [:]) throws {
         // Attach statistics to URL:
-        let eventInfo = eventData(name: name, uniqueID: uniqueID, properties: properties)
+        let eventInfoDict = eventDictionary(name: name, uniqueID: uniqueID, properties: properties)
+        var options: JSONSerialization.WritingOptions = []
+        if #available(OSX 10.15, *) {
+            options.insert(.withoutEscapingSlashes)
+        }
+        let eventInfo = try JSONSerialization.data(withJSONObject: eventInfoDict, options: options)
         var urlString = BuildTracker.baseURL
-        let base64EncodedProperties = (eventInfo.data(using: .utf8)?.base64EncodedString() ?? "")
-            .trimmingCharacters(in: CharacterSet(charactersIn: "="))
+        let base64EncodedProperties = eventInfo.base64EncodedString()
         guard base64EncodedProperties.count > 0 else {
             print("warning: Couldn't base64-encode statistics. This does not affect your generated code.")
             return
@@ -47,7 +59,7 @@ class BuildTracker {
         urlString.append(base64EncodedProperties)
         
         if verbose {
-            print("Trying to send statistics: <<\(eventInfo)>>")
+            print("Trying to send statistics: <<\(String(data: eventInfo, encoding: .utf8) ?? "")>>")
         }
         
         // Actually send them off:
@@ -96,13 +108,6 @@ class BuildTracker {
         return nil
     }
     
-    /// Quote and escape the given string for use in a JSON file.
-    func quoted(_ string: String) -> String {
-        return "\"" + string.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
-            .replacingOccurrences(of: "\r", with: "\\r").replacingOccurrences(of: "\n", with: "\\n")
-            .replacingOccurrences(of: "\t", with: "\\t") + "\""
-    }
-    
     /// Send the build statistics request at startup, unless user asked not to:
     func startup() throws {
         if statistics {
@@ -126,27 +131,34 @@ class BuildTracker {
             // Grab some info from Xcode-set environment variables, if available:
             let minSysVersion: String
             if let deploymentTargetVarName = ProcessInfo.processInfo.environment["DEPLOYMENT_TARGET_CLANG_ENV_NAME"] {
-                minSysVersion = quoted(ProcessInfo.processInfo.environment[deploymentTargetVarName] ?? "?")
+                minSysVersion = ProcessInfo.processInfo.environment[deploymentTargetVarName] ?? ""
             } else {
-                minSysVersion = "\"?\""
+                minSysVersion = ""
             }
-            let architectures = quoted(ProcessInfo.processInfo.environment["ARCHS"] ?? "?")
-            let moduleName = ProcessInfo.processInfo.environment["PRODUCT_MODULE_NAME"] ?? "?"
-            let destPlatform = quoted(ProcessInfo.processInfo.environment["SDK_NAME"] ?? "?")
+            let architectures = ProcessInfo.processInfo.environment["ARCHS"] ?? ""
+            let moduleName = ProcessInfo.processInfo.environment["PRODUCT_MODULE_NAME"] ?? ""
+            let destPlatform = ProcessInfo.processInfo.environment["SDK_NAME"] ?? ""
             let version = ProcessInfo.processInfo.operatingSystemVersion
-            let xcodeVersion = quoted(ProcessInfo.processInfo.environment["XCODE_VERSION_ACTUAL"] ?? "?")
-            let myVersion = quoted(Sourcery.version)
-            var properties = "\"BuildOS\": \"macOS\", "
-                + "\"BuildOSVersion\": \"\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)\", "
-                + "\"BuildCount\": \(buildCount), \"AppHash\": \"\(moduleName.sha1())\", "
-                + "\"Platform\": \(destPlatform), \"Architectures\": \(architectures), "
-                + "\"MinimumOSVersion\": \(minSysVersion), \"Xcode\": \(xcodeVersion), "
-                + "\"Version\": \(myVersion)"
+            let xcodeVersion = ProcessInfo.processInfo.environment["XCODE_VERSION_ACTUAL"] ?? ""
+            let myVersion = Sourcery.version
+            
+            var properties: [String: Any] = [
+                "BuildOS": "macOS",
+                "BuildOSVersion": "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)",
+                "BuildCount": buildCount,
+                "AppHash": moduleName.sha1(),
+                "Platform": destPlatform,
+                "Architectures": architectures,
+                "MinimumOSVersion": minSysVersion,
+                "Xcode": xcodeVersion,
+                "Version": myVersion
+                ]
+            
             if let ci = checkCI() {
-                properties.append(", \"CI\": \"\(ci)\"")
+                properties["CI"] = ci
             }
             
-            sendEvent(name: "Build", uniqueID: installationUID, properties: properties)
+            try sendEvent(name: "Build", uniqueID: installationUID, properties: properties)
         }
     }
 
@@ -400,7 +412,7 @@ class BuildTracker {
         "EH": "ESH", //  Western Sahara
         "YE": "YEM", //  Yemen
         "ZM": "ZMB", //  Zambia
-        "ZW": "ZWE", //  Zimbabwe        "?": "?"
+        "ZW": "ZWE" //  Zimbabwe
     ]
     /// Allow mapping from 2-character to 3-character language codes.
     private static let languageMappings = [
@@ -587,7 +599,6 @@ class BuildTracker {
         "yi": "yid", // Yiddish
         "yo": "yor", // Yoruba
         "za": "zha", // Zhuang, Chuang
-        "zu": "zul", // Zulu
-        "?": "?"
+        "zu": "zul" // Zulu
     ]
 }

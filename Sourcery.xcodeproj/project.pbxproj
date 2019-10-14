@@ -583,11 +583,11 @@
 				5573570D2343690D00B1D367 /* EntityInfo.stencil */,
 				5573570E2343690D00B1D367 /* Sourcery-Bridging-Header.h */,
 				5573570F2343690D00B1D367 /* ObjectBoxGenerator.swift */,
-				55CBFB3F2350C8B6000AE7C6 /* BuildTracker.swift */,
 				557357102343690D00B1D367 /* OBXProperty.h */,
 				557357112343690D00B1D367 /* PrettyJSON.swift */,
 				557357122343690D00B1D367 /* IdSyncModel.swift */,
 				557357132343690D00B1D367 /* IdSyncModelTests.swift */,
+				55CBFB3F2350C8B6000AE7C6 /* BuildTracker.swift */,
 				55CBFB3C23508F96000AE7C6 /* sha1.swift */,
 			);
 			path = ObjectBox;
