@@ -18,11 +18,13 @@ class BuildTracker {
     /// 1 hour expressed in seconds:
     private static let hourInSeconds = TimeInterval(3600.0)
     /// Base URL we append our tracking data to to send it out:
+    /// https://developer.mixpanel.com/docs/http#section-events
     private static let baseURL = "https://api.mixpanel.com/track/?data="
     /// Token to include with all events:
     private static let eventToken = "46d62a7c8def175e66900b3da09d698c"
 
-    /// Build a JSON string containing the information we send to Mixpanel.
+    /// Build a dictionary containing the information we send to Mixpanel, ready to be serialized to JSON.
+    /// https://developer.mixpanel.com/docs/http#section-tracking-events
     func eventDictionary(name: String, uniqueID: String? = nil, properties: [String: Any] = [:]) -> [String: Any] {
         let locale = Locale.current
         let country = BuildTracker.countryMappings[locale.regionCode?.uppercased() ?? ""] ?? ""
@@ -44,6 +46,7 @@ class BuildTracker {
     }
     
     /// Build a URL request for the given properties, unique ID and event name and send them out asynchronously.
+    /// https://developer.mixpanel.com/docs/http#section-event-request-parameters
     func sendEvent(name: String, uniqueID: String? = nil, properties: [String: Any] = [:]) throws {
         // Attach statistics to URL:
         let eventInfoDict = eventDictionary(name: name, uniqueID: uniqueID, properties: properties)
