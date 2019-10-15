@@ -28,12 +28,14 @@ enum ObjectBoxGenerator {
     static var modelJsonFile: URL?
     static var classVisibility = "internal"
     static var debugDataURL: URL?
-    static var builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate",
+    static var buildTracker = BuildTracker()
+    
+    static let builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate",
                                "TimeInterval", "NSTimeInterval", "Data", "NSData", "Array<UInt8>", "[UInt8]"]
-    static var builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
-    static var builtInStringTypes = ["String", "NSString"]
-    static var builtInByteVectorTypes = ["Data", "NSData", "[UInt8]", "Array<UInt8>"]
-    static var typeMappings: [String: EntityPropertyType] = [
+    static let builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
+    static let builtInStringTypes = ["String", "NSString"]
+    static let builtInByteVectorTypes = ["Data", "NSData", "[UInt8]", "Array<UInt8>"]
+    static let typeMappings: [String: EntityPropertyType] = [
         "Bool": .bool,
         "UInt8": .byte,
         "Int8": .byte,
@@ -58,7 +60,7 @@ enum ObjectBoxGenerator {
         "Array<UInt8>": .byteVector,
         "[UInt8]": .byteVector,
     ]
-    private static var validPropertyAnnotationNames = Set([
+    private static let validPropertyAnnotationNames = Set([
         "uid",
         "backlink",
         "name",
@@ -68,7 +70,7 @@ enum ObjectBoxGenerator {
         "id",
         "transient"
     ])
-    private static var validTypeAnnotationNames = Set([
+    private static let validTypeAnnotationNames = Set([
         "uid",
         "name",
         "entity",
@@ -79,7 +81,7 @@ enum ObjectBoxGenerator {
     private static var lastEntityId = IdSync.IdUid()
     private static var lastIndexId = IdSync.IdUid()
     private static var lastRelationId = IdSync.IdUid()
-
+    
     static func printError(_ error: Swift.Error) {
         if let obxError = error as? IdSync.Error {
             switch(obxError) {
@@ -503,6 +505,12 @@ enum ObjectBoxGenerator {
         if unknownAnnotations.count > 0 {
             print("warning: \(name) has unknown annotations \(unknownAnnotations.joined(separator: ",")).")
         }
+    }
+        
+    static func startup(statistics: Bool, verbose: Bool) throws {
+        buildTracker.statistics = statistics
+        buildTracker.verbose = verbose
+        try buildTracker.startup()
     }
     
     /* Process the parsed syntax tree, possibly annotating or otherwise

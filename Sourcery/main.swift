@@ -92,6 +92,7 @@ func runCLI() {
         Flag("disableCache", description: "Don't use the cache."),
         Flag("verbose", flag: "v", description: "Turn on verbose logging"),
         Flag("quiet", flag: "q", description: "Turn off any logging, only emit errors."),
+        Flag("no-statistics", description: "The code generator will occasionally send anonymous statistics to the development team. Specify this option if you do not wish this to happen."),
         Option<String>("visibility", "", description: "The visibility to give the classes in generated Swift code. Defaults to 'internal'."),
         Flag("prune", flag: "p", description: "Remove empty generated files"),
         VariadicOption<Path>("sources", description: "Path to a source swift files. File or Directory."),
@@ -108,7 +109,7 @@ func runCLI() {
         Option<Path>("ejsPath", "", description: "Path to EJS file for JavaScript templates."),
         Option<Path>("model-json", "", description: "Path to JSON file containing model IDs."),
         Option<String>("annotation-prefix", "", description: "Prefix to use for annotations. Defaults to \"objectbox\".")
-    ) { debugParseTree, watcherEnabled, disableCache, verboseLogging, quiet, visibility, prune, sources, excludeSources, templates, excludeTemplates, output, configPath, forceParse, projectPath, targetName, moduleName, args, ejsPath, modelJsonPath, annotationPrefix in
+    ) { debugParseTree, watcherEnabled, disableCache, verboseLogging, quiet, noStatistics, visibility, prune, sources, excludeSources, templates, excludeTemplates, output, configPath, forceParse, projectPath, targetName, moduleName, args, ejsPath, modelJsonPath, annotationPrefix in
         do {
             Log.level = verboseLogging ? .verbose : quiet ? .errors : .info
             Log.logBenchmarks = verboseLogging ? true : false
@@ -200,6 +201,8 @@ func runCLI() {
             }
 
             configuration.validate()
+
+            try ObjectBoxGenerator.startup(statistics: !noStatistics, verbose: verboseLogging)
 
             let sourcery = Sourcery(verbose: verboseLogging,
                                     watcherEnabled: watcherEnabled,
