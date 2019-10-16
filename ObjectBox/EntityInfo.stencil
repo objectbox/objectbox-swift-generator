@@ -125,32 +125,26 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
     {{ visibility }} func collect(fromEntity entity: EntityType, id: ObjectBox.Id,
                                   propertyCollector: ObjectBox.FlatBufferBuilder, store: ObjectBox.Store) {
-        {# Avoid defining the `offsets` array when there are no fitting properties #}
-        {% if entity.hasStringProperties or entity.hasByteVectorProperties %}
-        var offsets: [(offset: OBXDataOffset, index: UInt16)] = []
         {% for prop in entity.properties %}
         {% if prop.isStringType %}
-        offsets.append((propertyCollector.prepare(string: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }}), 2 + 2 * {{ prop.modelId.id }}))
+        let propertyOffset_{{ prop.propertyName }} = propertyCollector.prepare(string: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% elif prop.isByteVectorType %}
-        offsets.append((propertyCollector.prepare(bytes: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }}), 2 + 2 * {{ prop.modelId.id }}))
+        let propertyOffset_{{ prop.propertyName }} = propertyCollector.prepare(bytes: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endif %}
         {% endfor %}
-        {% endif %}
 
         propertyCollector.collect(id, at: 2 + 2 * {{ entity.idProperty.modelId.id }})
         {% for prop in entity.properties where not prop.isStringType and not prop.isByteVectorType and not prop.isObjectId and not prop.isRelation and not prop.isToManyRelation %}
         propertyCollector.collect({{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endfor %}
-
         {% for prop in entity.properties where prop.isRelation %}
         propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
         {% endfor %}
-
-        {% if entity.hasStringProperties or entity.hasByteVectorProperties %}
-        for value in offsets {
-            propertyCollector.collect(dataOffset: value.offset, at: value.index)
-        }
+        {% for prop in entity.properties %}
+        {% if prop.isStringType or prop.isByteVectorType %}
+        propertyCollector.collect(dataOffset: propertyOffset_{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endif %}
+        {% endfor %}
     }
 
     {# If a newly created object has an empty array in its ToMany relation, take that as "unloaded" and don't assign an
