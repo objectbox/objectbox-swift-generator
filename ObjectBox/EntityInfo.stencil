@@ -124,7 +124,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     }
 
     {{ visibility }} func collect(fromEntity entity: EntityType, id: ObjectBox.Id,
-                                  propertyCollector: ObjectBox.PropertyCollector, store: ObjectBox.Store) {
+                                  propertyCollector: ObjectBox.FlatBufferBuilder, store: ObjectBox.Store) {
         {# Avoid defining the `offsets` array when there are no fitting properties #}
         {% if entity.hasStringProperties or entity.hasByteVectorProperties %}
         var offsets: [(offset: OBXDataOffset, index: UInt16)] = []
@@ -203,7 +203,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         }
     }
   {% endif %}
-    {{ visibility }} func createEntity(entityReader: ObjectBox.EntityReader, store: ObjectBox.Store) -> EntityType {
+    {{ visibility }} func createEntity(entityReader: ObjectBox.FlatBufferReader, store: ObjectBox.Store) -> EntityType {
     {% if entity.isValueType %}
         let entityId: {{ entity.idProperty.propertyType }} = {{ entity.idProperty.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ entity.idProperty.modelId.id }}){{ entity.idProperty.conversionSuffix }}
         let entity = {{ entity.className }}(
