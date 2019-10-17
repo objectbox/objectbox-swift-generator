@@ -170,7 +170,7 @@ enum ObjectBoxGenerator {
                 Log.error("Missing backlink on to-many relation \(relation) of entity \(entity)")
             case .convertAnnotationMissingType(let name, let entity):
                 Log.error("Must specify a dbType in '// objectbox: convert = { \"dbType\": \"TYPE HERE\" }' annotation"
-                    + " of property \(name) of entity \(entity)")
+                    + " of property \(name) of entity \(entity), or put it on a RawRepresentable enum.")
             case .convertAnnotationMissingConverterOrDefault(let name, let entity):
                 Log.error("Must specify a converter or default in '// objectbox: convert = { "
                     + "\"dbType\": \"TYPE HERE\", \"default\": \"DEFAULT HERE\" }' annotation of "
@@ -263,7 +263,10 @@ enum ObjectBoxGenerator {
         return nil
     }
     
-    static func processOneEntityProperty(_ currIVar: SourceryVariable, in currType: Type, into schemaProperties: inout [IdSync.SchemaProperty], entity schemaEntity: IdSync.SchemaEntity, schema schemaData: IdSync.Schema) throws {
+    static func processOneEntityProperty(_ currIVar: SourceryVariable, in currType: Type,
+                                         into schemaProperties: inout [IdSync.SchemaProperty],
+                                         entity schemaEntity: IdSync.SchemaEntity, schema schemaData: IdSync.Schema,
+                                         enums: [String: TypeName]) throws {
         let fullTypeName = currIVar.typeName.name;
         var tmRelation: IdSync.SchemaToManyRelation? = nil
         if fullTypeName.hasPrefix("ToMany<") {
@@ -316,7 +319,12 @@ enum ObjectBoxGenerator {
         }
         
         if let convertDict = extractConvertAnnotation(currIVar.annotations["convert"]) {
-            guard let dbType = convertDict["dbType"] else {
+            let dbType: String
+            if let firstDbType = convertDict["dbType"] {
+                dbType = firstDbType
+            } else if let secondDbType = enums[schemaProperty.unwrappedPropertyType]?.name {
+                dbType = secondDbType
+            } else {
                 throw Error.convertAnnotationMissingType(name: schemaProperty.propertyName, entity: schemaProperty.entityName)
             }
             if let typeName = convertDict["converter"] {
@@ -434,7 +442,7 @@ enum ObjectBoxGenerator {
         schemaProperties.append(schemaProperty)
     }
     
-    static func processOneEntityType(_ currType: Type, entityBased isEntityBased: Bool, into schemaData: IdSync.Schema) throws {
+    static func processOneEntityType(_ currType: Type, entityBased isEntityBased: Bool, enums: [String: TypeName], into schemaData: IdSync.Schema) throws {
         let schemaEntity = IdSync.SchemaEntity()
         schemaEntity.className = currType.localName
         schemaEntity.isValueType = currType.kind == "struct"
@@ -452,7 +460,7 @@ enum ObjectBoxGenerator {
             guard !currIVar.isStatic else { return } // Exits only this iteration of the foreach block
             guard !currIVar.isComputed else { return } // Exits only this iteration of the foreach block
             
-            try processOneEntityProperty(currIVar, in: currType, into: &schemaProperties, entity: schemaEntity, schema: schemaData)
+            try processOneEntityProperty(currIVar, in: currType, into: &schemaProperties, entity: schemaEntity, schema: schemaData, enums: enums)
         }
         schemaProperties.last?.isLast = true
         schemaEntity.properties = schemaProperties
@@ -519,6 +527,13 @@ enum ObjectBoxGenerator {
     static func process(parsingResult result: inout Sourcery.ParsingResult) throws {
         let schemaData = IdSync.Schema()
         
+        var enums = [String: TypeName]()
+        result.types.all.forEach { currType in
+            if let enumType = currType as? Enum, let rawTypeName = enumType.rawTypeName {
+                enums[currType.name] = rawTypeName
+            }
+        }
+        
         try result.types.all.forEach { currType in
             warnIfAnnotations(otherThan: ObjectBoxGenerator.validTypeAnnotationNames,
                               in: Set(currType.annotations.keys), of: currType.name)
@@ -526,7 +541,7 @@ enum ObjectBoxGenerator {
             // The annotation should be lowercase "entity", but given the protocol is uppercase, we allow that too,
             // as a convenience for users who use both and get their case mixed up:
             if isEntityBased || currType.annotations["entity"] != nil || currType.annotations["Entity"] != nil {
-                try processOneEntityType(currType, entityBased: isEntityBased, into: schemaData)
+                try processOneEntityType(currType, entityBased: isEntityBased, enums: enums, into: schemaData)
             }
         }
         
