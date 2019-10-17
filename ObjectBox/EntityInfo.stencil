@@ -127,9 +127,9 @@ extension ObjectBox.Property where E == {{ entity.className }} {
                                   propertyCollector: ObjectBox.FlatBufferBuilder, store: ObjectBox.Store) {
         {% for prop in entity.properties %}
         {% if prop.isStringType %}
-        let propertyOffset_{{ prop.propertyName }} = propertyCollector.prepare(string: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }})
+        let propertyOffset_{{ prop.propertyName }} = propertyCollector.prepare(string: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }})
         {% elif prop.isByteVectorType %}
-        let propertyOffset_{{ prop.propertyName }} = propertyCollector.prepare(bytes: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }})
+        let propertyOffset_{{ prop.propertyName }} = propertyCollector.prepare(bytes: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }})
         {% endif %}
         {% endfor %}
 
