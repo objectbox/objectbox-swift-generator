@@ -286,7 +286,7 @@ extension ObjectBox.Box where E == {{ entity.className }} {
     /// - Returns: The stored objects. If any entity's id is 0, an ID is generated.
     /// - Throws: ObjectBoxError errors for database write errors.
     func put(structs entities: [{{ entity.className }}]) throws -> [{{ entity.className }}] {
-        let entityIds: [{{ entity.className }}.EntityBindingType.IdType] = try self.put(entities)
+        let entityIds: [{{ entity.className }}.EntityBindingType.IdType] = try self.putAndReturnIDs(entities)
         var newEntities = [{{ entity.className }}]()
 
         for i in 0 ..< min(entities.count, entityIds.count) {
