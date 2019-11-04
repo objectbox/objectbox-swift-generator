@@ -287,24 +287,25 @@ extension ObjectBox.Box where E == {{ entity.className }} {
     /// - Throws: ObjectBoxError errors for database write errors.
     func put(structs entities: [{{ entity.className }}]) throws -> [{{ entity.className }}] {
         let entityIds: [{{ entity.className }}.EntityBindingType.IdType] = try self.putAndReturnIDs(entities)
-        var newEntities = [{{ entity.className }}]()
+        return [{{ entity.className }}](unsafeUninitializedCapacity: entities.count)
+        { (ptr, initializedCount) in
+            for i in 0 ..< min(entities.count, entityIds.count) {
+                let entity = entities[i]
+                let entityId = entityIds[i]
 
-        for i in 0 ..< min(entities.count, entityIds.count) {
-            let entity = entities[i]
-            let entityId = entityIds[i]
-
-            newEntities.append({{ entity.className }}(
-                {% for prop in entity.properties %}
-                {% if prop.isObjectId %}
-                id: entityId{% elif prop.isRelation %}
-                {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% elif prop.isToManyRelation %}
-                {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% else %}
-                {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% endif %}{% if not prop.isLast %}, {% endif %}
-                {% endfor %}
-            ))
+                initializedCount = 0
+                ptr[initializedCount] = {{ entity.className }}(
+                    {% for prop in entity.properties %}
+                    {% if prop.isObjectId %}
+                    id: entityId{% elif prop.isRelation %}
+                    {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% elif prop.isToManyRelation %}
+                    {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% else %}
+                    {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% endif %}{% if not prop.isLast %}, {% endif %}
+                    {% endfor %}
+                )
+                initializedCount += 1
+            }
         }
-
-        return newEntities
     }
 }
 {% endif %}
