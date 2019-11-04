@@ -287,25 +287,24 @@ extension ObjectBox.Box where E == {{ entity.className }} {
     /// - Throws: ObjectBoxError errors for database write errors.
     func put(structs entities: [{{ entity.className }}]) throws -> [{{ entity.className }}] {
         let entityIds: [{{ entity.className }}.EntityBindingType.IdType] = try self.putAndReturnIDs(entities)
-        return [{{ entity.className }}](unsafeUninitializedCapacity: entities.count)
-        { (ptr, initializedCount) in
-            for i in 0 ..< min(entities.count, entityIds.count) {
-                let entity = entities[i]
-                let entityId = entityIds[i]
+        var newEntities = [{{ entity.className }}]()
 
-                initializedCount = 0
-                ptr[initializedCount] = {{ entity.className }}(
-                    {% for prop in entity.properties %}
-                    {% if prop.isObjectId %}
-                    id: entityId{% elif prop.isRelation %}
-                    {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% elif prop.isToManyRelation %}
-                    {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% else %}
-                    {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% endif %}{% if not prop.isLast %}, {% endif %}
-                    {% endfor %}
-                )
-                initializedCount += 1
-            }
+        for i in 0 ..< min(entities.count, entityIds.count) {
+            let entity = entities[i]
+            let entityId = entityIds[i]
+
+            newEntities.append({{ entity.className }}(
+                {% for prop in entity.properties %}
+                {% if prop.isObjectId %}
+                id: entityId{% elif prop.isRelation %}
+                {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% elif prop.isToManyRelation %}
+                {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% else %}
+                {{ prop.propertyName }}: entity.{{ prop.propertyName }}{% endif %}{% if not prop.isLast %}, {% endif %}
+                {% endfor %}
+            ))
         }
+
+        return newEntities
     }
 }
 {% endif %}
