@@ -288,6 +288,7 @@ extension ObjectBox.Box where E == {{ entity.className }} {
     func put(structs entities: [{{ entity.className }}]) throws -> [{{ entity.className }}] {
         let entityIds: [{{ entity.className }}.EntityBindingType.IdType] = try self.putAndReturnIDs(entities)
         var newEntities = [{{ entity.className }}]()
+        newEntities.reserveCapacity(entities.count)
 
         for i in 0 ..< min(entities.count, entityIds.count) {
             let entity = entities[i]
