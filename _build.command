@@ -1,7 +1,9 @@
 #!/bin/bash
+set -e
 
-cd "`dirname "$0"`"
-MY_DIR="`pwd`"
+# macOS does not have realpath and readlink does not have -f option, so do this instead:
+MY_DIR=$( cd "$(dirname "$0")" ; pwd -P )
+cd "$MY_DIR"
 
 if [ "$TERM" == "" ]; then
     SMSO=""
