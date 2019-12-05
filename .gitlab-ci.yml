@@ -1,0 +1,8 @@
+stages:
+  - build
+
+build:
+  stage: build
+  tags: [mac, x64, xcode]
+  script:
+    - ./_build.command
