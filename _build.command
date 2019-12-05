@@ -5,7 +5,7 @@ set -e
 MY_DIR=$( cd "$(dirname "$0")" ; pwd -P )
 cd "$MY_DIR"
 
-if [ "$TERM" == "" ]; then
+if [ "$TERM" == "" ] || [ "$TERM" == "dumb" ] ; then
     SMSO=""
     RMSO=""
     BEL=""
