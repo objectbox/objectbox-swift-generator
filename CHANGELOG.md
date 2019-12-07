@@ -3,6 +3,10 @@
 ---
 ## Master
 
+### New Features
+
+- Added `optional` filter for variables
+
 ### Internal Changes
 
 - Improved error logging when running with `--watch` option
@@ -10,6 +14,7 @@
 ### Bug fixes
 
 - Fixed expansion of undefined environment variables (now consistent with command line behaviour, where such args are empty strings)
+- Fixed a bug in inferring extensions of Dictionary and Array types
 
 ## 0.17.0
 
