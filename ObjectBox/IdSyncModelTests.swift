@@ -1,9 +1,4 @@
-//
-//  IdSyncModelTests.swift
-//  SourceryTests
-//
-//  Created by Uli Kusterer on 07.12.18.
-//
+//  Copyright © 2018-2019 ObjectBox. All rights reserved.
 
 import Foundation
 import Quick

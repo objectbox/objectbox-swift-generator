@@ -1,3 +1,5 @@
+//  Copyright © 2018-2019 ObjectBox. All rights reserved.
+
 import Foundation
 
 /// Object used for sending anonymous statistics about ObjectBox usage.

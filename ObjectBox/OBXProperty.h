@@ -1,4 +1,4 @@
-//  Copyright © 2018 ObjectBox. All rights reserved.
+//  Copyright © 2018-2019 ObjectBox. All rights reserved.
 
 #import <Foundation/Foundation.h>
 

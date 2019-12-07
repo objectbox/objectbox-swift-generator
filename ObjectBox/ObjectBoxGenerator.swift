@@ -1,10 +1,4 @@
-//
-//  ObjectBoxGenerator.swift
-//  Sourcery
-//
-//  Created by Uli Kusterer on 29.11.18.
-//  Copyright © 2018 ObjectBox. All rights reserved.
-//
+//  Copyright © 2018-2019 ObjectBox. All rights reserved.
 
 import Foundation
 import PathKit
@@ -13,7 +7,7 @@ import StencilSwiftKit
 import StencilSwiftKit.Swift
 import SourceryRuntime
 
-
+/// Builds the ObjectBox model in process() and exposes the model via exposeObjects()
 enum ObjectBoxGenerator {
         
     enum Error: Swift.Error {
@@ -524,6 +518,7 @@ enum ObjectBoxGenerator {
     
     /* Process the parsed syntax tree, possibly annotating or otherwise
         extending it. */
+    // Called by Sourcery class, which is called by main
     static func process(parsingResult result: inout Sourcery.ParsingResult) throws {
         let schemaData = IdSync.Schema()
         
@@ -561,6 +556,7 @@ enum ObjectBoxGenerator {
     }
     
     /* Modify the dictionary of global objects that Stencil sees. */
+    // Called by StencilTemplate to expose our ObjectBox model to templates
     static func exposeObjects(to objectsDictionary: inout [String:Any]) {
         objectsDictionary["entities"] = ObjectBoxGenerator.entities
         objectsDictionary["visibility"] = ObjectBoxGenerator.classVisibility;

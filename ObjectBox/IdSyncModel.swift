@@ -1,10 +1,4 @@
-//
-//  IdSyncModel.swift
-//  Sourcery
-//
-//  Created by Uli Kusterer on 03.12.18.
-//  Copyright © 2018 ObjectBox. All rights reserved.
-//
+//  Copyright © 2018-2019 ObjectBox. All rights reserved.
 
 import Foundation
 
