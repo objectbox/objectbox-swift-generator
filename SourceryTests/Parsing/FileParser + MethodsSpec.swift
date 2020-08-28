@@ -17,7 +17,12 @@ class FileParserMethodsSpec: QuickSpec {
             describe("parseMethod") {
                 func parse(_ code: String) -> [Type] {
                     guard let parserResult = try? FileParser(contents: code).parse() else { fail(); return [] }
-                    return Composer.uniqueTypes(parserResult)
+                    return Composer.uniqueTypesAndFunctions(parserResult).types
+                }
+
+                func parseFunctions(_ code: String) -> [SourceryMethod] {
+                    guard let parserResult = try? FileParser(contents: code).parse() else { fail(); return [] }
+                    return Composer.uniqueTypesAndFunctions(parserResult).functions
                 }
 
                 it("extracts methods properly") {
@@ -98,7 +103,7 @@ class FileParserMethodsSpec: QuickSpec {
                 it("extracts extension method properly") {
                     expect(parse("class Baz {}; extension Baz { func foo() {} }")).to(equal([
                         Class(name: "Baz", methods: [
-                            Method(name: "foo()", selectorName: "foo", definedInTypeName: TypeName("Baz"))
+                            Method(name: "foo()", selectorName: "foo", accessLevel: .none, definedInTypeName: TypeName("Baz"))
                             ])
                         ]))
                 }
@@ -109,6 +114,12 @@ class FileParserMethodsSpec: QuickSpec {
                             Method(name: "foo()", selectorName: "foo", isStatic: true, definedInTypeName: TypeName("Foo"))
                             ])
                         ]))
+                }
+
+                it("extracts free functions properly") {
+                    expect(parseFunctions("func foo() {}")).to(equal([
+                        Method(name: "foo()", selectorName: "foo", isStatic: false, definedInTypeName: nil)
+                    ]))
                 }
 
                 context("given method with parameters") {

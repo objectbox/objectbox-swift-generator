@@ -17,7 +17,7 @@ class FileParserSpec: QuickSpec {
             describe("parse") {
                 func parse(_ code: String) -> [Type] {
                     guard let parserResult = try? FileParser(contents: code).parse() else { fail(); return [] }
-                    return Composer.uniqueTypes(parserResult)
+                    return Composer.uniqueTypesAndFunctions(parserResult).types
                 }
 
                 describe("regression files") {
@@ -119,7 +119,7 @@ class FileParserSpec: QuickSpec {
                         }
 
                         it("extracts properly from extension") {
-                            let innerType = Struct(name: "Bar", accessLevel: .internal, isExtension: false, variables: [])
+                            let innerType = Struct(name: "Bar", accessLevel: .none, isExtension: false, variables: [])
 
                             expect(parse("struct Foo {}  extension Foo { struct Bar { } }"))
                                 .to(equal([
@@ -133,9 +133,9 @@ class FileParserSpec: QuickSpec {
                 context("given class") {
 
                     it("extracts variables properly") {
-                        expect(parse("class Foo { }; extension Foo { var x: Int }"))
+                        expect(parse("class Foo { }; extension Foo { var x: Int { 1 }"))
                                 .to(equal([
-                                        Class(name: "Foo", accessLevel: .internal, isExtension: false, variables: [Variable(name: "x", typeName: TypeName("Int"), accessLevel: (read: .internal, write: .internal), isComputed: false, definedInTypeName: TypeName("Foo"))])
+                                        Class(name: "Foo", accessLevel: .internal, isExtension: false, variables: [Variable(name: "x", typeName: TypeName("Int"), accessLevel: (read: .none, write: .none), isComputed: true, definedInTypeName: TypeName("Foo"))])
                                 ]))
                     }
 
@@ -160,7 +160,7 @@ class FileParserSpec: QuickSpec {
                     it("extracts extensions properly") {
                         expect(parse("protocol Foo { }; extension Bar: Foo { var x: Int { return 0 } }"))
                             .to(equal([
-                                Type(name: "Bar", accessLevel: .internal, isExtension: true, variables: [Variable(name: "x", typeName: TypeName("Int"), accessLevel: (read: .internal, write: .none), isComputed: true, definedInTypeName: TypeName("Bar"))], inheritedTypes: ["Foo"]),
+                                Type(name: "Bar", accessLevel: .none, isExtension: true, variables: [Variable(name: "x", typeName: TypeName("Int"), accessLevel: (read: .none, write: .none), isComputed: true, definedInTypeName: TypeName("Bar"))], inheritedTypes: ["Foo"]),
                                 Protocol(name: "Foo")
                                 ]))
                     }
@@ -168,7 +168,7 @@ class FileParserSpec: QuickSpec {
 
                 context("given typealias") {
                     func parse(_ code: String) -> FileParserResult {
-                        guard let parserResult = try? FileParser(contents: code).parse() else { fail(); return FileParserResult(path: nil, module: nil, types: [], typealiases: []) }
+                        guard let parserResult = try? FileParser(contents: code).parse() else { fail(); return FileParserResult(path: nil, module: nil, types: [], functions: [], typealiases: []) }
                         return parserResult
                     }
 
@@ -215,7 +215,6 @@ class FileParserSpec: QuickSpec {
                                     Typealias(aliasName: "GlobalAlias", typeName: TypeName("() -> ()"))
                                     ]))
                         }
-
                     }
 
                     context("given local typealias") {
@@ -236,6 +235,52 @@ class FileParserSpec: QuickSpec {
                         }
                     }
 
+                }
+
+                context("given a protocol composition") {
+                    context("of two protocols") {
+                        it("extracts protocol composition for typealias with ampersand") {
+                            expect(parse("typealias Composition = Foo & Bar; protocol Foo {}; protocol Bar {}"))
+                                .to(contain([
+                                    ProtocolComposition(name: "Composition", inheritedTypes: ["Foo", "Bar"], composedTypeNames: [TypeName("Foo"), TypeName("Bar")])
+                                    ]))
+                        }
+                    }
+
+                    context("of three protocols") {
+                        it("extracts protocol composition for typealias with ampersand") {
+                            expect(parse("typealias Composition = Foo & Bar & Baz; protocol Foo {}; protocol Bar {}; protocol Baz {}"))
+                                .to(contain([
+                                    ProtocolComposition(name: "Composition", inheritedTypes: ["Foo", "Bar", "Baz"], composedTypeNames: [TypeName("Foo"), TypeName("Bar"), TypeName("Baz")])
+                                    ]))
+                        }
+                    }
+
+                    context("of a protocol and a class") {
+                        it("extracts protocol composition for typealias with ampersand") {
+                            expect(parse("typealias Composition = Foo & Bar; protocol Foo {}; class Bar {}"))
+                                .to(contain([
+                                    ProtocolComposition(name: "Composition", inheritedTypes: ["Foo", "Bar"], composedTypeNames: [TypeName("Foo"), TypeName("Bar")])
+                                    ]))
+                        }
+                    }
+
+                    context("given local protocol composition") {
+                        it ("extracts local protocol compositions properly") {
+                            let foo = Type(name: "Foo")
+                            let bar = Type(name: "Bar", parent: foo)
+
+                            let types = parse("protocol P {}; class Foo { typealias FooComposition = Bar & P; class Bar { typealias BarComposition = FooBar & P; class FooBar {} } }")
+
+                            let fooComposition = types.first?.containedTypes.first
+                            let barComposition = types.first?.containedTypes.last?.containedTypes.first
+
+                            expect(fooComposition).to(equal(
+                                ProtocolComposition(name: "FooComposition", parent: foo, inheritedTypes: ["Bar", "P"], composedTypeNames: [TypeName("Bar"), TypeName("P")])))
+                            expect(barComposition).to(equal(
+                                ProtocolComposition(name: "BarComposition", parent: bar, inheritedTypes: ["FooBar", "P"], composedTypeNames: [TypeName("FooBar"), TypeName("P")])))
+                        }
+                    }
                 }
 
                 context("given enum") {
@@ -473,6 +518,18 @@ class FileParserSpec: QuickSpec {
                                 ]))
                     }
 
+                    it("extracts enums with indirect cases") {
+                        expect(parse("enum Foo { case optionA; case optionB; indirect case optionC }"))
+                                .to(equal([
+                                    Enum(name: "Foo", accessLevel: .internal, isExtension: false, inheritedTypes: [], cases:
+                                        [
+                                            EnumCase(name: "optionA", indirect: false),
+                                            EnumCase(name: "optionB"),
+                                            EnumCase(name: "optionC", indirect: true)
+                                        ])
+                                ]))
+                    }
+
                     it("extracts enums with empty parenthesis as ones with () associated type") {
                         expect(parse("enum Foo { case optionA(); case optionB() }"))
                                 .to(equal([
@@ -482,6 +539,23 @@ class FileParserSpec: QuickSpec {
                                                           EnumCase(name: "optionB", associatedValues: [AssociatedValue(typeName: TypeName("()"))])
                                                   ])
                                           ]))
+                    }
+
+                    it("extracts default values for asssociated values") {
+                        expect(parse("enum Foo { case optionA(Int = 1, named: Float = 42.0, _: Bool = false); case optionB(Bool = true) }"))
+                        .to(equal([
+                            Enum(name: "Foo", accessLevel: .internal, isExtension: false, inheritedTypes: [], cases:
+                                [
+                                    EnumCase(name: "optionA", associatedValues: [
+                                        AssociatedValue(localName: nil, externalName: "0", typeName: TypeName("Int"), defaultValue: "1"),
+                                        AssociatedValue(localName: "named", externalName: "named", typeName: TypeName("Float"), defaultValue: "42.0"),
+                                        AssociatedValue(localName: nil, externalName: "2", typeName: TypeName("Bool"), defaultValue: "false")
+                                        ]),
+                                    EnumCase(name: "optionB", associatedValues: [
+                                    AssociatedValue(localName: nil, externalName: nil, typeName: TypeName("Bool"), defaultValue: "true")
+                                    ])
+                                ])
+                        ]))
                     }
 
                     context("given associated value with its type existing") {

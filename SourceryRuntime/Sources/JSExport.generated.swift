@@ -1,4 +1,4 @@
-// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 1.0.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace trailing_newline
@@ -13,11 +13,20 @@ import JavaScriptCore
 
 extension ArrayType: ArrayTypeAutoJSExport {}
 
+@objc protocol AssociatedTypeAutoJSExport: JSExport {
+    var name: String { get }
+    var typeName: TypeName? { get }
+    var type: Type? { get }
+}
+
+extension AssociatedType: AssociatedTypeAutoJSExport {}
+
 @objc protocol AssociatedValueAutoJSExport: JSExport {
     var localName: String? { get }
     var externalName: String? { get }
     var typeName: TypeName { get }
     var type: Type? { get }
+    var defaultValue: String? { get }
     var annotations: [String: NSObject] { get }
     var isOptional: Bool { get }
     var isImplicitlyUnwrappedOptional: Bool { get }
@@ -45,6 +54,7 @@ extension BytesRange: BytesRangeAutoJSExport {}
     var kind: String { get }
     var isFinal: Bool { get }
     var module: String? { get }
+    var imports: [String] { get }
     var accessLevel: String { get }
     var name: String { get }
     var globalName: String { get }
@@ -112,6 +122,7 @@ extension DictionaryType: DictionaryTypeAutoJSExport {}
     var based: [String: String] { get }
     var hasAssociatedValues: Bool { get }
     var module: String? { get }
+    var imports: [String] { get }
     var accessLevel: String { get }
     var name: String { get }
     var globalName: String { get }
@@ -150,6 +161,7 @@ extension Enum: EnumAutoJSExport {}
     var rawValue: String? { get }
     var associatedValues: [AssociatedValue] { get }
     var annotations: [String: NSObject] { get }
+    var indirect: Bool { get }
     var hasAssociatedValue: Bool { get }
 }
 
@@ -223,7 +235,9 @@ extension MethodParameter: MethodParameterAutoJSExport {}
 
 @objc protocol ProtocolAutoJSExport: JSExport {
     var kind: String { get }
+    var associatedTypes: [String: AssociatedType] { get }
     var module: String? { get }
+    var imports: [String] { get }
     var accessLevel: String { get }
     var name: String { get }
     var globalName: String { get }
@@ -259,9 +273,11 @@ extension MethodParameter: MethodParameterAutoJSExport {}
 extension Protocol: ProtocolAutoJSExport {}
 
 
+
 @objc protocol StructAutoJSExport: JSExport {
     var kind: String { get }
     var module: String? { get }
+    var imports: [String] { get }
     var accessLevel: String { get }
     var name: String { get }
     var globalName: String { get }
@@ -318,6 +334,7 @@ extension Struct: StructAutoJSExport {}
 extension Subscript: SubscriptAutoJSExport {}
 
 @objc protocol TemplateContextAutoJSExport: JSExport {
+    var functions: [SourceryMethod] { get }
     var types: Types { get }
     var argument: [String: NSObject] { get }
     var type: [String: Type] { get }
@@ -347,6 +364,7 @@ extension TupleType: TupleTypeAutoJSExport {}
 
 @objc protocol TypeAutoJSExport: JSExport {
     var module: String? { get }
+    var imports: [String] { get }
     var kind: String { get }
     var accessLevel: String { get }
     var name: String { get }

@@ -7,6 +7,7 @@ import Foundation
 
 /// :nodoc:
 @objcMembers public final class TemplateContext: NSObject, SourceryModel {
+    public let functions: [SourceryMethod]
     public let types: Types
     public let argument: [String: NSObject]
 
@@ -15,20 +16,23 @@ import Foundation
         return types.typesByName
     }
 
-    public init(types: Types, arguments: [String: NSObject]) {
+    public init(types: Types, functions: [SourceryMethod], arguments: [String: NSObject]) {
         self.types = types
+        self.functions = functions
         self.argument = arguments
     }
 
 // sourcery:inline:TemplateContext.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
+            guard let functions: [SourceryMethod] = aDecoder.decode(forKey: "functions") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["functions"])); fatalError() }; self.functions = functions
             guard let types: Types = aDecoder.decode(forKey: "types") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["types"])); fatalError() }; self.types = types
             guard let argument: [String: NSObject] = aDecoder.decode(forKey: "argument") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["argument"])); fatalError() }; self.argument = argument
         }
 
         /// :nodoc:
         public func encode(with aCoder: NSCoder) {
+            aCoder.encode(self.functions, forKey: "functions")
             aCoder.encode(self.types, forKey: "types")
             aCoder.encode(self.argument, forKey: "argument")
         }
@@ -37,6 +41,7 @@ import Foundation
     public var stencilContext: [String: Any] {
         return [
             "types": types,
+            "functions": functions,
             "type": types.typesByName,
             "argument": argument
         ]
@@ -56,6 +61,7 @@ import Foundation
                 "inheriting": types.inheriting,
                 "implementing": types.implementing
             ],
+            "functions": functions,
             "type": types.typesByName,
             "argument": argument
         ]
@@ -77,20 +83,26 @@ extension ProcessInfo {
     /// :nodoc:
     public let types: [Type]
 
+    /// All known typealiases
+    public let typealiases: [Typealias]
+
     /// :nodoc:
-    public init(types: [Type]) {
+    public init(types: [Type], typealiases: [Typealias] = []) {
         self.types = types
+        self.typealiases = typealiases
     }
 
 // sourcery:inline:Types.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let types: [Type] = aDecoder.decode(forKey: "types") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["types"])); fatalError() }; self.types = types
+            guard let typealiases: [Typealias] = aDecoder.decode(forKey: "typealiases") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["typealiases"])); fatalError() }; self.typealiases = typealiases
         }
 
         /// :nodoc:
         public func encode(with aCoder: NSCoder) {
             aCoder.encode(self.types, forKey: "types")
+            aCoder.encode(self.typealiases, forKey: "typealiases")
         }
 // sourcery:end
 
@@ -98,20 +110,34 @@ extension ProcessInfo {
     /// :nodoc:
     public lazy internal(set) var typesByName: [String: Type] = {
         var typesByName = [String: Type]()
-        self.types.forEach { typesByName[$0.name] = $0 }
+        self.types.forEach { typesByName[$0.globalName] = $0 }
         return typesByName
     }()
 
     // sourcery: skipDescription, skipEquality, skipCoding
-    /// All known types, excluding protocols
+    /// :nodoc:
+    public lazy internal(set) var typesaliasesByName: [String: Typealias] = {
+        var typesaliasesByName = [String: Typealias]()
+        self.typealiases.forEach { typesaliasesByName[$0.name] = $0 }
+        return typesaliasesByName
+    }()
+
+    // sourcery: skipDescription, skipEquality, skipCoding
+    /// All known types, excluding protocols or protocol compositions.
     public lazy internal(set) var all: [Type] = {
-        return self.types.filter { !($0 is Protocol) }
+        return self.types.filter { !($0 is Protocol || $0 is ProtocolComposition) }
     }()
 
     // sourcery: skipDescription, skipEquality, skipCoding
     /// All known protocols
     public lazy internal(set) var protocols: [Protocol] = {
         return self.types.compactMap { $0 as? Protocol }
+    }()
+
+    // sourcery: skipDescription, skipEquality, skipCoding
+    /// All known protocol compositions
+    public lazy internal(set) var protocolCompositions: [ProtocolComposition] = {
+        return self.types.compactMap { $0 as? ProtocolComposition }
     }()
 
     // sourcery: skipDescription, skipEquality, skipCoding

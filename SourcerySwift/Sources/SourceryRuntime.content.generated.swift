@@ -47,6 +47,47 @@ public protocol Annotated {
 }
 
 """),
+    .init(name: "AssociatedType.swift", content:
+"""
+import Foundation
+
+/// Describes Swift AssociatedType
+@objcMembers public final class AssociatedType: NSObject, SourceryModel {
+    /// Associated type name
+    public let name: String
+
+    /// Associated type type constraint name, if specified
+    public let typeName: TypeName?
+
+    // sourcery: skipEquality, skipDescription
+    /// Associated type constrained type, if known, i.e. if the type is declared in the scanned sources.
+    public var type: Type?
+
+    /// :nodoc:
+    public init(name: String, typeName: TypeName? = nil, type: Type? = nil) {
+        self.name = name
+        self.typeName = typeName
+        self.type = type
+    }
+
+// sourcery:inline:AssociatedType.AutoCoding
+        /// :nodoc:
+        required public init?(coder aDecoder: NSCoder) {
+            guard let name: String = aDecoder.decode(forKey: "name") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["name"])); fatalError() }; self.name = name
+            self.typeName = aDecoder.decode(forKey: "typeName")
+            self.type = aDecoder.decode(forKey: "type")
+        }
+
+        /// :nodoc:
+        public func encode(with aCoder: NSCoder) {
+            aCoder.encode(self.name, forKey: "name")
+            aCoder.encode(self.typeName, forKey: "typeName")
+            aCoder.encode(self.type, forKey: "type")
+        }
+// sourcery:end
+}
+
+"""),
     .init(name: "Attribute.swift", content:
 """
 import Foundation
@@ -313,7 +354,7 @@ import Foundation
 """),
     .init(name: "Coding.generated.swift", content:
 """
-// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 1.0.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace trailing_newline
@@ -359,6 +400,8 @@ extension NSCoder {
 
 extension ArrayType: NSCoding {}
 
+extension AssociatedType: NSCoding {}
+
 extension AssociatedValue: NSCoding {}
 
 extension Attribute: NSCoding {}
@@ -382,6 +425,7 @@ extension GenericTypeParameter: NSCoding {}
 extension Method: NSCoding {}
 
 extension MethodParameter: NSCoding {}
+
 
 
 
@@ -427,7 +471,7 @@ public protocol Definition: AnyObject {
 """),
     .init(name: "Description.generated.swift", content:
 """
-// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 1.0.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace
@@ -442,6 +486,15 @@ extension ArrayType {
         return string
     }
 }
+extension AssociatedType {
+    /// :nodoc:
+    override public var description: String {
+        var string = "\\(Swift.type(of: self)): "
+        string += "name = \\(String(describing: self.name)), "
+        string += "typeName = \\(String(describing: self.typeName))"
+        return string
+    }
+}
 extension AssociatedValue {
     /// :nodoc:
     override public var description: String {
@@ -449,6 +502,7 @@ extension AssociatedValue {
         string += "localName = \\(String(describing: self.localName)), "
         string += "externalName = \\(String(describing: self.externalName)), "
         string += "typeName = \\(String(describing: self.typeName)), "
+        string += "defaultValue = \\(String(describing: self.defaultValue)), "
         string += "annotations = \\(String(describing: self.annotations))"
         return string
     }
@@ -513,6 +567,7 @@ extension EnumCase {
         string += "rawValue = \\(String(describing: self.rawValue)), "
         string += "associatedValues = \\(String(describing: self.associatedValues)), "
         string += "annotations = \\(String(describing: self.annotations)), "
+        string += "indirect = \\(String(describing: self.indirect)), "
         string += "hasAssociatedValue = \\(String(describing: self.hasAssociatedValue))"
         return string
     }
@@ -524,6 +579,7 @@ extension FileParserResult {
         string += "path = \\(String(describing: self.path)), "
         string += "module = \\(String(describing: self.module)), "
         string += "types = \\(String(describing: self.types)), "
+        string += "functions = \\(String(describing: self.functions)), "
         string += "typealiases = \\(String(describing: self.typealiases)), "
         string += "inlineRanges = \\(String(describing: self.inlineRanges)), "
         string += "inlineIndentations = \\(String(describing: self.inlineIndentations)), "
@@ -588,7 +644,18 @@ extension Protocol {
     override public var description: String {
         var string = super.description
         string += ", "
-        string += "kind = \\(String(describing: self.kind))"
+        string += "kind = \\(String(describing: self.kind)), "
+        string += "associatedTypes = \\(String(describing: self.associatedTypes))"
+        return string
+    }
+}
+extension ProtocolComposition {
+    /// :nodoc:
+    override public var description: String {
+        var string = super.description
+        string += ", "
+        string += "kind = \\(String(describing: self.kind)), "
+        string += "composedTypeNames = \\(String(describing: self.composedTypeNames))"
         return string
     }
 }
@@ -623,6 +690,7 @@ extension TemplateContext {
     /// :nodoc:
     override public var description: String {
         var string = "\\(Swift.type(of: self)): "
+        string += "functions = \\(String(describing: self.functions)), "
         string += "types = \\(String(describing: self.types)), "
         string += "argument = \\(String(describing: self.argument)), "
         string += "stencilContext = \\(String(describing: self.stencilContext))"
@@ -652,6 +720,7 @@ extension Type {
     override public var description: String {
         var string = "\\(Swift.type(of: self)): "
         string += "module = \\(String(describing: self.module)), "
+        string += "imports = \\(String(describing: self.imports)), "
         string += "typealiases = \\(String(describing: self.typealiases)), "
         string += "isExtension = \\(String(describing: self.isExtension)), "
         string += "kind = \\(String(describing: self.kind)), "
@@ -694,7 +763,8 @@ extension Types {
     /// :nodoc:
     override public var description: String {
         var string = "\\(Swift.type(of: self)): "
-        string += "types = \\(String(describing: self.types))"
+        string += "types = \\(String(describing: self.types)), "
+        string += "typealiases = \\(String(describing: self.typealiases))"
         return string
     }
 }
@@ -723,7 +793,7 @@ extension Variable {
 """),
     .init(name: "Diffable.generated.swift", content:
 """
-// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 1.0.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 import Foundation
@@ -740,6 +810,18 @@ extension ArrayType: Diffable {
         return results
     }
 }
+extension AssociatedType: Diffable {
+    @objc func diffAgainst(_ object: Any?) -> DiffableResult {
+        let results = DiffableResult()
+        guard let castObject = object as? AssociatedType else {
+            results.append("Incorrect type <expected: AssociatedType, received: \\(Swift.type(of: object))>")
+            return results
+        }
+        results.append(contentsOf: DiffableResult(identifier: "name").trackDifference(actual: self.name, expected: castObject.name))
+        results.append(contentsOf: DiffableResult(identifier: "typeName").trackDifference(actual: self.typeName, expected: castObject.typeName))
+        return results
+    }
+}
 extension AssociatedValue: Diffable {
     @objc func diffAgainst(_ object: Any?) -> DiffableResult {
         let results = DiffableResult()
@@ -750,6 +832,7 @@ extension AssociatedValue: Diffable {
         results.append(contentsOf: DiffableResult(identifier: "localName").trackDifference(actual: self.localName, expected: castObject.localName))
         results.append(contentsOf: DiffableResult(identifier: "externalName").trackDifference(actual: self.externalName, expected: castObject.externalName))
         results.append(contentsOf: DiffableResult(identifier: "typeName").trackDifference(actual: self.typeName, expected: castObject.typeName))
+        results.append(contentsOf: DiffableResult(identifier: "defaultValue").trackDifference(actual: self.defaultValue, expected: castObject.defaultValue))
         results.append(contentsOf: DiffableResult(identifier: "annotations").trackDifference(actual: self.annotations, expected: castObject.annotations))
         return results
     }
@@ -841,6 +924,7 @@ extension EnumCase: Diffable {
         results.append(contentsOf: DiffableResult(identifier: "rawValue").trackDifference(actual: self.rawValue, expected: castObject.rawValue))
         results.append(contentsOf: DiffableResult(identifier: "associatedValues").trackDifference(actual: self.associatedValues, expected: castObject.associatedValues))
         results.append(contentsOf: DiffableResult(identifier: "annotations").trackDifference(actual: self.annotations, expected: castObject.annotations))
+        results.append(contentsOf: DiffableResult(identifier: "indirect").trackDifference(actual: self.indirect, expected: castObject.indirect))
         return results
     }
 }
@@ -854,6 +938,7 @@ extension FileParserResult: Diffable {
         results.append(contentsOf: DiffableResult(identifier: "path").trackDifference(actual: self.path, expected: castObject.path))
         results.append(contentsOf: DiffableResult(identifier: "module").trackDifference(actual: self.module, expected: castObject.module))
         results.append(contentsOf: DiffableResult(identifier: "types").trackDifference(actual: self.types, expected: castObject.types))
+        results.append(contentsOf: DiffableResult(identifier: "functions").trackDifference(actual: self.functions, expected: castObject.functions))
         results.append(contentsOf: DiffableResult(identifier: "typealiases").trackDifference(actual: self.typealiases, expected: castObject.typealiases))
         results.append(contentsOf: DiffableResult(identifier: "inlineRanges").trackDifference(actual: self.inlineRanges, expected: castObject.inlineRanges))
         results.append(contentsOf: DiffableResult(identifier: "inlineIndentations").trackDifference(actual: self.inlineIndentations, expected: castObject.inlineIndentations))
@@ -931,6 +1016,19 @@ extension Protocol {
             results.append("Incorrect type <expected: Protocol, received: \\(Swift.type(of: object))>")
             return results
         }
+        results.append(contentsOf: DiffableResult(identifier: "associatedTypes").trackDifference(actual: self.associatedTypes, expected: castObject.associatedTypes))
+        results.append(contentsOf: super.diffAgainst(castObject))
+        return results
+    }
+}
+extension ProtocolComposition {
+    override func diffAgainst(_ object: Any?) -> DiffableResult {
+        let results = DiffableResult()
+        guard let castObject = object as? ProtocolComposition else {
+            results.append("Incorrect type <expected: ProtocolComposition, received: \\(Swift.type(of: object))>")
+            return results
+        }
+        results.append(contentsOf: DiffableResult(identifier: "composedTypeNames").trackDifference(actual: self.composedTypeNames, expected: castObject.composedTypeNames))
         results.append(contentsOf: super.diffAgainst(castObject))
         return results
     }
@@ -970,6 +1068,7 @@ extension TemplateContext: Diffable {
             results.append("Incorrect type <expected: TemplateContext, received: \\(Swift.type(of: object))>")
             return results
         }
+        results.append(contentsOf: DiffableResult(identifier: "functions").trackDifference(actual: self.functions, expected: castObject.functions))
         results.append(contentsOf: DiffableResult(identifier: "types").trackDifference(actual: self.types, expected: castObject.types))
         results.append(contentsOf: DiffableResult(identifier: "argument").trackDifference(actual: self.argument, expected: castObject.argument))
         return results
@@ -1007,6 +1106,7 @@ extension Type: Diffable {
             return results
         }
         results.append(contentsOf: DiffableResult(identifier: "module").trackDifference(actual: self.module, expected: castObject.module))
+        results.append(contentsOf: DiffableResult(identifier: "imports").trackDifference(actual: self.imports, expected: castObject.imports))
         results.append(contentsOf: DiffableResult(identifier: "typealiases").trackDifference(actual: self.typealiases, expected: castObject.typealiases))
         results.append(contentsOf: DiffableResult(identifier: "isExtension").trackDifference(actual: self.isExtension, expected: castObject.isExtension))
         results.append(contentsOf: DiffableResult(identifier: "accessLevel").trackDifference(actual: self.accessLevel, expected: castObject.accessLevel))
@@ -1062,6 +1162,7 @@ extension Types: Diffable {
             return results
         }
         results.append(contentsOf: DiffableResult(identifier: "types").trackDifference(actual: self.types, expected: castObject.types))
+        results.append(contentsOf: DiffableResult(identifier: "typealiases").trackDifference(actual: self.typealiases, expected: castObject.typealiases))
         return results
     }
 }
@@ -1159,6 +1260,7 @@ extension DiffableResult {
 
 #if swift(>=4.1)
 #else
+    /// :nodoc:
     @discardableResult func trackDifference<T: Equatable>(actual: T, expected: T) -> DiffableResult {
         if actual != expected {
             let result = DiffableResult(results: ["<expected: \\(expected), received: \\(actual)>"])
@@ -1168,6 +1270,7 @@ extension DiffableResult {
     }
 #endif
 
+    /// :nodoc:
     @discardableResult func trackDifference<T: Equatable>(actual: T?, expected: T?) -> DiffableResult {
         if actual != expected {
             let result = DiffableResult(results: ["<expected: \\(expected.map({ "\\($0)" }) ?? "nil"), received: \\(actual.map({ "\\($0)" }) ?? "nil")>"])
@@ -1176,12 +1279,14 @@ extension DiffableResult {
         return self
     }
 
+    /// :nodoc:
     @discardableResult func trackDifference<T: Equatable>(actual: T, expected: T) -> DiffableResult where T: Diffable {
         let diffResult = actual.diffAgainst(expected)
         append(contentsOf: diffResult)
         return self
     }
 
+    /// :nodoc:
     @discardableResult func trackDifference<T: Equatable>(actual: [T], expected: [T]) -> DiffableResult where T: Diffable {
         let diffResult = DiffableResult()
         defer { append(contentsOf: diffResult) }
@@ -1203,6 +1308,7 @@ extension DiffableResult {
         return self
     }
 
+    /// :nodoc:
     @discardableResult func trackDifference<T: Equatable>(actual: [T], expected: [T]) -> DiffableResult {
         let diffResult = DiffableResult()
         defer { append(contentsOf: diffResult) }
@@ -1220,6 +1326,7 @@ extension DiffableResult {
         return self
     }
 
+    /// :nodoc:
     @discardableResult func trackDifference<K, T: Equatable>(actual: [K: T], expected: [K: T]) -> DiffableResult where T: Diffable {
         let diffResult = DiffableResult()
         defer { append(contentsOf: diffResult) }
@@ -1257,6 +1364,7 @@ extension DiffableResult {
 
 // MARK: - NSObject diffing
 
+    /// :nodoc:
     @discardableResult func trackDifference<K, T: NSObjectProtocol>(actual: [K: T], expected: [K: T]) -> DiffableResult {
         let diffResult = DiffableResult()
         defer { append(contentsOf: diffResult) }
@@ -1318,20 +1426,24 @@ import Foundation
     /// Associated value type, if known
     public var type: Type?
 
+    /// Associated value default value
+    public let defaultValue: String?
+
     /// Annotations, that were created with // sourcery: annotation1, other = "annotation value", alterantive = 2
     public var annotations: [String: NSObject] = [:]
 
     /// :nodoc:
-    public init(localName: String?, externalName: String?, typeName: TypeName, type: Type? = nil, annotations: [String: NSObject] = [:]) {
+    public init(localName: String?, externalName: String?, typeName: TypeName, type: Type? = nil, defaultValue: String? = nil, annotations: [String: NSObject] = [:]) {
         self.localName = localName
         self.externalName = externalName
         self.typeName = typeName
         self.type = type
+        self.defaultValue = defaultValue
         self.annotations = annotations
     }
 
-    convenience init(name: String? = nil, typeName: TypeName, type: Type? = nil, annotations: [String: NSObject] = [:]) {
-        self.init(localName: name, externalName: name, typeName: typeName, type: type, annotations: annotations)
+    convenience init(name: String? = nil, typeName: TypeName, type: Type? = nil, defaultValue: String? = nil, annotations: [String: NSObject] = [:]) {
+        self.init(localName: name, externalName: name, typeName: typeName, type: type, defaultValue: defaultValue, annotations: annotations)
     }
 
 // sourcery:inline:AssociatedValue.AutoCoding
@@ -1341,6 +1453,7 @@ import Foundation
             self.externalName = aDecoder.decode(forKey: "externalName")
             guard let typeName: TypeName = aDecoder.decode(forKey: "typeName") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["typeName"])); fatalError() }; self.typeName = typeName
             self.type = aDecoder.decode(forKey: "type")
+            self.defaultValue = aDecoder.decode(forKey: "defaultValue")
             guard let annotations: [String: NSObject] = aDecoder.decode(forKey: "annotations") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["annotations"])); fatalError() }; self.annotations = annotations
         }
 
@@ -1350,6 +1463,7 @@ import Foundation
             aCoder.encode(self.externalName, forKey: "externalName")
             aCoder.encode(self.typeName, forKey: "typeName")
             aCoder.encode(self.type, forKey: "type")
+            aCoder.encode(self.defaultValue, forKey: "defaultValue")
             aCoder.encode(self.annotations, forKey: "annotations")
         }
 // sourcery:end
@@ -1371,6 +1485,9 @@ import Foundation
     /// Enum case annotations
     public var annotations: [String: NSObject] = [:]
 
+    /// Whether enum case is indirect
+    public let indirect: Bool
+
     /// Whether enum case has associated value
     public var hasAssociatedValue: Bool {
         return !associatedValues.isEmpty
@@ -1382,11 +1499,12 @@ import Foundation
     public var __parserData: Any?
 
     /// :nodoc:
-    public init(name: String, rawValue: String? = nil, associatedValues: [AssociatedValue] = [], annotations: [String: NSObject] = [:]) {
+    public init(name: String, rawValue: String? = nil, associatedValues: [AssociatedValue] = [], annotations: [String: NSObject] = [:], indirect: Bool = false) {
         self.name = name
         self.rawValue = rawValue
         self.associatedValues = associatedValues
         self.annotations = annotations
+        self.indirect = indirect
     }
 
 // sourcery:inline:EnumCase.AutoCoding
@@ -1396,6 +1514,7 @@ import Foundation
             self.rawValue = aDecoder.decode(forKey: "rawValue")
             guard let associatedValues: [AssociatedValue] = aDecoder.decode(forKey: "associatedValues") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["associatedValues"])); fatalError() }; self.associatedValues = associatedValues
             guard let annotations: [String: NSObject] = aDecoder.decode(forKey: "annotations") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["annotations"])); fatalError() }; self.annotations = annotations
+            self.indirect = aDecoder.decode(forKey: "indirect")
         }
 
         /// :nodoc:
@@ -1404,6 +1523,7 @@ import Foundation
             aCoder.encode(self.rawValue, forKey: "rawValue")
             aCoder.encode(self.associatedValues, forKey: "associatedValues")
             aCoder.encode(self.annotations, forKey: "annotations")
+            aCoder.encode(self.indirect, forKey: "indirect")
         }
 // sourcery:end
 }
@@ -1507,7 +1627,7 @@ import Foundation
 """),
     .init(name: "Equality.generated.swift", content:
 """
-// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 1.0.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace
@@ -1522,6 +1642,15 @@ extension ArrayType {
         return true
     }
 }
+extension AssociatedType {
+    /// :nodoc:
+    override public func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? AssociatedType else { return false }
+        if self.name != rhs.name { return false }
+        if self.typeName != rhs.typeName { return false }
+        return true
+    }
+}
 extension AssociatedValue {
     /// :nodoc:
     override public func isEqual(_ object: Any?) -> Bool {
@@ -1529,6 +1658,7 @@ extension AssociatedValue {
         if self.localName != rhs.localName { return false }
         if self.externalName != rhs.externalName { return false }
         if self.typeName != rhs.typeName { return false }
+        if self.defaultValue != rhs.defaultValue { return false }
         if self.annotations != rhs.annotations { return false }
         return true
     }
@@ -1605,6 +1735,7 @@ extension EnumCase {
         if self.rawValue != rhs.rawValue { return false }
         if self.associatedValues != rhs.associatedValues { return false }
         if self.annotations != rhs.annotations { return false }
+        if self.indirect != rhs.indirect { return false }
         return true
     }
 }
@@ -1615,6 +1746,7 @@ extension FileParserResult {
         if self.path != rhs.path { return false }
         if self.module != rhs.module { return false }
         if self.types != rhs.types { return false }
+        if self.functions != rhs.functions { return false }
         if self.typealiases != rhs.typealiases { return false }
         if self.inlineRanges != rhs.inlineRanges { return false }
         if self.inlineIndentations != rhs.inlineIndentations { return false }
@@ -1677,6 +1809,15 @@ extension Protocol {
     /// :nodoc:
     override public func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? Protocol else { return false }
+        if self.associatedTypes != rhs.associatedTypes { return false }
+        return super.isEqual(rhs)
+    }
+}
+extension ProtocolComposition {
+    /// :nodoc:
+    override public func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? ProtocolComposition else { return false }
+        if self.composedTypeNames != rhs.composedTypeNames { return false }
         return super.isEqual(rhs)
     }
 }
@@ -1705,6 +1846,7 @@ extension TemplateContext {
     /// :nodoc:
     override public func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? TemplateContext else { return false }
+        if self.functions != rhs.functions { return false }
         if self.types != rhs.types { return false }
         if self.argument != rhs.argument { return false }
         return true
@@ -1733,6 +1875,7 @@ extension Type {
     override public func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? Type else { return false }
         if self.module != rhs.module { return false }
+        if self.imports != rhs.imports { return false }
         if self.typealiases != rhs.typealiases { return false }
         if self.isExtension != rhs.isExtension { return false }
         if self.accessLevel != rhs.accessLevel { return false }
@@ -1780,6 +1923,7 @@ extension Types {
     override public func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? Types else { return false }
         if self.types != rhs.types { return false }
+        if self.typealiases != rhs.typealiases { return false }
         return true
     }
 }
@@ -1902,7 +2046,7 @@ public extension String {
 
     /// :nodoc:
     func isValidClosureName() -> Bool {
-        return components(separatedBy: "->", excludingDelimiterBetween: ("(", ")")).count > 1
+        return components(separatedBy: "->", excludingDelimiterBetween: (["(", "<"], [")", ">"])).count > 1
     }
 
     /// :nodoc:
@@ -1945,7 +2089,6 @@ public extension String {
         var quotesCount: Int = 0
         var item = ""
         var items = [String]()
-        var matchedDelimiter = (alreadyMatched: "", leftToMatch: delimiter)
 
         var i = self.startIndex
         while i < self.endIndex {
@@ -1984,6 +2127,7 @@ public extension String {
 }
 
 public extension NSString {
+    /// :nodoc:
     var entireRange: NSRange {
         return NSRange(location: 0, length: self.length)
     }
@@ -2015,6 +2159,7 @@ import Foundation
             }
         }
     }
+    public var functions = [SourceryMethod]()
     public var typealiases = [Typealias]()
     public var inlineRanges = [String: NSRange]()
     public var inlineIndentations = [String: String]()
@@ -2022,10 +2167,11 @@ import Foundation
     public var modifiedDate: Date
     public var sourceryVersion: String
 
-    public init(path: String?, module: String?, types: [Type], typealiases: [Typealias] = [], inlineRanges: [String: NSRange] = [:], inlineIndentations: [String: String] = [:], modifiedDate: Date = Date(), sourceryVersion: String = "") {
+    public init(path: String?, module: String?, types: [Type], functions: [SourceryMethod], typealiases: [Typealias] = [], inlineRanges: [String: NSRange] = [:], inlineIndentations: [String: String] = [:], modifiedDate: Date = Date(), sourceryVersion: String = "") {
         self.path = path
         self.module = module
         self.types = types
+        self.functions = functions
         self.typealiases = typealiases
         self.inlineRanges = inlineRanges
         self.inlineIndentations = inlineIndentations
@@ -2041,6 +2187,7 @@ import Foundation
             self.path = aDecoder.decode(forKey: "path")
             self.module = aDecoder.decode(forKey: "module")
             guard let types: [Type] = aDecoder.decode(forKey: "types") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["types"])); fatalError() }; self.types = types
+            guard let functions: [SourceryMethod] = aDecoder.decode(forKey: "functions") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["functions"])); fatalError() }; self.functions = functions
             guard let typealiases: [Typealias] = aDecoder.decode(forKey: "typealiases") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["typealiases"])); fatalError() }; self.typealiases = typealiases
             guard let inlineRanges: [String: NSRange] = aDecoder.decode(forKey: "inlineRanges") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["inlineRanges"])); fatalError() }; self.inlineRanges = inlineRanges
             guard let inlineIndentations: [String: String] = aDecoder.decode(forKey: "inlineIndentations") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["inlineIndentations"])); fatalError() }; self.inlineIndentations = inlineIndentations
@@ -2053,6 +2200,7 @@ import Foundation
             aCoder.encode(self.path, forKey: "path")
             aCoder.encode(self.module, forKey: "module")
             aCoder.encode(self.types, forKey: "types")
+            aCoder.encode(self.functions, forKey: "functions")
             aCoder.encode(self.typealiases, forKey: "typealiases")
             aCoder.encode(self.inlineRanges, forKey: "inlineRanges")
             aCoder.encode(self.inlineIndentations, forKey: "inlineIndentations")
@@ -2065,7 +2213,7 @@ import Foundation
 """),
     .init(name: "JSExport.generated.swift", content:
 """
-// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 1.0.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace trailing_newline
@@ -2080,11 +2228,20 @@ import JavaScriptCore
 
 extension ArrayType: ArrayTypeAutoJSExport {}
 
+@objc protocol AssociatedTypeAutoJSExport: JSExport {
+    var name: String { get }
+    var typeName: TypeName? { get }
+    var type: Type? { get }
+}
+
+extension AssociatedType: AssociatedTypeAutoJSExport {}
+
 @objc protocol AssociatedValueAutoJSExport: JSExport {
     var localName: String? { get }
     var externalName: String? { get }
     var typeName: TypeName { get }
     var type: Type? { get }
+    var defaultValue: String? { get }
     var annotations: [String: NSObject] { get }
     var isOptional: Bool { get }
     var isImplicitlyUnwrappedOptional: Bool { get }
@@ -2112,6 +2269,7 @@ extension BytesRange: BytesRangeAutoJSExport {}
     var kind: String { get }
     var isFinal: Bool { get }
     var module: String? { get }
+    var imports: [String] { get }
     var accessLevel: String { get }
     var name: String { get }
     var globalName: String { get }
@@ -2179,6 +2337,7 @@ extension DictionaryType: DictionaryTypeAutoJSExport {}
     var based: [String: String] { get }
     var hasAssociatedValues: Bool { get }
     var module: String? { get }
+    var imports: [String] { get }
     var accessLevel: String { get }
     var name: String { get }
     var globalName: String { get }
@@ -2217,6 +2376,7 @@ extension Enum: EnumAutoJSExport {}
     var rawValue: String? { get }
     var associatedValues: [AssociatedValue] { get }
     var annotations: [String: NSObject] { get }
+    var indirect: Bool { get }
     var hasAssociatedValue: Bool { get }
 }
 
@@ -2290,7 +2450,9 @@ extension MethodParameter: MethodParameterAutoJSExport {}
 
 @objc protocol ProtocolAutoJSExport: JSExport {
     var kind: String { get }
+    var associatedTypes: [String: AssociatedType] { get }
     var module: String? { get }
+    var imports: [String] { get }
     var accessLevel: String { get }
     var name: String { get }
     var globalName: String { get }
@@ -2326,9 +2488,11 @@ extension MethodParameter: MethodParameterAutoJSExport {}
 extension Protocol: ProtocolAutoJSExport {}
 
 
+
 @objc protocol StructAutoJSExport: JSExport {
     var kind: String { get }
     var module: String? { get }
+    var imports: [String] { get }
     var accessLevel: String { get }
     var name: String { get }
     var globalName: String { get }
@@ -2385,6 +2549,7 @@ extension Struct: StructAutoJSExport {}
 extension Subscript: SubscriptAutoJSExport {}
 
 @objc protocol TemplateContextAutoJSExport: JSExport {
+    var functions: [SourceryMethod] { get }
     var types: Types { get }
     var argument: [String: NSObject] { get }
     var type: [String: Type] { get }
@@ -2414,6 +2579,7 @@ extension TupleType: TupleTypeAutoJSExport {}
 
 @objc protocol TypeAutoJSExport: JSExport {
     var module: String? { get }
+    var imports: [String] { get }
     var kind: String { get }
     var accessLevel: String { get }
     var name: String { get }
@@ -2921,6 +3087,9 @@ public typealias SourceryProtocol = Protocol
     /// Returns "protocol"
     public override var kind: String { return "protocol" }
 
+    /// list of all declared associated types with their names as keys
+    public var associatedTypes: [String: AssociatedType]
+
     /// :nodoc:
     public override init(name: String = "",
                          parent: Type? = nil,
@@ -2935,6 +3104,7 @@ public typealias SourceryProtocol = Protocol
                          attributes: [String: Attribute] = [:],
                          annotations: [String: NSObject] = [:],
                          isGeneric: Bool = false) {
+        self.associatedTypes = [:]
         super.init(
             name: name,
             parent: parent,
@@ -2961,14 +3131,90 @@ public typealias SourceryProtocol = Protocol
 // sourcery:inline:Protocol.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
+            guard let associatedTypes: [String: AssociatedType] = aDecoder.decode(forKey: "associatedTypes") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["associatedTypes"])); fatalError() }; self.associatedTypes = associatedTypes
             super.init(coder: aDecoder)
         }
 
         /// :nodoc:
         override public func encode(with aCoder: NSCoder) {
             super.encode(with: aCoder)
+            aCoder.encode(self.associatedTypes, forKey: "associatedTypes")
         }
 // sourcery:end
+}
+
+"""),
+    .init(name: "ProtocolComposition.swift", content:
+"""
+// Created by eric_horacek on 2/12/20.
+// Copyright © 2020 Airbnb Inc. All rights reserved.
+
+import Foundation
+
+// sourcery: skipJSExport
+/// Describes a Swift [protocol composition](https://docs.swift.org/swift-book/ReferenceManual/Types.html#ID454).
+@objcMembers public final class ProtocolComposition: Type {
+
+    /// Returns "protocolComposition"
+    public override var kind: String { return "protocolComposition" }
+
+    /// The names of the types composed to form this composition
+    public let composedTypeNames: [TypeName]
+
+    // sourcery: skipEquality, skipDescription
+    /// The types composed to form this composition, if known
+    public var composedTypes: [Type]?
+
+    /// :nodoc:
+    public init(name: String = "",
+                parent: Type? = nil,
+                accessLevel: AccessLevel = .internal,
+                isExtension: Bool = false,
+                variables: [Variable] = [],
+                methods: [Method] = [],
+                subscripts: [Subscript] = [],
+                inheritedTypes: [String] = [],
+                containedTypes: [Type] = [],
+                typealiases: [Typealias] = [],
+                attributes: [String: Attribute] = [:],
+                annotations: [String: NSObject] = [:],
+                isGeneric: Bool = false,
+                composedTypeNames: [TypeName] = [],
+                composedTypes: [Type]? = nil) {
+        self.composedTypeNames = composedTypeNames
+        self.composedTypes = composedTypes
+        super.init(
+            name: name,
+            parent: parent,
+            accessLevel: accessLevel,
+            isExtension: isExtension,
+            variables: variables,
+            methods: methods,
+            subscripts: subscripts,
+            inheritedTypes: inheritedTypes,
+            containedTypes: containedTypes,
+            typealiases: typealiases,
+            annotations: annotations,
+            isGeneric: isGeneric
+        )
+    }
+
+// sourcery:inline:ProtocolComposition.AutoCoding
+        /// :nodoc:
+        required public init?(coder aDecoder: NSCoder) {
+            guard let composedTypeNames: [TypeName] = aDecoder.decode(forKey: "composedTypeNames") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["composedTypeNames"])); fatalError() }; self.composedTypeNames = composedTypeNames
+            self.composedTypes = aDecoder.decode(forKey: "composedTypes")
+            super.init(coder: aDecoder)
+        }
+
+        /// :nodoc:
+        override public func encode(with aCoder: NSCoder) {
+            super.encode(with: aCoder)
+            aCoder.encode(self.composedTypeNames, forKey: "composedTypeNames")
+            aCoder.encode(self.composedTypes, forKey: "composedTypes")
+        }
+// sourcery:end
+
 }
 
 """),
@@ -3176,6 +3422,7 @@ import Foundation
 
 /// :nodoc:
 @objcMembers public final class TemplateContext: NSObject, SourceryModel {
+    public let functions: [SourceryMethod]
     public let types: Types
     public let argument: [String: NSObject]
 
@@ -3184,20 +3431,23 @@ import Foundation
         return types.typesByName
     }
 
-    public init(types: Types, arguments: [String: NSObject]) {
+    public init(types: Types, functions: [SourceryMethod], arguments: [String: NSObject]) {
         self.types = types
+        self.functions = functions
         self.argument = arguments
     }
 
 // sourcery:inline:TemplateContext.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
+            guard let functions: [SourceryMethod] = aDecoder.decode(forKey: "functions") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["functions"])); fatalError() }; self.functions = functions
             guard let types: Types = aDecoder.decode(forKey: "types") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["types"])); fatalError() }; self.types = types
             guard let argument: [String: NSObject] = aDecoder.decode(forKey: "argument") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["argument"])); fatalError() }; self.argument = argument
         }
 
         /// :nodoc:
         public func encode(with aCoder: NSCoder) {
+            aCoder.encode(self.functions, forKey: "functions")
             aCoder.encode(self.types, forKey: "types")
             aCoder.encode(self.argument, forKey: "argument")
         }
@@ -3206,6 +3456,7 @@ import Foundation
     public var stencilContext: [String: Any] {
         return [
             "types": types,
+            "functions": functions,
             "type": types.typesByName,
             "argument": argument
         ]
@@ -3225,6 +3476,7 @@ import Foundation
                 "inheriting": types.inheriting,
                 "implementing": types.implementing
             ],
+            "functions": functions,
             "type": types.typesByName,
             "argument": argument
         ]
@@ -3246,20 +3498,26 @@ extension ProcessInfo {
     /// :nodoc:
     public let types: [Type]
 
+    /// All known typealiases
+    public let typealiases: [Typealias]
+
     /// :nodoc:
-    public init(types: [Type]) {
+    public init(types: [Type], typealiases: [Typealias] = []) {
         self.types = types
+        self.typealiases = typealiases
     }
 
 // sourcery:inline:Types.AutoCoding
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             guard let types: [Type] = aDecoder.decode(forKey: "types") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["types"])); fatalError() }; self.types = types
+            guard let typealiases: [Typealias] = aDecoder.decode(forKey: "typealiases") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["typealiases"])); fatalError() }; self.typealiases = typealiases
         }
 
         /// :nodoc:
         public func encode(with aCoder: NSCoder) {
             aCoder.encode(self.types, forKey: "types")
+            aCoder.encode(self.typealiases, forKey: "typealiases")
         }
 // sourcery:end
 
@@ -3267,20 +3525,34 @@ extension ProcessInfo {
     /// :nodoc:
     public lazy internal(set) var typesByName: [String: Type] = {
         var typesByName = [String: Type]()
-        self.types.forEach { typesByName[$0.name] = $0 }
+        self.types.forEach { typesByName[$0.globalName] = $0 }
         return typesByName
     }()
 
     // sourcery: skipDescription, skipEquality, skipCoding
-    /// All known types, excluding protocols
+    /// :nodoc:
+    public lazy internal(set) var typesaliasesByName: [String: Typealias] = {
+        var typesaliasesByName = [String: Typealias]()
+        self.typealiases.forEach { typesaliasesByName[$0.name] = $0 }
+        return typesaliasesByName
+    }()
+
+    // sourcery: skipDescription, skipEquality, skipCoding
+    /// All known types, excluding protocols or protocol compositions.
     public lazy internal(set) var all: [Type] = {
-        return self.types.filter { !($0 is Protocol) }
+        return self.types.filter { !($0 is Protocol || $0 is ProtocolComposition) }
     }()
 
     // sourcery: skipDescription, skipEquality, skipCoding
     /// All known protocols
     public lazy internal(set) var protocols: [Protocol] = {
         return self.types.compactMap { $0 as? Protocol }
+    }()
+
+    // sourcery: skipDescription, skipEquality, skipCoding
+    /// All known protocol compositions
+    public lazy internal(set) var protocolCompositions: [ProtocolComposition] = {
+        return self.types.compactMap { $0 as? ProtocolComposition }
     }()
 
     // sourcery: skipDescription, skipEquality, skipCoding
@@ -3420,6 +3692,9 @@ import Foundation
     /// :nodoc:
     public var module: String?
 
+    /// :nodoc:
+    public var imports: [String] = []
+
     // All local typealiases
     // sourcery: skipJSExport
     /// :nodoc:
@@ -3447,7 +3722,8 @@ import Foundation
     }
 
     // sourcery: skipDescription
-    var globalName: String {
+    /// Global type name including module name
+    public var globalName: String {
         guard let module = module else { return name }
         return "\\(module).\\(name)"
     }
@@ -3697,6 +3973,7 @@ import Foundation
         /// :nodoc:
         required public init?(coder aDecoder: NSCoder) {
             self.module = aDecoder.decode(forKey: "module")
+            guard let imports: [String] = aDecoder.decode(forKey: "imports") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["imports"])); fatalError() }; self.imports = imports
             guard let typealiases: [String: Typealias] = aDecoder.decode(forKey: "typealiases") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["typealiases"])); fatalError() }; self.typealiases = typealiases
             self.isExtension = aDecoder.decode(forKey: "isExtension")
             guard let accessLevel: String = aDecoder.decode(forKey: "accessLevel") else { NSException.raise(NSExceptionName.parseErrorException, format: "Key '%@' not found.", arguments: getVaList(["accessLevel"])); fatalError() }; self.accessLevel = accessLevel
@@ -3723,6 +4000,7 @@ import Foundation
         /// :nodoc:
         public func encode(with aCoder: NSCoder) {
             aCoder.encode(self.module, forKey: "module")
+            aCoder.encode(self.imports, forKey: "imports")
             aCoder.encode(self.typealiases, forKey: "typealiases")
             aCoder.encode(self.isExtension, forKey: "isExtension")
             aCoder.encode(self.accessLevel, forKey: "accessLevel")
@@ -3751,6 +4029,7 @@ import Foundation
 extension Type {
 
     // sourcery: skipDescription, skipJSExport
+    /// :nodoc:
     var isClass: Bool {
         let isNotClass = self is Struct || self is Enum || self is Protocol
         return !isNotClass && !isExtension
@@ -3832,10 +4111,16 @@ public protocol Typed {
         } else {
             name = name.bracketsBalancing()
             name = name.trimmingPrefix("inout ").trimmingCharacters(in: .whitespacesAndNewlines)
-            let isImplicitlyUnwrappedOptional = name.hasSuffix("!") || name.hasPrefix("ImplicitlyUnwrappedOptional<")
-            let isOptional = name.hasSuffix("?") || name.hasPrefix("Optional<") || isImplicitlyUnwrappedOptional
-            self.isImplicitlyUnwrappedOptional = isImplicitlyUnwrappedOptional
-            self.isOptional = isOptional
+
+            if name.isValidClosureName() {
+                let isImplicitlyUnwrappedOptional = name.hasPrefix("ImplicitlyUnwrappedOptional<") && name.hasSuffix(">")
+                self.isImplicitlyUnwrappedOptional = isImplicitlyUnwrappedOptional
+                self.isOptional = (name.hasPrefix("Optional<")  && name.hasSuffix(">")) || isImplicitlyUnwrappedOptional
+            } else {
+                let isImplicitlyUnwrappedOptional = name.hasSuffix("!") || name.hasPrefix("ImplicitlyUnwrappedOptional<")
+                self.isImplicitlyUnwrappedOptional = isImplicitlyUnwrappedOptional
+                self.isOptional = name.hasSuffix("?") || name.hasPrefix("Optional<") || isImplicitlyUnwrappedOptional
+            }
 
             var unwrappedTypeName: String
 
@@ -4350,7 +4635,7 @@ import Foundation
 """),
     .init(name: "Typed.generated.swift", content:
 """
-// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 1.0.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace

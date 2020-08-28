@@ -16,14 +16,20 @@ private func build(_ source: String) -> [String: SourceKitRepresentable]? {
     return try? Structure(file: File(contents: source)).dictionary
 }
 
+// swiftlint:disable type_body_length file_length
 class ParserComposerSpec: QuickSpec {
     // swiftlint:disable function_body_length
     override func spec() {
         describe("ParserComposer") {
-            describe("uniqueType") {
+            describe("uniqueTypesAndFunctions") {
                 func parse(_ code: String) -> [Type] {
                     guard let parserResult = try? FileParser(contents: code).parse() else { fail(); return [] }
-                    return Composer.uniqueTypes(parserResult)
+                    return Composer.uniqueTypesAndFunctions(parserResult).types
+                }
+
+                func parseFunctions(_ code: String) -> [SourceryMethod] {
+                    guard let parserResult = try? FileParser(contents: code).parse() else { fail(); return [] }
+                    return Composer.uniqueTypesAndFunctions(parserResult).functions
                 }
 
                 context("given class hierarchy") {
@@ -75,6 +81,7 @@ class ParserComposerSpec: QuickSpec {
                                                                               typeName: TypeName("String"),
                                                                               defaultValue: "\"Baz\"")],
                                                  returnTypeName: TypeName("Void"),
+                                                 accessLevel: .none,
                                                  definedInTypeName: TypeName("Foo"))
                     }
 
@@ -83,7 +90,7 @@ class ParserComposerSpec: QuickSpec {
                             input = "enum Foo { case A; func \(method.name) {} }; extension Foo { func \(defaultedMethod.name) {} }"
                             parsedResult = parse(input).first
                             originalType = Enum(name: "Foo", cases: [EnumCase(name: "A")], methods: [method, defaultedMethod])
-                            typeExtension = Type(name: "Foo", accessLevel: .internal, isExtension: true, methods: [defaultedMethod])
+                            typeExtension = Type(name: "Foo", accessLevel: .none, isExtension: true, methods: [defaultedMethod])
                         }
 
                         it("resolves methods definedInType") {
@@ -97,7 +104,7 @@ class ParserComposerSpec: QuickSpec {
                             input = "protocol Foo { func \(method.name) }; extension Foo { func \(defaultedMethod.name) {} }"
                             parsedResult = parse(input).first
                             originalType = Protocol(name: "Foo", methods: [method, defaultedMethod])
-                            typeExtension = Type(name: "Foo", accessLevel: .internal, isExtension: true, methods: [defaultedMethod])
+                            typeExtension = Type(name: "Foo", accessLevel: .none, isExtension: true, methods: [defaultedMethod])
                         }
 
                         it("resolves methods definedInType") {
@@ -111,7 +118,7 @@ class ParserComposerSpec: QuickSpec {
                             input = "class Foo { func \(method.name) {} }; extension Foo { func \(defaultedMethod.name) {} }"
                             parsedResult = parse(input).first
                             originalType = Class(name: "Foo", methods: [method, defaultedMethod])
-                            typeExtension = Type(name: "Foo", accessLevel: .internal, isExtension: true, methods: [defaultedMethod])
+                            typeExtension = Type(name: "Foo", accessLevel: .none, isExtension: true, methods: [defaultedMethod])
                         }
 
                         it("resolves methods definedInType") {
@@ -125,7 +132,7 @@ class ParserComposerSpec: QuickSpec {
                             input = "struct Foo { func \(method.name) {} }; extension Foo { func \(defaultedMethod.name) {} }"
                             parsedResult = parse(input).first
                             originalType = Struct(name: "Foo", methods: [method, defaultedMethod])
-                            typeExtension = Type(name: "Foo", accessLevel: .internal, isExtension: true, methods: [defaultedMethod])
+                            typeExtension = Type(name: "Foo", accessLevel: .none, isExtension: true, methods: [defaultedMethod])
                         }
 
                         it("resolves methods definedInType") {
@@ -254,6 +261,15 @@ class ParserComposerSpec: QuickSpec {
                                               ]))
                     }
 
+                }
+
+                context("given enum inheriting protocol composition") {
+                    it("extracts the protocol composition as the inherited type") {
+                        expect(parse("enum Enum: Composition { }; typealias Composition = Foo & Bar; protocol Foo {}; protocol Bar {}"))
+                            .to(contain([
+                                Enum(name: "Enum", inheritedTypes: ["Composition"])
+                            ]))
+                    }
                 }
 
                 context("given tuple type") {
@@ -504,6 +520,10 @@ class ParserComposerSpec: QuickSpec {
                 }
 
                 context("given typealiases") {
+                    func parseTypealiases(_ code: String) -> [Typealias] {
+                        guard let parserResult = try? FileParser(contents: code).parse() else { fail(); return [] }
+                        return Composer.uniqueTypesAndFunctions(parserResult).typealiases
+                    }
 
                     it("resolves definedInType for methods") {
                         let input = "class Foo { func bar() {} }; typealias FooAlias = Foo; extension FooAlias { func baz() {} }"
@@ -810,6 +830,51 @@ class ParserComposerSpec: QuickSpec {
                                 .to(contain([Class(name: "Bar", inheritedTypes: ["Foo"])]))
                     }
 
+                    context("given global protocol composition") {
+                        it("replaces variable alias type with protocol composition types") {
+                            let expectedProtocol1 = Protocol(name: "Foo")
+                            let expectedProtocol2 = Protocol(name: "Bar")
+                            let expectedProtocolComposition = ProtocolComposition(name: "GlobalComposition", inheritedTypes: ["Foo", "Bar"], composedTypeNames: [TypeName("Foo"), TypeName("Bar")])
+
+                            let type = parse("typealias GlobalComposition = Foo & Bar; protocol Foo {}; protocol Bar {}").last as? ProtocolComposition
+
+                            expect(type).to(equal(expectedProtocolComposition))
+                            expect(type?.composedTypes?.first).to(equal(expectedProtocol1))
+                            expect(type?.composedTypes?.last).to(equal(expectedProtocol2))
+                        }
+
+                        it("should deconstruct compositions of protocols for implements") {
+                            let expectedProtocol1 = Protocol(name: "Foo")
+                            let expectedProtocol2 = Protocol(name: "Bar")
+                            let expectedProtocolComposition = ProtocolComposition(name: "GlobalComposition", inheritedTypes: ["Foo", "Bar"], composedTypeNames: [TypeName("Foo"), TypeName("Bar")])
+
+                            let type = parse("typealias GlobalComposition = Foo & Bar; protocol Foo {}; protocol Bar {}; class Implements: GlobalComposition {}").last as? Class
+
+                            expect(type?.implements).to(equal([
+                                expectedProtocol1.name: expectedProtocol1,
+                                expectedProtocol2.name: expectedProtocol2,
+                                expectedProtocolComposition.name: expectedProtocolComposition
+                            ]))
+                        }
+
+                        it("should deconstruct compositions of protocols and classes for implements and inherits") {
+                            let expectedProtocol = Protocol(name: "Foo")
+                            let expectedClass = Class(name: "Bar")
+                            let expectedProtocolComposition = ProtocolComposition(name: "GlobalComposition", inheritedTypes: ["Foo", "Bar"], composedTypeNames: [TypeName("Foo"), TypeName("Bar")])
+
+                            let type = parse("typealias GlobalComposition = Foo & Bar; protocol Foo {}; class Bar {}; class Implements: GlobalComposition {}").last as? Class
+
+                            expect(type?.implements).to(equal([
+                                expectedProtocol.name: expectedProtocol,
+                                expectedProtocolComposition.name: expectedProtocolComposition
+                            ]))
+
+                            expect(type?.inherits).to(equal([
+                                expectedClass.name: expectedClass
+                            ]))
+                        }
+                    }
+
                     context("given local typealias") {
                         it("replaces variable alias type with actual type") {
                             let expectedVariable = Variable(name: "foo", typeName: TypeName("FooAlias", actualTypeName: TypeName("Foo")), type: Class(name: "Foo"), definedInTypeName: TypeName("Bar"))
@@ -842,6 +907,55 @@ class ParserComposerSpec: QuickSpec {
                             expect(variable).to(equal(expectedVariable))
                             expect(variable?.actualTypeName).to(equal(expectedVariable.actualTypeName))
                             expect(variable?.type).to(equal(expectedVariable.type))
+                        }
+
+                        it("populates the local collection of typealiases") {
+                            let expectedType = Class(name: "Foo")
+                            let expectedParent = Class(name: "Bar")
+                            let type = parse("class Bar { typealias FooAlias = Foo }; class Foo {}").first
+                            let aliases = type?.typealiases
+
+                            expect(aliases).to(haveCount(1))
+                            expect(aliases?["FooAlias"]).to(equal(Typealias(aliasName: "FooAlias", typeName: TypeName("Foo"), parent: expectedParent)))
+                            expect(aliases?["FooAlias"]?.type).to(equal(expectedType))
+                        }
+
+                        it("populates the global collection of typealiases") {
+                            let expectedType = Class(name: "Foo")
+                            let expectedParent = Class(name: "Bar")
+                            let aliases = parseTypealiases("class Bar { typealias FooAlias = Foo }; class Foo {}")
+
+                            expect(aliases).to(haveCount(1))
+                            expect(aliases.first).to(equal(Typealias(aliasName: "FooAlias", typeName: TypeName("Foo"), parent: expectedParent)))
+                            expect(aliases.first?.type).to(equal(expectedType))
+                        }
+                    }
+
+                    context("given global typealias") {
+                        it("extracts typealiases of other typealiases") {
+                            expect(parseTypealiases("typealias Foo = Int; typealias Bar = Foo"))
+                                .to(contain([
+                                    Typealias(aliasName: "Foo", typeName: TypeName("Int")),
+                                    Typealias(aliasName: "Bar", typeName: TypeName("Foo"))
+                                ]))
+                        }
+
+                        it("extracts typealiases of other typealiases of a type") {
+                            expect(parseTypealiases("typealias Foo = Baz; typealias Bar = Foo; class Baz {}"))
+                                .to(contain([
+                                    Typealias(aliasName: "Foo", typeName: TypeName("Baz")),
+                                    Typealias(aliasName: "Bar", typeName: TypeName("Foo"))
+                                ]))
+                        }
+
+                        it("resolves types transitively") {
+                            let expectedType = Class(name: "Baz")
+
+                            let typealiases = parseTypealiases("typealias Foo = Bar; typealias Bar = Baz; class Baz {}")
+
+                            expect(typealiases).to(haveCount(2))
+                            expect(typealiases.first?.type).to(equal(expectedType))
+                            expect(typealiases.last?.type).to(equal(expectedType))
                         }
                     }
                 }
@@ -945,17 +1059,17 @@ class ParserComposerSpec: QuickSpec {
                             try? FileParser(contents: $0.contents, module: $0.name).parse()
                         }
 
-                        let parserResult = moduleResults.reduce(FileParserResult(path: nil, module: nil, types: [], typealiases: [])) { acc, next in
+                        let parserResult = moduleResults.reduce(FileParserResult(path: nil, module: nil, types: [], functions: [], typealiases: [])) { acc, next in
                             acc.typealiases += next.typealiases
                             acc.types += next.types
                             return acc
                         }
 
-                        return Composer.uniqueTypes(parserResult)
+                        return Composer.uniqueTypesAndFunctions(parserResult).types
                     }
 
                     it("extends type with extension") {
-                        let expectedBar = Struct(name: "Bar", variables: [Variable(name: "foo", typeName: TypeName("Int"), accessLevel: (read: .internal, write: .none), isComputed: true, definedInTypeName: TypeName("MyModule.Bar"))])
+                        let expectedBar = Struct(name: "Bar", variables: [Variable(name: "foo", typeName: TypeName("Int"), accessLevel: (read: .none, write: .none), isComputed: true, definedInTypeName: TypeName("MyModule.Bar"))])
                         expectedBar.module = "MyModule"
 
                         let types = parseModules(
@@ -993,6 +1107,94 @@ class ParserComposerSpec: QuickSpec {
                         expect(types).to(equal([expectedBar, expectedFoo]))
                         expect(types.last?.variables.first?.type).to(equal(expectedBar))
                         expect(types.last?.variables.first?.definedInType).to(equal(expectedFoo))
+                    }
+                }
+
+                context("given free function") {
+                    it("resolves generic return types properly") {
+                        let functions = parseFunctions("func foo() -> Bar<String> { }")
+                        expect(functions[0]).to(equal(SourceryMethod(
+                            name: "foo()",
+                            selectorName: "foo",
+                            parameters: [],
+                            returnTypeName: TypeName(
+                                "Bar<String>",
+                                generic: GenericType(
+                                    name: "Bar",
+                                    typeParameters: [
+                                        GenericTypeParameter(
+                                            typeName: TypeName("String"),
+                                            type: nil
+                                        )
+                                ])
+                            ),
+                            definedInTypeName: nil)))
+                    }
+
+                    it("resolves tuple return types properly") {
+                        let functions = parseFunctions("func foo() -> (bar: String, biz: Int) { }")
+                        expect(functions[0]).to(equal(SourceryMethod(
+                            name: "foo()",
+                            selectorName: "foo",
+                            parameters: [],
+                            returnTypeName: TypeName(
+                                "(bar: String, biz: Int)",
+                                tuple: TupleType(
+                                    name: "(bar: String, biz: Int)",
+                                    elements: [
+                                        TupleElement(name: "bar", typeName: TypeName("String")),
+                                        TupleElement(name: "biz", typeName: TypeName("Int"))
+                                    ])
+                            ),
+                            definedInTypeName: nil)))
+                    }
+                }
+                context("given protocols of the same name in different modules") {
+                    func parseModules(_ modules: (name: String?, contents: String)...) -> [Type] {
+                        let moduleResults = modules.compactMap {
+                            try? FileParser(contents: $0.contents, module: $0.name).parse()
+                        }
+
+                        let parserResult = moduleResults.reduce(FileParserResult(path: nil, module: nil, types: [], functions: [], typealiases: [])) { acc, next in
+                            acc.typealiases += next.typealiases
+                            acc.types += next.types
+                            return acc
+                        }
+
+                        return Composer.uniqueTypesAndFunctions(parserResult).types.sorted {
+                            $0.globalName < $1.globalName
+                        }
+                    }
+
+                    it("resolves types properly") {
+                        let types = parseModules(
+                            ("Mod1", "protocol Foo { func foo1() }"),
+                            ("Mod2", "protocol Foo { func foo2() }"))
+
+                        expect(types.first?.globalName).to(equal("Mod1.Foo"))
+                        expect(types.first?.allMethods.map { $0.name }).to(equal(["foo1()"]))
+                        expect(types.last?.globalName).to(equal("Mod2.Foo"))
+                        expect(types.last?.allMethods.map { $0.name }).to(equal(["foo2()"]))
+                    }
+
+                    it("resolves inheritance properly with global type name") {
+                        let types = parseModules(
+                            ("Mod1", "protocol Foo { func foo1() }"),
+                            ("Mod2", "protocol Foo { func foo2() }"),
+                            ("Mod3", "import Mod1; import Mod2; protocol Bar: Mod1.Foo { func bar() }"))
+                        let bar = types.first { $0.name == "Bar" }
+
+                        expect(bar?.allMethods.map { $0.name }.sorted()).to(equal(["bar()", "foo1()"]))
+                    }
+
+                    it("resolves inheritance properly with local type name") {
+                        let types = parseModules(
+                            ("Mod1", "protocol Foo { func foo1() }"),
+                            ("Mod2", "protocol Foo { func foo2() }"),
+                            ("Mod3", "import Mod1; protocol Bar: Foo { func bar() }"))
+                        let bar = types.first { $0.name == "Bar"}
+
+                        expect(bar?.allMethods.map { $0.name }.sorted()).to(equal(["bar()", "foo1()"]))
                     }
                 }
             }

@@ -1,4 +1,4 @@
-// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 1.0.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace
@@ -13,6 +13,15 @@ extension ArrayType {
         return string
     }
 }
+extension AssociatedType {
+    /// :nodoc:
+    override public var description: String {
+        var string = "\(Swift.type(of: self)): "
+        string += "name = \(String(describing: self.name)), "
+        string += "typeName = \(String(describing: self.typeName))"
+        return string
+    }
+}
 extension AssociatedValue {
     /// :nodoc:
     override public var description: String {
@@ -20,6 +29,7 @@ extension AssociatedValue {
         string += "localName = \(String(describing: self.localName)), "
         string += "externalName = \(String(describing: self.externalName)), "
         string += "typeName = \(String(describing: self.typeName)), "
+        string += "defaultValue = \(String(describing: self.defaultValue)), "
         string += "annotations = \(String(describing: self.annotations))"
         return string
     }
@@ -84,6 +94,7 @@ extension EnumCase {
         string += "rawValue = \(String(describing: self.rawValue)), "
         string += "associatedValues = \(String(describing: self.associatedValues)), "
         string += "annotations = \(String(describing: self.annotations)), "
+        string += "indirect = \(String(describing: self.indirect)), "
         string += "hasAssociatedValue = \(String(describing: self.hasAssociatedValue))"
         return string
     }
@@ -95,6 +106,7 @@ extension FileParserResult {
         string += "path = \(String(describing: self.path)), "
         string += "module = \(String(describing: self.module)), "
         string += "types = \(String(describing: self.types)), "
+        string += "functions = \(String(describing: self.functions)), "
         string += "typealiases = \(String(describing: self.typealiases)), "
         string += "inlineRanges = \(String(describing: self.inlineRanges)), "
         string += "inlineIndentations = \(String(describing: self.inlineIndentations)), "
@@ -159,7 +171,18 @@ extension Protocol {
     override public var description: String {
         var string = super.description
         string += ", "
-        string += "kind = \(String(describing: self.kind))"
+        string += "kind = \(String(describing: self.kind)), "
+        string += "associatedTypes = \(String(describing: self.associatedTypes))"
+        return string
+    }
+}
+extension ProtocolComposition {
+    /// :nodoc:
+    override public var description: String {
+        var string = super.description
+        string += ", "
+        string += "kind = \(String(describing: self.kind)), "
+        string += "composedTypeNames = \(String(describing: self.composedTypeNames))"
         return string
     }
 }
@@ -194,6 +217,7 @@ extension TemplateContext {
     /// :nodoc:
     override public var description: String {
         var string = "\(Swift.type(of: self)): "
+        string += "functions = \(String(describing: self.functions)), "
         string += "types = \(String(describing: self.types)), "
         string += "argument = \(String(describing: self.argument)), "
         string += "stencilContext = \(String(describing: self.stencilContext))"
@@ -223,6 +247,7 @@ extension Type {
     override public var description: String {
         var string = "\(Swift.type(of: self)): "
         string += "module = \(String(describing: self.module)), "
+        string += "imports = \(String(describing: self.imports)), "
         string += "typealiases = \(String(describing: self.typealiases)), "
         string += "isExtension = \(String(describing: self.isExtension)), "
         string += "kind = \(String(describing: self.kind)), "
@@ -265,7 +290,8 @@ extension Types {
     /// :nodoc:
     override public var description: String {
         var string = "\(Swift.type(of: self)): "
-        string += "types = \(String(describing: self.types))"
+        string += "types = \(String(describing: self.types)), "
+        string += "typealiases = \(String(describing: self.typealiases))"
         return string
     }
 }

@@ -1,4 +1,4 @@
-// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 1.0.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace
@@ -13,6 +13,15 @@ extension ArrayType {
         return true
     }
 }
+extension AssociatedType {
+    /// :nodoc:
+    override public func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? AssociatedType else { return false }
+        if self.name != rhs.name { return false }
+        if self.typeName != rhs.typeName { return false }
+        return true
+    }
+}
 extension AssociatedValue {
     /// :nodoc:
     override public func isEqual(_ object: Any?) -> Bool {
@@ -20,6 +29,7 @@ extension AssociatedValue {
         if self.localName != rhs.localName { return false }
         if self.externalName != rhs.externalName { return false }
         if self.typeName != rhs.typeName { return false }
+        if self.defaultValue != rhs.defaultValue { return false }
         if self.annotations != rhs.annotations { return false }
         return true
     }
@@ -96,6 +106,7 @@ extension EnumCase {
         if self.rawValue != rhs.rawValue { return false }
         if self.associatedValues != rhs.associatedValues { return false }
         if self.annotations != rhs.annotations { return false }
+        if self.indirect != rhs.indirect { return false }
         return true
     }
 }
@@ -106,6 +117,7 @@ extension FileParserResult {
         if self.path != rhs.path { return false }
         if self.module != rhs.module { return false }
         if self.types != rhs.types { return false }
+        if self.functions != rhs.functions { return false }
         if self.typealiases != rhs.typealiases { return false }
         if self.inlineRanges != rhs.inlineRanges { return false }
         if self.inlineIndentations != rhs.inlineIndentations { return false }
@@ -168,6 +180,15 @@ extension Protocol {
     /// :nodoc:
     override public func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? Protocol else { return false }
+        if self.associatedTypes != rhs.associatedTypes { return false }
+        return super.isEqual(rhs)
+    }
+}
+extension ProtocolComposition {
+    /// :nodoc:
+    override public func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? ProtocolComposition else { return false }
+        if self.composedTypeNames != rhs.composedTypeNames { return false }
         return super.isEqual(rhs)
     }
 }
@@ -196,6 +217,7 @@ extension TemplateContext {
     /// :nodoc:
     override public func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? TemplateContext else { return false }
+        if self.functions != rhs.functions { return false }
         if self.types != rhs.types { return false }
         if self.argument != rhs.argument { return false }
         return true
@@ -224,6 +246,7 @@ extension Type {
     override public func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? Type else { return false }
         if self.module != rhs.module { return false }
+        if self.imports != rhs.imports { return false }
         if self.typealiases != rhs.typealiases { return false }
         if self.isExtension != rhs.isExtension { return false }
         if self.accessLevel != rhs.accessLevel { return false }
@@ -271,6 +294,7 @@ extension Types {
     override public func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? Types else { return false }
         if self.types != rhs.types { return false }
+        if self.typealiases != rhs.typealiases { return false }
         return true
     }
 }

@@ -78,6 +78,7 @@ open class SwiftTemplate {
 
         let context = ProcessInfo().context!
         let types = context.types
+        let functions = context.functions
         let type = context.types.typesByName
         let argument = context.argument
 
@@ -228,6 +229,7 @@ open class SwiftTemplate {
 
         let arguments = [
             "xcrun",
+            "--sdk", "macosx",
             "swift",
             "build",
             "-Xswiftc", "-Onone",
@@ -239,7 +241,9 @@ open class SwiftTemplate {
                                                        currentDirectoryPath: buildDir)
 
         if compilationResult.exitCode != 0 || !compilationResult.error.isEmpty {
-            throw compilationResult.output
+            throw [compilationResult.output, compilationResult.error]
+                .filter { !$0.isEmpty }
+                .joined(separator: "\n")
         }
 
         return binaryFile

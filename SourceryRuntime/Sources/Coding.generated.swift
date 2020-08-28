@@ -1,4 +1,4 @@
-// Generated using Sourcery 0.17.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 1.0.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 // swiftlint:disable vertical_whitespace trailing_newline
@@ -44,6 +44,8 @@ extension NSCoder {
 
 extension ArrayType: NSCoding {}
 
+extension AssociatedType: NSCoding {}
+
 extension AssociatedValue: NSCoding {}
 
 extension Attribute: NSCoding {}
@@ -67,6 +69,7 @@ extension GenericTypeParameter: NSCoding {}
 extension Method: NSCoding {}
 
 extension MethodParameter: NSCoding {}
+
 
 
 

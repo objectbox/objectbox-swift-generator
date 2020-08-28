@@ -83,6 +83,7 @@
 		63E1AD0E1F4093EB00D01FED /* Configs in Resources */ = {isa = PBXBuildFile; fileRef = 63E1AD0D1F4093EB00D01FED /* Configs */; };
 		6D31FC5F1F0C2DE4000E77E3 /* Definition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D31FC5E1F0C2DE4000E77E3 /* Definition.swift */; };
 		990B63465A767D7147E0B29B /* Pods_SourceryJS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D0C82AE0D8342A0606F1E8CE /* Pods_SourceryJS.framework */; };
+		A65B189D23F3F05D0023F4A9 /* ProtocolComposition.swift in Sources */ = {isa = PBXBuildFile; fileRef = A65B189C23F3F05D0023F4A9 /* ProtocolComposition.swift */; };
 		B5089B5221D1817F007A001C /* SourceryRuntime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 64E201A31EAE8FBF00EAD8A2 /* SourceryRuntime.framework */; };
 		B5089B5321D1817F007A001C /* SourceryRuntime.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 64E201A31EAE8FBF00EAD8A2 /* SourceryRuntime.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		B5089B5421D1817F007A001C /* SourceryJS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6393BC692019F58D0044E8CC /* SourceryJS.framework */; };
@@ -134,6 +135,8 @@
 		E291DE1CB3B72BAA22DEDEDA /* StencilTemplateSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = E291D0D4A5AF091CD15550FD /* StencilTemplateSpec.swift */; };
 		E291DF22F03C87C646576942 /* AnnotationsParserSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = E291DCF0A8E779EC67C9A37E /* AnnotationsParserSpec.swift */; };
 		E43A7434D25A759BA0658051 /* Pods_SourceryUtils.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC54F603FD22AD275A3E7B3F /* Pods_SourceryUtils.framework */; };
+		F63E56CE24BCB13700715CD1 /* AssociatedType.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63E56CD24BCB13700715CD1 /* AssociatedType.swift */; };
+		F63E602824BCF57E00715CD1 /* FileParser + AssociatedTypeSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63E602724BCF57E00715CD1 /* FileParser + AssociatedTypeSpec.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -308,6 +311,7 @@
 		6A1278DE322EEEC30934B058 /* Pods_SourceryTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SourceryTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D31FC5E1F0C2DE4000E77E3 /* Definition.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Definition.swift; path = SourceryRuntime/Sources/Definition.swift; sourceTree = SOURCE_ROOT; };
 		79EDC093C51A602ADB2AAE88 /* Pods-SourceryFramework.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SourceryFramework.debug.xcconfig"; path = "Target Support Files/Pods-SourceryFramework/Pods-SourceryFramework.debug.xcconfig"; sourceTree = "<group>"; };
+		A65B189C23F3F05D0023F4A9 /* ProtocolComposition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProtocolComposition.swift; path = SourceryRuntime/Sources/ProtocolComposition.swift; sourceTree = SOURCE_ROOT; };
 		AC5C7A379558EBA48F09B22E /* Pods-SourcerySwift.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SourcerySwift.debug.xcconfig"; path = "Target Support Files/Pods-SourcerySwift/Pods-SourcerySwift.debug.xcconfig"; sourceTree = "<group>"; };
 		B5BCF9F321D161B5009DF652 /* SourceryFramework.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SourceryFramework.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5BCF9F521D161B5009DF652 /* SourceryFramework.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SourceryFramework.h; sourceTree = "<group>"; };
@@ -370,6 +374,8 @@
 		E291DFE1A3D6905537EE86D9 /* ComposerSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ComposerSpec.swift; sourceTree = "<group>"; };
 		F1A3DAD7FDF3830E52EF0509 /* Pods-SourceryFramework.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SourceryFramework.release.xcconfig"; path = "Target Support Files/Pods-SourceryFramework/Pods-SourceryFramework.release.xcconfig"; sourceTree = "<group>"; };
 		F3C3A7B6CE0BCA036E0835CE /* Pods-Sourcery.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Sourcery.release.xcconfig"; path = "Target Support Files/Pods-Sourcery/Pods-Sourcery.release.xcconfig"; sourceTree = "<group>"; };
+		F63E56CD24BCB13700715CD1 /* AssociatedType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AssociatedType.swift; path = SourceryRuntime/Sources/AssociatedType.swift; sourceTree = SOURCE_ROOT; };
+		F63E602724BCF57E00715CD1 /* FileParser + AssociatedTypeSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileParser + AssociatedTypeSpec.swift"; sourceTree = "<group>"; };
 		F81A4FAFF66C386F53742B5F /* Pods_SourcerySwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SourcerySwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FF69E64877680ED87A0520E5 /* Pods-SourceryJS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SourceryJS.release.xcconfig"; path = "Target Support Files/Pods-SourceryJS/Pods-SourceryJS.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -510,6 +516,7 @@
 			children = (
 				09334E621EB916040092806F /* AccessLevel.swift */,
 				09334E631EB916040092806F /* Annotations.swift */,
+				F63E56CD24BCB13700715CD1 /* AssociatedType.swift */,
 				524A2EA61FFD3C40001CD8F9 /* BytesRange.swift */,
 				6D31FC5E1F0C2DE4000E77E3 /* Definition.swift */,
 				09334E641EB916040092806F /* Attribute.swift */,
@@ -527,6 +534,7 @@
 				09334E6F1EB916040092806F /* Typealias.swift */,
 				09334E701EB916040092806F /* TypeName.swift */,
 				09334E711EB916040092806F /* Variable.swift */,
+				A65B189C23F3F05D0023F4A9 /* ProtocolComposition.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -823,6 +831,7 @@
 				E291DD46F8BC3AA0E7E5FB4D /* FileParserSpec.swift */,
 				E291DCF0A8E779EC67C9A37E /* AnnotationsParserSpec.swift */,
 				E291D37EF6AA39833209828F /* FileParser + VariableSpec.swift */,
+				F63E602724BCF57E00715CD1 /* FileParser + AssociatedTypeSpec.swift */,
 				098442721E21BF850051E1A1 /* FileParser + AttributesSpec.swift */,
 				E291DC650271984B35942FE4 /* TemplateAnnotationsParserSpec.swift */,
 				0906124C1E2BC43500BA0937 /* FileParser + MethodsSpec.swift */,
@@ -1605,6 +1614,8 @@
 				09334E5E1EB915E00092806F /* Equality.generated.swift in Sources */,
 				09334E7B1EB916040092806F /* Protocol.swift in Sources */,
 				09334E5D1EB915E00092806F /* Diffable.generated.swift in Sources */,
+				A65B189D23F3F05D0023F4A9 /* ProtocolComposition.swift in Sources */,
+				F63E56CE24BCB13700715CD1 /* AssociatedType.swift in Sources */,
 				09334E5F1EB915E00092806F /* JSExport.generated.swift in Sources */,
 				09334E601EB915E00092806F /* Typed.generated.swift in Sources */,
 				09334E7E1EB916040092806F /* Type.swift in Sources */,
@@ -1660,6 +1671,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				09B1DD3F1E21ADD8009228EE /* GeneratorSpec.swift in Sources */,
+				F63E602824BCF57E00715CD1 /* FileParser + AssociatedTypeSpec.swift in Sources */,
 				0967DA611E0341400084F702 /* ProtocolSpec.swift in Sources */,
 				CDF5E71D1E671B8500664763 /* TypedSpec.generated.swift in Sources */,
 				CDE812ED1E1127FF00F1FF97 /* Sourcery+PerformanceSpec.swift in Sources */,
@@ -2231,7 +2243,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 0.17.0;
+				CURRENT_PROJECT_VERSION = 1.0.0;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -2253,7 +2265,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_CODE_COVERAGE = NO;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 0.17.0;
+				CURRENT_PROJECT_VERSION = 1.0.0;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
