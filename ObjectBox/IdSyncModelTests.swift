@@ -17,6 +17,7 @@ class IdSyncTests: XCTestCase {
 
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
+        try idSync.write()
         
         XCTAssertEqual(schemaData.entities.count, 0)
         
@@ -44,7 +45,8 @@ class IdSyncTests: XCTestCase {
         
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
-        
+        try idSync.write()
+
         XCTAssertEqual(schemaData.entities.count, 1)
         
         let data = try? Data(contentsOf: jsonFile)
@@ -85,7 +87,8 @@ class IdSyncTests: XCTestCase {
         
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
-        
+        try idSync.write()
+
         XCTAssertEqual(schemaData.entities.count, 1)
         
         let data = try? Data(contentsOf: jsonFile)
@@ -158,7 +161,8 @@ class IdSyncTests: XCTestCase {
         
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
-        
+        try idSync.write()
+
         XCTAssertEqual(schemaData.entities.count, 2)
         
         let data = try? Data(contentsOf: jsonFile)
@@ -254,7 +258,8 @@ class IdSyncTests: XCTestCase {
         
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
-        
+        try idSync.write()
+
         // Test synching a second time, are the UIDs still the same?
         var didThrowAsExpected = false
         let overrideId = IdSync.IdUid(string: "0:1") // Simulate empty "uid" tag.
