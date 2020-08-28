@@ -103,11 +103,11 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
 
 /// Generated service type to handle persisting and reading entity data. Exposed through `{{ entity.className }}.EntityBindingType`.
-{{ visibility }} class {{ entity.className }}Binding: NSObject, ObjectBox.EntityBinding {
+{{ visibility }} class {{ entity.className }}Binding: ObjectBox.EntityBinding {
     {{ visibility }} typealias EntityType = {{ entity.className }}
     {{ visibility }} typealias IdType = {{ entity.idProperty.propertyType }}
 
-    override {{ visibility }} required init() {}
+    {{ visibility }} required init() {}
 
     {% if entity.isValueType and entity.idProperty.isMutable %}
     {{ visibility }} func setStructEntityId(of entity: inout EntityType, to entityId: ObjectBox.Id) {
