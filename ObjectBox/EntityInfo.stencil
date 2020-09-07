@@ -351,13 +351,15 @@ extension ObjectBox.Store {
     ///           So when hitting this limit, try values around 200-500.
     /// - important: This initializer is created by the code generator. If you only see the internal `init(model:...)`
     ///              initializer, trigger code generation by building your project.
-    {{ visibility }} convenience init(directoryPath: String, maxDbSizeInKByte: UInt64 = 1024 * 1024, fileMode: UInt32 = 0o644, maxReaders: UInt32 = 0) throws {
+    {{ visibility }} convenience init(directoryPath: String, maxDbSizeInKByte: UInt64 = 1024 * 1024,
+                            fileMode: UInt32 = 0o644, maxReaders: UInt32 = 0, readOnly: Bool = false) throws {
         try self.init(
             model: try cModel(),
             directory: directoryPath,
             maxDbSizeInKByte: maxDbSizeInKByte,
             fileMode: fileMode,
-            maxReaders: maxReaders)
+            maxReaders: maxReaders,
+            readOnly: readOnly)
     }
 }
 
