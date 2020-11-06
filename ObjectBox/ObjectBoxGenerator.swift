@@ -71,10 +71,11 @@ enum ObjectBoxGenerator {
         "Entity"
     ])
 
-    private static var entities = [IdSync.SchemaEntity]()
-    private static var lastEntityId = IdSync.IdUid()
-    private static var lastIndexId = IdSync.IdUid()
-    private static var lastRelationId = IdSync.IdUid()
+    // TODO why static?
+    private static var entities = [SchemaEntity]()
+    private static var lastEntityId = IdUid()
+    private static var lastIndexId = IdUid()
+    private static var lastRelationId = IdUid()
     
     static func printError(_ error: Swift.Error) {
         if let obxError = error as? IdSync.Error {
@@ -258,11 +259,11 @@ enum ObjectBoxGenerator {
     }
     
     static func processOneEntityProperty(_ currIVar: SourceryVariable, in currType: Type,
-                                         into schemaProperties: inout [IdSync.SchemaProperty],
-                                         entity schemaEntity: IdSync.SchemaEntity, schema schemaData: IdSync.Schema,
+                                         into schemaProperties: inout [SchemaProperty],
+                                         entity schemaEntity: SchemaEntity, schema schemaData: Schema,
                                          enums: [String: TypeName]) throws {
         let fullTypeName = currIVar.typeName.name;
-        var tmRelation: IdSync.SchemaToManyRelation? = nil
+        var tmRelation: SchemaToManyRelation? = nil
         if fullTypeName.hasPrefix("ToMany<") {
             if fullTypeName.hasSuffix(">") {
                 let templateTypesString = fullTypeName.drop(first: "ToMany<".count, last: 1)
@@ -270,9 +271,9 @@ enum ObjectBoxGenerator {
                 let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                 let myType = currType.name
                 
-                let relation = IdSync.SchemaToManyRelation(name: currIVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
+                let relation = SchemaToManyRelation(name: currIVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
                 if let propertyUid = currIVar.annotations["uid"] as? Int64 {
-                    relation.modelId = IdSync.IdUid(id: 0, uid: propertyUid)
+                    relation.modelId = IdUid(id: 0, uid: propertyUid)
                 }
                 if let backlinkProperty = currIVar.annotations["backlink"] as? String {
                     relation.backlinkProperty = backlinkProperty
@@ -282,7 +283,7 @@ enum ObjectBoxGenerator {
             }
         }
         
-        let schemaProperty = IdSync.SchemaProperty()
+        let schemaProperty = SchemaProperty()
         schemaProperty.entityName = currType.localName
         schemaProperty.propertyName = currIVar.name
         schemaProperty.isMutable = currIVar.isMutable
@@ -307,7 +308,7 @@ enum ObjectBoxGenerator {
         if let dbNameIsEmpty = schemaProperty.dbName?.isEmpty, dbNameIsEmpty { schemaProperty.dbName = nil }
         schemaProperty.name = schemaProperty.dbName ?? schemaProperty.propertyName
         if let propertyUidObject = currIVar.annotations["uid"], let propertyUid = (propertyUidObject as? NSNumber)?.int64Value {
-            var propId = IdSync.IdUid()
+            var propId = IdUid()
             propId.uid = propertyUid
             schemaProperty.modelId = propId
         }
@@ -417,7 +418,7 @@ enum ObjectBoxGenerator {
             let templateTypesString = fullTypeName.drop(first: "ToOne<".count, last: 1)
             let templateTypes = templateTypesString.split(separator: ",")
             let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-            let relation = IdSync.SchemaRelation(name: schemaProperty.propertyName, type: schemaProperty.propertyType,
+            let relation = SchemaRelation(name: schemaProperty.propertyName, type: schemaProperty.propertyType,
                                                  targetType: destinationType)
             relation.property = schemaProperty
             schemaEntity.relations.append(relation)
@@ -436,8 +437,8 @@ enum ObjectBoxGenerator {
         schemaProperties.append(schemaProperty)
     }
     
-    static func processOneEntityType(_ currType: Type, entityBased isEntityBased: Bool, enums: [String: TypeName], into schemaData: IdSync.Schema) throws {
-        let schemaEntity = IdSync.SchemaEntity()
+    static func processOneEntityType(_ currType: Type, entityBased isEntityBased: Bool, enums: [String: TypeName], into schemaData: Schema) throws {
+        let schemaEntity = SchemaEntity()
         schemaEntity.className = currType.localName
         schemaEntity.isValueType = currType.kind == "struct"
         schemaEntity.modelUid = currType.annotations["uid"] as? Int64
@@ -446,7 +447,7 @@ enum ObjectBoxGenerator {
         schemaEntity.name = schemaEntity.dbName ?? schemaEntity.className
         schemaEntity.isEntitySubclass = isEntityBased
         
-        var schemaProperties = Array<IdSync.SchemaProperty>()
+        var schemaProperties = Array<SchemaProperty>()
         try currType.variables.forEach { currIVar in
             warnIfAnnotations(otherThan: ObjectBoxGenerator.validPropertyAnnotationNames,
                               in: Set(currIVar.annotations.keys), of: currIVar.name)
@@ -520,7 +521,7 @@ enum ObjectBoxGenerator {
         extending it. */
     // Called by Sourcery class, which is called by main
     static func process(parsingResult result: inout Sourcery.ParsingResult) throws {
-        let schemaData = IdSync.Schema()
+        let schemaData = Schema()
         
         var enums = [String: TypeName]()
         result.types.all.forEach { currType in
