@@ -132,10 +132,6 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--xcode-project /Users/uli/Programming/github-objectbox-swift/Example/NotesExample.xcodeproj --xcode-target NotesExample-iOS --disableCache --model-json /Users/uli/Programming/github-objectbox-swift/Example/model.json"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "--xcode-project ${PROJECT_DIR}/../../ios-framework/CodeGenTests/ToolTestProject.xcodeproj --xcode-target ToolTestProject32 --disableCache --debug-parsetree ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/parsetree.txt --model-json ${PROJECT_DIR}/../../ios-framework/CodeGenTests/build/model.json"
             isEnabled = "NO">
          </CommandLineArgument>

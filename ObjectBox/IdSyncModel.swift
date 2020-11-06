@@ -88,8 +88,8 @@ enum IdSync {
         var id = IdUid()
         var name = ""
         var indexId: IdUid?
-        var type: UInt?
-        var flags: UInt?
+        var type: UInt16?
+        var flags: UInt32?
         var relationTarget: String? // dbName or if not explicitly specified, name of Swift class
         var relationTargetUnresolved: String? // Name of Swift class
 
@@ -102,7 +102,7 @@ enum IdSync {
             case relationTarget
         }
         
-        init(name: String, id: IdUid, indexId: IdUid?, relationTargetUnresolved: String?, type: UInt, flags: UInt) {
+        init(name: String, id: IdUid, indexId: IdUid?, relationTargetUnresolved: String?, type: UInt16, flags: UInt32) {
             self.id = id
             self.name = name
             self.indexId = indexId
@@ -110,7 +110,7 @@ enum IdSync {
             self.type = type != 0 ? type : nil
             self.flags = flags != 0 ? flags : nil
         }
-        
+
         func contains(uid: Int64) -> Bool {
             if id.uid == uid { return true }
             if let indexId = indexId, indexId.uid == uid { return true }
@@ -467,8 +467,8 @@ enum IdSync {
         var toManyRelation: SchemaToManyRelation? = nil
         var isUniqueIndex: Bool = false
         var isUnsignedType: Bool = false
-        var entityType = EntityPropertyType.unknown
-        var entityFlags: EntityPropertyFlag = []
+        var entityType = PropertyType.unknown
+        var entityFlags: [PropertyFlags] = []
         var name: String = ""
         var isMutable = true
         var flagsList: String = ""
@@ -1055,7 +1055,7 @@ enum IdSync {
             }
             
             if shouldHaveIndex {
-                schemaProperty.entityFlags.insert(.indexed)
+                schemaProperty.entityFlags.append(.indexed)
             }
             
             // No entry for this index yet? Add one!

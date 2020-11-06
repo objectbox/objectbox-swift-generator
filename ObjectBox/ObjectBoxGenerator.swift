@@ -29,7 +29,7 @@ enum ObjectBoxGenerator {
     static let builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
     static let builtInStringTypes = ["String", "NSString"]
     static let builtInByteVectorTypes = ["Data", "NSData", "[UInt8]", "Array<UInt8>"]
-    static let typeMappings: [String: EntityPropertyType] = [
+    static let typeMappings: [String: PropertyType] = [
         "Bool": .bool,
         "UInt8": .byte,
         "Int8": .byte,
@@ -228,7 +228,7 @@ enum ObjectBoxGenerator {
         return isByteVectorType
     }
     
-    static func entityType(for typeName: TypeName?) -> EntityPropertyType {
+    static func entityType(for typeName: TypeName?) -> PropertyType {
         var currPropType = typeName
         
         while let currPropTypeReadOnly = currPropType {
@@ -380,7 +380,7 @@ enum ObjectBoxGenerator {
             schemaEntity.idProperty = schemaProperty
             if let objectAnnotationDict = objectIdAnnotationValue as? NSDictionary {
                 if let assignableBool = objectAnnotationDict["assignable"] as? Bool, assignableBool == true {
-                    schemaProperty.entityFlags.insert(.idSelfAssignable)
+                    schemaProperty.entityFlags.append(.idSelfAssignable)
                 }
             }
         } else {
@@ -397,21 +397,21 @@ enum ObjectBoxGenerator {
         }
         
         if schemaProperty.isObjectId {
-            schemaProperty.entityFlags.insert(.id)
+            schemaProperty.entityFlags.append(.id)
         }
         if !schemaProperty.isObjectId && schemaProperty.isUnsignedType {
-            schemaProperty.entityFlags.insert(.unsigned)
+            schemaProperty.entityFlags.append(.unsigned)
         }
         if schemaProperty.isUniqueIndex {
-            schemaProperty.entityFlags.insert(.unique)
+            schemaProperty.entityFlags.append(.unique)
         }
         if schemaProperty.indexType == .hashIndex {
-            schemaProperty.entityFlags.insert(.indexHash)
+            schemaProperty.entityFlags.append(.indexHash)
         } else if schemaProperty.indexType == .hash64Index {
-            schemaProperty.entityFlags.insert(.indexHash64)
+            schemaProperty.entityFlags.append(.indexHash64)
         }
         if schemaProperty.indexType != .none {
-            schemaProperty.entityFlags.insert(.indexed)
+            schemaProperty.entityFlags.append(.indexed)
         }
         if schemaProperty.isRelation && fullTypeName.hasPrefix("ToOne<") && fullTypeName.hasSuffix(">") {
             let templateTypesString = fullTypeName.drop(first: "ToOne<".count, last: 1)
@@ -477,9 +477,9 @@ enum ObjectBoxGenerator {
                 }
             }
             schemaEntity.idProperty?.isObjectId = true
-            schemaEntity.idProperty?.entityFlags.insert(.id)
+            schemaEntity.idProperty?.entityFlags.append(.id)
             // No other binding marks IDs as unsigned, so don't break compatibility.
-            schemaEntity.idProperty?.entityFlags.remove(.unsigned)
+            schemaEntity.idProperty?.entityFlags.removeAll(where: { $0 == .unsigned })
         }
         
         schemaProperties.forEach { schemaProperty in
