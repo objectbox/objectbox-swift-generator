@@ -96,6 +96,21 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
         name.hash(into: &hasher)
     }
 
+    public var flagsStringList: String {
+        get {
+            var flagsList: [String] = []
+            if flags.contains(.useNoArgConstructor) { flagsList.append(".useNoArgConstructor") }  // Not used in Swift
+            if flags.contains(.syncEnabled) { flagsList.append(".syncEnabled") }
+            if flagsList.count == 0 {
+                return ""
+            } else if flagsList.count == 1 {
+                return flagsList[0]
+            } else {
+                return "[" + flagsList.joined(separator: ", ") + "]"
+            }
+        }
+    }
+
     public var debugDescription: String {
         get {
             return "SchemaEntity {\n\t\tmodelId = \(String(describing: modelId))\n\t\tmodelUid = \(String(describing: modelUid))\n\t\tclassName = \(className)\n\t\tdbName = \(String(describing: dbName))\n\t\tproperties = \(properties)\n\t\tindexes = \(indexes)\n\t\trelations = \(relations)\n\t\ttoManyRelations = \(toManyRelations)\n\t\tlastPropertyId = \(String(describing: lastPropertyId))\n\t\tisEntitySubclass = \(isEntitySubclass)\n\t\tisValueType = \(isValueType)\n\t\thasStringProperties = \(hasStringProperties)\n\t\tidProperty = \(String(describing: idProperty))\n\t\tidCandidates = \(idCandidates)\n\t}\n"
