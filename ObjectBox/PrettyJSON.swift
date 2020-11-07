@@ -52,14 +52,14 @@ class PrettyJSON {
             for entity in modelEntities {
                 output.append("\n    {\n      \"id\": \"\(entity.id.toString())\",")
 
-                if entity.flags != nil {
-                    output.append("\n      \"flags\": \(entity.flags!),")
-                }
-
                 if let lastPropertyId = entity.lastPropertyId {
                     output.append("\n      \"lastPropertyId\": \"\(lastPropertyId.toString())\",")
                 }
-                output.append("\n      \"name\": \"\(escapeName(entity.name))\",\n      \"properties\": [")
+                output.append("\n      \"name\": \"\(escapeName(entity.name))\",")
+                if entity.flags ?? 0 != 0 {
+                    output.append("\n      \"flags\": \(entity.flags!),")
+                }
+                output.append("\n      \"properties\": [")
                 let entityProperties = entity.properties ?? []
                 if entityProperties.isEmpty {
                     output.append("],")
