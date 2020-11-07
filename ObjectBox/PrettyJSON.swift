@@ -51,6 +51,11 @@ class PrettyJSON {
             var entitiesToGo = modelEntities.count
             for entity in modelEntities {
                 output.append("\n    {\n      \"id\": \"\(entity.id.toString())\",")
+
+                if entity.flags != nil {
+                    output.append("\n      \"flags\": \(entity.flags!),")
+                }
+
                 if let lastPropertyId = entity.lastPropertyId {
                     output.append("\n      \"lastPropertyId\": \"\(lastPropertyId.toString())\",")
                 }

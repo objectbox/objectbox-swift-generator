@@ -109,6 +109,7 @@ enum IdSync {
     class Entity: Codable, Hashable, Equatable, CustomDebugStringConvertible {
         var id = IdUid()
         var name = ""
+        var flags: UInt32?
         var lastPropertyId: IdUid?
         var properties: Array<Property>?
         var relations: Array<Relation>?
@@ -117,14 +118,16 @@ enum IdSync {
         private enum CodingKeys: String, CodingKey {
             case id
             case name
+            case flags
             case lastPropertyId
             case properties
             case relations
         }
         
-        init(name: String, id: IdUid, properties: [Property], relations: [Relation], lastPropertyId: IdUid, isEntitySubclass: Bool) {
-            self.name = name
+        init(name: String, id: IdUid, flags: UInt32, properties: [Property], relations: [Relation], lastPropertyId: IdUid, isEntitySubclass: Bool) {
             self.id = id
+            self.name = name
+            self.flags = flags
             self.properties = properties
             self.relations = relations
             self.lastPropertyId = lastPropertyId
@@ -765,7 +768,9 @@ enum IdSync {
                 sourceId = lastEntityId.incId(uid: try newUid(entityUid)) // Create new id
             }
             
-            let entity = Entity(name: entityName, id: sourceId, properties: properties, relations: relations, lastPropertyId: lastPropertyId, isEntitySubclass: schemaEntity.isEntitySubclass)
+            let entity = Entity(name: entityName, id: sourceId, flags: schemaEntity.flags.rawValue,
+                    properties: properties, relations: relations, lastPropertyId: lastPropertyId,
+                    isEntitySubclass: schemaEntity.isEntitySubclass)
             
             schemaEntity.modelUid = entity.id.uid
             schemaEntity.modelId = entity.id.id

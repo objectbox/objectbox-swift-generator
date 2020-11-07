@@ -68,7 +68,8 @@ enum ObjectBoxGenerator {
         "uid",
         "name",
         "entity",
-        "Entity"
+        "Entity",
+        "sync"
     ])
 
     // TODO why static?
@@ -443,6 +444,10 @@ enum ObjectBoxGenerator {
         schemaEntity.isValueType = currType.kind == "struct"
         schemaEntity.modelUid = currType.annotations["uid"] as? Int64
         schemaEntity.dbName = currType.annotations["name"] as? String
+        if currType.annotations["sync"] != nil {
+            schemaEntity.flags.append(.syncEnabled)
+        }
+
         if let dbNameIsEmpty = schemaEntity.dbName?.isEmpty, dbNameIsEmpty { schemaEntity.dbName = nil }
         schemaEntity.name = schemaEntity.dbName ?? schemaEntity.className
         schemaEntity.isEntitySubclass = isEntityBased

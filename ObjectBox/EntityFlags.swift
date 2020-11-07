@@ -35,3 +35,13 @@ public enum EntityFlags: UInt32 {
     public static var min: EntityFlags { return .useNoArgConstructor }
 }
 
+extension Array where Element == EntityFlags {
+    var rawValue: UInt32 {
+        var combined: UInt32 = 0
+        for value in self {
+            combined |= value.rawValue
+        }
+        return combined
+    }
+}
+
