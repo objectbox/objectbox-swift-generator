@@ -10,7 +10,7 @@ import PathKit
 
 class IdSyncTests: XCTestCase {
     func testEmptyFile() throws {
-        let schemaData = IdSync.Schema()
+        let schemaData = Schema()
         
         let jsonFile = URL(fileURLWithPath: "/tmp").appendingPathComponent("model.json")
         try? FileManager.default.removeItem(at: jsonFile)
@@ -35,8 +35,8 @@ class IdSyncTests: XCTestCase {
     }
 
     func testOneEmptyClassFile() throws {
-        let schemaData = IdSync.Schema()
-        let entity = IdSync.SchemaEntity()
+        let schemaData = Schema()
+        let entity = SchemaEntity()
         entity.className = "FirstEntity"
         schemaData.entities.append(entity)
         
@@ -72,10 +72,10 @@ class IdSyncTests: XCTestCase {
     }
     
     func testOneMinimalClassFile() throws {
-        let schemaData = IdSync.Schema()
-        let entity = IdSync.SchemaEntity()
+        let schemaData = Schema()
+        let entity = SchemaEntity()
         entity.className = "FirstEntity"
-        let prop = IdSync.SchemaProperty()
+        let prop = SchemaProperty()
         prop.propertyName = "identifikationsNummer"
         prop.propertyType = "EntityId<FirstEntity>"
         prop.entityName = "FirstEntity"
@@ -120,30 +120,30 @@ class IdSyncTests: XCTestCase {
         }
     }
 
-    func multiPropertyClassSchema() -> IdSync.Schema {
-        let schemaData = IdSync.Schema()
-        let entity = IdSync.SchemaEntity()
+    func multiPropertyClassSchema() -> Schema {
+        let schemaData = Schema()
+        let entity = SchemaEntity()
         entity.className = "FirstEntity"
-        let prop = IdSync.SchemaProperty()
+        let prop = SchemaProperty()
         prop.propertyName = "id"
         prop.propertyType = "EntityId<FirstEntity>"
         prop.entityName = "FirstEntity"
         entity.properties.append(prop)
-        let prop2 = IdSync.SchemaProperty()
+        let prop2 = SchemaProperty()
         prop2.propertyName = "name"
         prop2.propertyType = "String"
         prop2.entityName = "FirstEntity"
         entity.properties.append(prop2)
         schemaData.entities.append(entity)
         
-        let entity2 = IdSync.SchemaEntity()
+        let entity2 = SchemaEntity()
         entity2.className = "SecondEntity"
-        let prop3 = IdSync.SchemaProperty()
+        let prop3 = SchemaProperty()
         prop3.propertyName = "id"
         prop3.propertyType = "EntityId<SecondEntity>"
         prop3.entityName = "SecondEntity"
         entity2.properties.append(prop3)
-        let prop4 = IdSync.SchemaProperty()
+        let prop4 = SchemaProperty()
         prop4.propertyName = "name"
         prop4.propertyType = "String"
         prop4.entityName = "SecondEntity"
@@ -176,9 +176,9 @@ class IdSyncTests: XCTestCase {
         if let jsonContents = jsonContents {
             XCTAssertEqual(jsonContents.entities?.count ?? 0, 2)
 
-            var entityUid = IdSync.IdUid()
-            var entityProp1Uid = IdSync.IdUid()
-            var entityProp2Uid = IdSync.IdUid()
+            var entityUid = IdUid()
+            var entityProp1Uid = IdUid()
+            var entityProp2Uid = IdUid()
             let entity = jsonContents.entities?.first
             XCTAssertNotNil(entity)
             if let entity = entity {
@@ -206,9 +206,9 @@ class IdSyncTests: XCTestCase {
                 XCTAssertEqual(entity.relations?.count ?? 0, 0)
             }
             
-            var entity2Uid = IdSync.IdUid()
-            var entity2Prop1Uid = IdSync.IdUid()
-            var entity2Prop2Uid = IdSync.IdUid()
+            var entity2Uid = IdUid()
+            var entity2Prop1Uid = IdUid()
+            var entity2Prop2Uid = IdUid()
             let entity2 = jsonContents.entities?[1]
             XCTAssertNotNil(entity2)
             if let entity2 = entity2 {
@@ -262,7 +262,7 @@ class IdSyncTests: XCTestCase {
 
         // Test synching a second time, are the UIDs still the same?
         var didThrowAsExpected = false
-        let overrideId = IdSync.IdUid(string: "0:1") // Simulate empty "uid" tag.
+        let overrideId = IdUid(string: "0:1") // Simulate empty "uid" tag.
         let schemaData2 = multiPropertyClassSchema()
         var thrownEntity: String = ""
         var thrownProperty: String = ""
