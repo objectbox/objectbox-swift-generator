@@ -17,6 +17,7 @@ enum ObjectBoxGenerator {
         case MissingBacklinkOnToManyRelation(entity: String, relation: String)
         case convertAnnotationMissingType(name: String, entity: String)
         case convertAnnotationMissingConverterOrDefault(name: String, entity: String)
+        case IllegalDictionaryElements(entity: String, message: String)
     }
 
     static var modelJsonFile: URL?
@@ -171,6 +172,8 @@ enum ObjectBoxGenerator {
                 Log.error("Must specify a converter or default in '// objectbox: convert = { "
                     + "\"dbType\": \"TYPE HERE\", \"default\": \"DEFAULT HERE\" }' annotation of "
                     + "property \(name) of entity \(entity)")
+            case .IllegalDictionaryElements(let entity, let message):
+                Log.error("Illegal dictionary elements found in entity \(entity): \(message)")
             }
         } else {
             Log.error("\(error)")
@@ -444,17 +447,33 @@ enum ObjectBoxGenerator {
         schemaEntity.isValueType = currType.kind == "struct"
         schemaEntity.modelUid = currType.annotations["uid"] as? Int64
         schemaEntity.dbName = currType.annotations["name"] as? String
-        let isSync = currType.annotations["sync"] != nil
-        if isSync {
+        let syncAnnotation = currType.annotations["sync"]
+        if syncAnnotation != nil {
             schemaEntity.flags.append(.syncEnabled)
+
+            if let syncDict = syncAnnotation as? NSDictionary {
+                // These are critical: do strict checks to ensure nothing goes bad because of an typo
+                for(key, value) in syncDict {
+                    guard let keyString = key as? String else {
+                        throw Error.IllegalDictionaryElements(entity: schemaEntity.className,
+                                message: "the sync annotation contains a non-string key")
+                    }
+                    if keyString == "sharedGlobalIds" {
+                        guard let valueBool = value as? Bool else {
+                            throw Error.IllegalDictionaryElements(entity: schemaEntity.className,
+                                    message: "the sync annotation has a non-boolean value for key: \(keyString)")
+                        }
+                        if valueBool {
+                            schemaEntity.flags.append(.sharedGlobalIds)
+                        }
+                    } else {
+                        throw Error.IllegalDictionaryElements(entity: schemaEntity.className,
+                                message: "the sync annotation contains an unknown key: \(keyString)")
+                    }
+                }
+            } // else TODO verify syncAnnotation is expected
         }
-        if currType.annotations["sharedGlobalIds"] != nil {
-            if !isSync {
-                print("warning: \(schemaEntity.className) annotated with 'sharedGlobalIds', but not 'sync' (implicitly added)")
-                schemaEntity.flags.append(.syncEnabled)
-            }
-            schemaEntity.flags.append(.sharedGlobalIds)
-        }
+
         // Not sure why, but Sourcery has trouble with "computed" properties,
         // help it by "materializing" to a plain String property
         schemaEntity.flagsStringList = schemaEntity.flagsStringListDynamic
@@ -523,7 +542,7 @@ enum ObjectBoxGenerator {
             !validAnnotations.contains($0)
         }
         if unknownAnnotations.count > 0 {
-            print("warning: \(name) has unknown annotations \(unknownAnnotations.joined(separator: ",")).")
+            print("error: \(name) has unknown annotations \(unknownAnnotations.joined(separator: ",")).")
         }
     }
         
