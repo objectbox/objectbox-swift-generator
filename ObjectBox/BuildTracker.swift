@@ -52,7 +52,7 @@ class BuildTracker {
     func sendEvent(name: String, uniqueID: String? = nil, properties: [String: Any] = [:]) throws {
         // Attach statistics to URL:
         let eventInfoDict = eventDictionary(name: name, uniqueID: uniqueID, properties: properties)
-        var options: JSONSerialization.WritingOptions = []
+        let options: JSONSerialization.WritingOptions = []
         // Turn off this option as long as build server still builds with Xcode 10 and the 10.14
         // SDK, because this check only works if you build with a 10.15+ SDK but with support for
         // running on the old system.
