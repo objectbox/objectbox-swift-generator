@@ -101,6 +101,7 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
             var flagsList: [String] = []
             if flags.contains(.useNoArgConstructor) { flagsList.append(".useNoArgConstructor") }  // Not used in Swift
             if flags.contains(.syncEnabled) { flagsList.append(".syncEnabled") }
+            if flags.contains(.sharedGlobalIds) { flagsList.append(".sharedGlobalIds") }
             if flagsList.count == 0 {
                 return ""
             } else if flagsList.count == 1 {
