@@ -5,6 +5,13 @@ set -e
 MY_DIR=$( cd "$(dirname "$0")" ; pwd -P )
 cd "$MY_DIR"
 
+if [ "${1:-}" == "--dirty" ]; then
+    dirty=true
+    shift
+else
+    dirty=false
+fi
+
 if [ "$TERM" == "" ] || [ "$TERM" == "dumb" ] ; then
     SMSO=""
     RMSO=""
@@ -33,15 +40,26 @@ echo ""
 
 xcodebuild -workspace "${MY_DIR}/Sourcery.xcworkspace" -scheme "Sourcery-Release" -configuration Release -quiet CONFIGURATION_BUILD_DIR="${MY_DIR}/bin/build"
 
-echo ""
-echo "$SMSO Clean up... $RMSO"
-echo ""
+if [ "$dirty" = true ] ; then
+    echo ""
+    echo "$SMSO Copying (without cleaning)... $RMSO"
+    echo ""
 
-rm -rf "${MY_DIR}/bin/Sourcery.app"
-rm -rf "${MY_DIR}/bin/"*.dSYM
-mv -f "${MY_DIR}/bin/build/Sourcery.app" "${MY_DIR}/bin/"
-mv -f "${MY_DIR}/bin/build/"*.dSYM "${MY_DIR}/bin/"
-rm -rf "${MY_DIR}/bin/build"
+    rm -rf "${MY_DIR}/bin/Sourcery.app"
+    rm -rf "${MY_DIR}/bin/"*.dSYM
+    cp -Rf "${MY_DIR}/bin/build/Sourcery.app" "${MY_DIR}/bin/"
+    cp -Rf "${MY_DIR}/bin/build/"*.dSYM "${MY_DIR}/bin/"
+else
+    echo ""
+    echo "$SMSO Clean up... $RMSO"
+    echo ""
+
+    rm -rf "${MY_DIR}/bin/Sourcery.app"
+    rm -rf "${MY_DIR}/bin/"*.dSYM
+    mv -f "${MY_DIR}/bin/build/Sourcery.app" "${MY_DIR}/bin/"
+    mv -f "${MY_DIR}/bin/build/"*.dSYM "${MY_DIR}/bin/"
+    rm -rf "${MY_DIR}/bin/build"
+fi
 
 echo ""
 echo "$GREEN Done. $RMGREEN$BEL"
