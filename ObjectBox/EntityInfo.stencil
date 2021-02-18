@@ -26,7 +26,7 @@ extension {{ entity.className }}: ObjectBox.EntityInspectable {
 
     fileprivate static func buildEntity(modelBuilder: ObjectBox.ModelBuilder) throws {
         let entityBuilder = try modelBuilder.entityBuilder(for: {{ entity.className }}.self, id: {{ entity.modelId }}, uid: {{ entity.modelUid }})
-        {% if entity.flags.count != 0 %}try entityBuilder.flags(.syncEnabled{# Workaround; it should have been this instead: {{ entity.flagsStringList }} #}){% endif %}
+        {% if entity.flags.count != 0 %}try entityBuilder.flags({{ entity.flagsStringList }}){% endif %}
         {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
         {% set indexParam %}{% if prop.modelIndexId %}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }}{% endif %}{% endset %}
         try entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})

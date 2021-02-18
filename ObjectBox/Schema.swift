@@ -81,6 +81,7 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
     var idCandidates = Array<SchemaProperty>()
     var name: String = ""
     var flags: [EntityFlags] = []
+    var flagsStringList: String = ""
 
     public static func == (lhs: SchemaEntity, rhs: SchemaEntity) -> Bool { lhs.name == rhs.name }
 
@@ -96,7 +97,7 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
         name.hash(into: &hasher)
     }
 
-    public var flagsStringList: String {
+    public var flagsStringListDynamic: String {
         get {
             var flagsList: [String] = []
             if flags.contains(.useNoArgConstructor) { flagsList.append(".useNoArgConstructor") }  // Not used in Swift

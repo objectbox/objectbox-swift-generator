@@ -444,9 +444,20 @@ enum ObjectBoxGenerator {
         schemaEntity.isValueType = currType.kind == "struct"
         schemaEntity.modelUid = currType.annotations["uid"] as? Int64
         schemaEntity.dbName = currType.annotations["name"] as? String
-        if currType.annotations["sync"] != nil {
+        let isSync = currType.annotations["sync"] != nil
+        if isSync {
             schemaEntity.flags.append(.syncEnabled)
         }
+        if currType.annotations["sharedGlobalIds"] != nil {
+            if !isSync {
+                print("warning: \(schemaEntity.className) annotated with 'sharedGlobalIds', but not 'sync' (implicitly added)")
+                schemaEntity.flags.append(.syncEnabled)
+            }
+            schemaEntity.flags.append(.sharedGlobalIds)
+        }
+        // Not sure why, but Sourcery has trouble with "computed" properties,
+        // help it by "materializing" to a plain String property
+        schemaEntity.flagsStringList = schemaEntity.flagsStringListDynamic
 
         if let dbNameIsEmpty = schemaEntity.dbName?.isEmpty, dbNameIsEmpty { schemaEntity.dbName = nil }
         schemaEntity.name = schemaEntity.dbName ?? schemaEntity.className
