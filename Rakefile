@@ -313,7 +313,10 @@ namespace :release do
     system(%Q{sed -i '' -e 's/## Master/## #{new_version}/' CHANGELOG.md})
 
     # Update podspec version
-    podspec_update_version(new_version)
+    podspec_update_version(new_version, 'Sourcery.podspec')
+    podspec_update_version(new_version, 'SourceryFramework.podspec')
+    podspec_update_version(new_version, 'SourceryRuntime.podspec')
+    podspec_update_version(new_version, 'SourceryUtils.podspec')
 
     # Update project version
     project_update_version(new_version)
@@ -321,7 +324,7 @@ namespace :release do
     # Update command line tool version
     command_line_tool_update_version(new_version)
 
-    manual_commit(["CHANGELOG.md", "Sourcery.podspec", "Sourcery.xcodeproj/project.pbxproj", VERSION_FILE], "docs: update metadata for #{new_version} release")
+    manual_commit(["CHANGELOG.md", "Sourcery.podspec", "SourceryFramework.podspec", "SourceryRuntime.podspec", "SourceryUtils.podspec", "Sourcery.xcodeproj/project.pbxproj", VERSION_FILE], "docs: update metadata for #{new_version} release")
   end
 
   desc 'Create a tag for the project version and push to remote'

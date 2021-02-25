@@ -33,7 +33,7 @@ extension Type {
 
     public func bodyRange(_ contents: String) -> NSRange? {
         guard let bytesRange = bodyBytesRange else { return nil }
-        return contents.bridge().byteRangeToNSRange(start: Int(bytesRange.offset), length: Int(bytesRange.length))
+        return StringView(contents).byteRangeToNSRange(ByteRange(location: ByteCount(bytesRange.offset), length: ByteCount(bytesRange.length)))
     }
 }
 
@@ -125,45 +125,46 @@ public final class FileParser {
         var typealiases = [Typealias]()
         try walkDeclarations(source: source) { kind, name, access, inheritedTypes, source, definedIn, next in
             let type: Type
-            switch kind {
-            case .protocol:
+            switch (kind, name) {
+            case let (.protocol, name?):
                 type = Protocol(name: name, accessLevel: access, isExtension: false, inheritedTypes: inheritedTypes)
-            case .class:
+            case let (.class, name?):
                 type = Class(name: name, accessLevel: access, isExtension: false, inheritedTypes: inheritedTypes)
-            case .struct:
+            case let (.struct, name?):
                 type = Struct(name: name, accessLevel: access, isExtension: false, inheritedTypes: inheritedTypes)
-            case .enum:
+            case let (.enum, name?):
                 type = Enum(name: name, accessLevel: access, isExtension: false, inheritedTypes: inheritedTypes)
-            case .extension,
-                 .extensionClass,
-                 .extensionStruct,
-                 .extensionEnum:
+            case let (.extension, name?),
+                 let (.extensionClass, name?),
+                 let (.extensionStruct, name?),
+                 let (.extensionEnum, name?):
                 type = Type(name: name, accessLevel: access, isExtension: true, inheritedTypes: inheritedTypes)
-            case .enumelement:
+            case (.enumelement, _):
                 return parseEnumCase(source)
-            case .varInstance:
+            case (.varInstance, _):
                 return parseVariable(source, definedIn: definedIn as? Type)
-            case .varStatic, .varClass:
+            case (.varStatic, _),
+                 (.varClass, _):
                 return parseVariable(source, definedIn: definedIn as? Type, isStatic: true)
-            case .varLocal:
+            case (.varLocal, _):
                 //! Don't log local / param vars
                 return nil
-            case .functionMethodClass,
-                 .functionMethodInstance,
-                 .functionMethodStatic:
+            case (.functionMethodClass, _),
+                 (.functionMethodInstance, _),
+                 (.functionMethodStatic, _):
                 return parseMethod(source, definedIn: definedIn as? Type, nextStructure: next)
-            case .functionFree:
+            case (.functionFree, _):
                 guard let function = parseMethod(source, definedIn: definedIn as? Type, nextStructure: next) else {
                     return nil
                 }
 
                 functions.append(function)
                 return function
-            case .functionSubscript:
+            case (.functionSubscript, _):
                 return parseSubscript(source, definedIn: definedIn as? Type, nextStructure: next)
-            case .varParameter:
+            case (.varParameter, _):
                 return parseParameter(source)
-            case .typealias:
+            case (.typealias, _):
                 switch parseTypealias(source, containingType: definedIn as? Type) {
                 case nil:
                     return nil
@@ -179,10 +180,11 @@ public final class FileParser {
                         return protocolComposition
                     }
                 }
-            case .associatedtype:
+            case (.associatedtype, _):
                 return parseAssociatedType(source, definedIn: definedIn as? Type)
             default:
-                Log.verbose("\(logPrefix) Unsupported entry \"\(access) \(kind) \(name)\"")
+                let nameSuffix = name.map { " \($0)" } ?? ""
+                Log.verbose("\(logPrefix) Unsupported entry \"\(access) \(kind)\(nameSuffix)\"")
                 return nil
             }
 
@@ -201,7 +203,7 @@ public final class FileParser {
 
     typealias FoundEntry = (
         /*kind:*/ SwiftDeclarationKind,
-        /*name:*/ String,
+        /*name:*/ String?,
         /*accessLevel:*/ AccessLevel,
         /*inheritedTypes:*/ [String],
         /*source:*/ [String: SourceKitRepresentable],
@@ -310,19 +312,46 @@ public final class FileParser {
 // MARK: - Details parsing
 extension FileParser {
 
-    fileprivate func parseTypeRequirements(_ dict: [String: SourceKitRepresentable]) -> (name: String, kind: SwiftDeclarationKind, accessibility: AccessLevel)? {
-        guard let kind = (dict[SwiftDocKey.kind.rawValue] as? String).flatMap({ SwiftDeclarationKind(rawValue: $0) }),
-              var name = dict[SwiftDocKey.name.rawValue] as? String else { return nil }
-
-        if case .enumelement = kind, let colon = name.firstIndex(of: "(") {
-            name = String(name[..<colon])
-        }
-
-        if extract(.name, from: dict)?.hasPrefix("`") == true {
-            name = "`\(name)`"
-        }
+    fileprivate func parseTypeRequirements(_ dict: [String: SourceKitRepresentable]) -> (name: String?, kind: SwiftDeclarationKind, accessibility: AccessLevel)? {
+        guard let kind = (dict[SwiftDocKey.kind.rawValue] as? String).flatMap({ SwiftDeclarationKind(rawValue: $0) }) else { return nil }
 
         let accessibility = (dict["key.accessibility"] as? String).flatMap({ AccessLevel(rawValue: $0.replacingOccurrences(of: "source.lang.swift.accessibility.", with: "") ) }) ?? .none
+        
+        let name: String? = (dict[SwiftDocKey.name.rawValue] as? String).map {
+            var name: String = $0
+            
+            if case .enumelement = kind, let openingBrace = name.firstIndex(of: "(") {
+                name = String(name[..<openingBrace])
+            }
+
+            if extract(.name, from: dict)?.hasPrefix("`") == true {
+                name = "`\(name)`"
+            }
+            
+            return name
+        }
+
+        // Some declarations are expected to have name, while others don't.
+        //
+        // Example:
+        // ```
+        // func method(_: Int)
+        // ```
+        //
+        // Method is expected to have a name, while argument is not.
+        
+        switch (kind, name) {
+        case (.varParameter, _):
+            // Parameters can have no name
+            break
+        case (_, .some):
+            // Other declarations must have some name
+            break
+        default:
+            // Fail to parse if those requirements aren't met
+            return nil
+        }
+        
         return (name, kind, accessibility)
     }
 
@@ -357,8 +386,11 @@ extension FileParser {
 // MARK: - Variables
 extension FileParser {
 
-    private func inferType(from string: String) -> String? {
-        let string = string.trimmingCharacters(in: .whitespaces)
+    private func inferType(from input: String) -> String? {
+        let string = input
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .strippingComments()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         // probably lazy property or default value with closure,
         // we expect explicit type, as we don't know return type
         guard !(string.hasPrefix("{") && string.hasSuffix(")")) else { return nil }
@@ -400,7 +432,9 @@ extension FileParser {
         } else if string.first == "[", string.last == "]" {
             //collection
             let string = string.dropFirstAndLast()
-            let items = string.commaSeparated()
+            let items = string.commaSeparated().map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines).strippingComments().trimmingCharacters(in: .whitespacesAndNewlines)
+            }
 
             func genericType(from itemsTypes: [String]) -> String {
                 let genericType: String
@@ -420,7 +454,9 @@ extension FileParser {
             if items[0].colonSeparated().count == 1 {
                 var itemsTypes = [String]()
                 for item in items {
-                    guard let type = inferType(from: item) else { return nil }
+                    guard let type = inferType(from: item) else {
+                        return nil
+                    }
                     itemsTypes.append(type)
                 }
                 return "[\(genericType(from: itemsTypes))]"
@@ -432,7 +468,9 @@ extension FileParser {
                     guard keyAndValue.count == 2,
                         let keyType = inferType(from: keyAndValue[0]),
                         let valueType = inferType(from: keyAndValue[1])
-                        else { return nil }
+                        else {
+                            return nil
+                        }
 
                     keysTypes.append(keyType)
                     valuesTypes.append(valueType)
@@ -459,7 +497,9 @@ extension FileParser {
 
             // get everything before `(`
             let components = string.components(separatedBy: "(", excludingDelimiterBetween: ("<[(", ")]>"))
-            if components.count > 1 && string.last == ")" {
+
+            // scenario for '}' is for property settter / getter logic
+            if components.count > 1 && (string.last == ")" || string.last == "}") {
                 //initializer without `init`
                 inferredType = components[0]
                 return possibleEnumType(inferredType) ?? inferredType
@@ -470,8 +510,9 @@ extension FileParser {
     }
 
     internal func parseVariable(_ source: [String: SourceKitRepresentable], definedIn: Type?, isStatic: Bool = false) -> Variable? {
-        guard let (name, _, accessibility) = parseTypeRequirements(source) else { return nil }
-
+        guard let (nameOrNil, _, accessibility) = parseTypeRequirements(source),
+            let name = nameOrNil else { return nil }
+        
         let definedInProtocol = (definedIn != nil) ? definedIn is SourceryProtocol : false
         var maybeType: String? = source[SwiftDocKey.typeName.rawValue] as? String
 
@@ -479,7 +520,6 @@ extension FileParser {
             guard substring.hasPrefix("=") else { return nil }
 
             var substring = substring.dropFirst().trimmingCharacters(in: .whitespaces)
-            substring = substring.components(separatedBy: .newlines)[0]
 
             if substring.hasSuffix("{") {
                 substring = String(substring.dropLast()).trimmingCharacters(in: .whitespaces)
@@ -494,7 +534,8 @@ extension FileParser {
         } else {
             let declaration = extract(.key, from: source)
             // swiftlint:disable:next force_unwrapping
-            typeName = TypeName("<<unknown type, please add type attribution to variable\(declaration != nil ? " '\(declaration!)'" : "")>>")
+            Log.warning("<<unknown type, please add type attribution to variable\(declaration != nil ? " '\(declaration!)'" : "")>>")
+            typeName = TypeName("UnknownTypeSoAddTypeAttributionToVariable")
         }
 
         let setterAccessibility = self.setterAccessibility(source: source)
@@ -591,8 +632,7 @@ extension FileParser {
             if let upperBound = upperBound {
                 let start = Int(nameSuffixRange.offset)
                 let length = upperBound - Int(nameSuffixRange.offset)
-                let nameSuffixUpToNextStruct = contents.bridge()
-                    .substringWithByteRange(start: start, length: length)?
+                let nameSuffixUpToNextStruct = StringView(contents)                            .substringWithByteRange(ByteRange(location: ByteCount(start), length: ByteCount(length)))?
                     .trimmingCharacters(in: CharacterSet(charactersIn: ";").union(.whitespacesAndNewlines))
 
                 if let nameSuffixUpToNextStruct = nameSuffixUpToNextStruct {
@@ -602,8 +642,8 @@ extension FileParser {
                             || $0.type.hasPrefix("source.lang.swift.syntaxtype.doccomment")
                     })
                     if let firstDocToken = firstDocToken {
-                        nameSuffix = nameSuffixUpToNextStruct.bridge()
-                            .substringWithByteRange(start: 0, length: firstDocToken.offset)?
+                        nameSuffix = StringView(nameSuffixUpToNextStruct)
+                            .substringWithByteRange(ByteRange(location: ByteCount(0), length: firstDocToken.offset))?
                             .trimmingCharacters(in: CharacterSet(charactersIn: ";").union(.whitespacesAndNewlines))
                     } else {
                         nameSuffix = nameSuffixUpToNextStruct
@@ -641,7 +681,7 @@ extension FileParser {
         let `inout` = type.hasPrefix("inout ")
         let typeName = TypeName(type, attributes: parseTypeAttributes(type))
         let defaultValue = extractDefaultValue(type: type, from: source)
-        let parameter = MethodParameter(argumentLabel: argumentLabel, name: name, typeName: typeName, defaultValue: defaultValue, annotations: annotations.from(source), isInout: `inout`)
+        let parameter = MethodParameter(argumentLabel: argumentLabel, name: name ?? "", typeName: typeName, defaultValue: defaultValue, annotations: annotations.from(source), isInout: `inout`)
         parameter.setSource(source)
         return parameter
     }
@@ -652,8 +692,9 @@ extension FileParser {
 extension FileParser {
 
     fileprivate func parseEnumCase(_ source: [String: SourceKitRepresentable]) -> EnumCase? {
-        guard let (name, _, _) = parseTypeRequirements(source) else { return nil }
-
+        guard let (nameOrNil, _, _) = parseTypeRequirements(source),
+            let name = nameOrNil else { return nil }
+        
         var associatedValues: [AssociatedValue] = []
         var rawValue: String?
 
@@ -738,7 +779,8 @@ extension FileParser {
     }
 
     private func parseTypealias(_ source: [String: SourceKitRepresentable], containingType: Type?) -> TypealiasParseOutcome? {
-        guard let (name, _, _) = parseTypeRequirements(source),
+        guard let (nameOrNil, _, _) = parseTypeRequirements(source),
+            let name = nameOrNil,
             let nameSuffix = extract(.nameSuffix, from: source)?
                 .trimmingCharacters(in: CharacterSet.init(charactersIn: "=").union(.whitespacesAndNewlines))
             else { return nil }
@@ -757,7 +799,8 @@ extension FileParser {
 // MARK: - AssociatedTypes
 extension FileParser {
     private func parseAssociatedType(_ source: [String: SourceKitRepresentable], definedIn: Type?) -> AssociatedType? {
-        guard let (name, _, _) = parseTypeRequirements(source) else { return nil }
+        guard let (nameOrNil, _, _) = parseTypeRequirements(source),
+            let name = nameOrNil else { return nil }
 
         guard let nameSuffix = extract(.nameSuffix, from: source)?
             .trimmingCharacters(in: CharacterSet.init(charactersIn: ":").union(.whitespacesAndNewlines))
@@ -884,15 +927,15 @@ extension FileParser {
     }
 
     fileprivate func extract(_ token: SyntaxToken, contents: String) -> String? {
-        return contents.bridge().substringWithByteRange(start: token.offset, length: token.length)
+        return StringView(contents).substringWithByteRange(ByteRange(location: token.offset, length: token.length))
     }
 
     fileprivate func extract(from: SyntaxToken, to: SyntaxToken, contents: String) -> String? {
-        return contents.bridge().substringWithByteRange(start: from.offset, length: to.offset + to.length - from.offset)
+        return StringView(contents).substringWithByteRange(ByteRange(location: from.offset, length: to.offset + to.length - from.offset))
     }
 
     fileprivate func extract(after: SyntaxToken, contents: String) -> String? {
-        return contents.bridge().substringWithByteRange(start: after.offset + after.length, length: contents.count - (after.offset + after.length))
+        return StringView(contents).substringWithByteRange(ByteRange(location: after.offset + after.length, length: ByteCount(contents.count) - (after.offset + after.length)))
     }
 
     fileprivate func extractDefaultValue(type: String?, from source: [String: SourceKitRepresentable]) -> String? {
@@ -937,7 +980,7 @@ extension String {
         var stripped = self
         repeat {
             finished = true
-            let lines = stripped.lines()
+            let lines = StringView(stripped).lines
             if lines.count > 1 {
                 stripped = lines.lazy
                     .filter({ line in !line.content.hasPrefix("//") })
