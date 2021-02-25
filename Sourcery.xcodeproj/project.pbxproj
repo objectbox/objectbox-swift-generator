@@ -116,6 +116,7 @@
 		CD9C459D1DFAF76D00161C2C /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD9C459C1DFAF76D00161C2C /* main.swift */; };
 		CDAB7CFC231E412C00ED8A32 /* Time.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDAB7CFB231E412C00ED8A32 /* Time.swift */; };
 		CDBEC15C1E242B9E0090E881 /* StencilTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDBEC15B1E242B9E0090E881 /* StencilTemplate.swift */; };
+		CDDF5BF82572697200F494EA /* Array+Parallel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E291D6548CB0B086F0574D1B /* Array+Parallel.swift */; };
 		CDE812ED1E1127FF00F1FF97 /* Sourcery+PerformanceSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE812EC1E1127FF00F1FF97 /* Sourcery+PerformanceSpec.swift */; };
 		CDE812EF1E112CC700F1FF97 /* Performance-Code in Resources */ = {isa = PBXBuildFile; fileRef = CDE812EE1E112CC700F1FF97 /* Performance-Code */; };
 		CDF5E71D1E671B8500664763 /* TypedSpec.generated.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDF5E71C1E671B8500664763 /* TypedSpec.generated.swift */; };
@@ -130,7 +131,6 @@
 		E291D8BB621560C275813B1F /* SourcerySpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = E291DB1241856B9CFAAA25E7 /* SourcerySpec.swift */; };
 		E291D8DB06EC63770326562B /* Type+Stencil.swift in Sources */ = {isa = PBXBuildFile; fileRef = E291D04C9425FA502B37895D /* Type+Stencil.swift */; };
 		E291D90EC943AC5CBA99899A /* ComposerSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = E291DFE1A3D6905537EE86D9 /* ComposerSpec.swift */; };
-		E291D9FBE0B751C3C898E5B6 /* Array+Parallel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E291D6548CB0B086F0574D1B /* Array+Parallel.swift */; };
 		E291DA3352C0EDD1EB8DDCB3 /* FileParser + VariableSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = E291D37EF6AA39833209828F /* FileParser + VariableSpec.swift */; };
 		E291DC5F2343BF3DE3334986 /* Stubs.swift in Sources */ = {isa = PBXBuildFile; fileRef = E291D2450093BB4B3A9ADFEC /* Stubs.swift */; };
 		E291DCA363FD8EBF0455C712 /* Sourcery.swift in Sources */ = {isa = PBXBuildFile; fileRef = E291DB6A95BAECDB6E978A76 /* Sourcery.swift */; };
@@ -582,6 +582,7 @@
 		47635CA521DA338200B2D5A1 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				E291D6548CB0B086F0574D1B /* Array+Parallel.swift */,
 				47635CA621DA338200B2D5A1 /* Path+Extensions.swift */,
 				47635CA721DA338200B2D5A1 /* Version.swift */,
 				47635CA821DA338200B2D5A1 /* Sha.swift */,
@@ -893,7 +894,6 @@
 			isa = PBXGroup;
 			children = (
 				E291DBAA16ABFED8C04CB42A /* FolderWatcher.swift */,
-				E291D6548CB0B086F0574D1B /* Array+Parallel.swift */,
 				09C61FA51E76109E005EA58A /* Xcode+Extensions.swift */,
 			);
 			path = Utils;
@@ -1568,6 +1568,7 @@
 			files = (
 				47635CAA21DA338200B2D5A1 /* Version.swift in Sources */,
 				47635CA921DA338200B2D5A1 /* Path+Extensions.swift in Sources */,
+				CDDF5BF82572697200F494EA /* Array+Parallel.swift in Sources */,
 				47635CAB21DA338200B2D5A1 /* Sha.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1659,7 +1660,6 @@
 				557357162343690D00B1D367 /* PrettyJSON.swift in Sources */,
 				55CBFB402350C8B6000AE7C6 /* BuildTracker.swift in Sources */,
 				E291D33EA3BB6FC777B3950E /* FolderWatcher.swift in Sources */,
-				E291D9FBE0B751C3C898E5B6 /* Array+Parallel.swift in Sources */,
 				BF8C924BA9078F4C3302F2A8 /* EntityFlags.swift in Sources */,
 				BF8C97A241E2222BBA7D013D /* PropertyType.swift in Sources */,
 				BF8C903E94844482DA028EB4 /* Schema.swift in Sources */,
@@ -2248,7 +2248,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.1;
+				CURRENT_PROJECT_VERSION = 1.0.2;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -2270,7 +2270,7 @@
 				CLANG_ENABLE_CODE_COVERAGE = NO;
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.1;
+				CURRENT_PROJECT_VERSION = 1.0.2;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
