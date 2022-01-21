@@ -56,21 +56,23 @@ enum ObjectBoxGenerator {
         "[UInt8]": .byteVector,
     ]
     private static let validPropertyAnnotationNames = Set([
-        "uid",
         "backlink",
-        "name",
         "convert",
-        "index",
-        "unique",
+        "date-nano",
+        "flex",
+        "name",
         "id",
-        "transient"
+        "index",
+        "transient",
+        "uid",
+        "unique",
     ])
     private static let validTypeAnnotationNames = Set([
-        "uid",
-        "name",
         "entity",
         "Entity",
-        "sync"
+        "name",
+        "sync",
+        "uid"
     ])
 
     // TODO why static?
