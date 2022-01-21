@@ -262,41 +262,39 @@ enum ObjectBoxGenerator {
         return nil
     }
     
-    static func processOneEntityProperty(_ currIVar: SourceryVariable, in currType: Type,
-                                         into schemaProperties: inout [SchemaProperty],
-                                         entity schemaEntity: SchemaEntity, schema schemaData: Schema,
-                                         enums: [String: TypeName]) throws {
-        let fullTypeName = currIVar.typeName.name;
+    static func processProperty(_ propertyVar: SourceryVariable, in propertyType: Type,
+                                into schemaProperties: inout [SchemaProperty],
+                                entity schemaEntity: SchemaEntity, schema schemaData: Schema,
+                                enums: [String: TypeName]) throws {
+        let fullTypeName = propertyVar.typeName.name;
         var tmRelation: SchemaToManyRelation? = nil
-        if fullTypeName.hasPrefix("ToMany<") {
-            if fullTypeName.hasSuffix(">") {
-                let templateTypesString = fullTypeName.drop(first: "ToMany<".count, last: 1)
-                let templateTypes = templateTypesString.split(separator: ",")
-                let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-                let myType = currType.name
-                
-                let relation = SchemaToManyRelation(name: currIVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
-                if let propertyUid = currIVar.annotations["uid"] as? Int64 {
-                    relation.modelId = IdUid(id: 0, uid: propertyUid)
-                }
-                if let backlinkProperty = currIVar.annotations["backlink"] as? String {
-                    relation.backlinkProperty = backlinkProperty
-                }
-                tmRelation = relation
-                schemaEntity.toManyRelations.append(relation)
+        if fullTypeName.hasPrefix("ToMany<") && fullTypeName.hasSuffix(">") {
+            let templateTypesString = fullTypeName.drop(first: "ToMany<".count, last: 1)
+            let templateTypes = templateTypesString.split(separator: ",")
+            let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            let myType = propertyType.name
+
+            let relation = SchemaToManyRelation(name: propertyVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
+            if let propertyUid = propertyVar.annotations["uid"] as? Int64 {
+                relation.modelId = IdUid(id: 0, uid: propertyUid)
             }
+            if let backlinkProperty = propertyVar.annotations["backlink"] as? String {
+                relation.backlinkProperty = backlinkProperty
+            }
+            tmRelation = relation
+            schemaEntity.toManyRelations.append(relation)
         }
         
         let schemaProperty = SchemaProperty()
-        schemaProperty.entityName = currType.localName
-        schemaProperty.propertyName = currIVar.name
-        schemaProperty.isMutable = currIVar.isMutable
+        schemaProperty.entityName = propertyType.localName
+        schemaProperty.propertyName = propertyVar.name
+        schemaProperty.isMutable = propertyVar.isMutable
         schemaProperty.propertyType = fullTypeName
-        schemaProperty.entityType = entityType(for: currIVar.typeName)
-        schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(currIVar.typeName)
-        schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(currIVar.typeName)
-        schemaProperty.isStringType = isStringTypeOrAlias(currIVar.typeName)
-        schemaProperty.isByteVectorType = isByteVectorTypeOrAlias(currIVar.typeName)
+        schemaProperty.entityType = entityType(for: propertyVar.typeName)
+        schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(propertyVar.typeName)
+        schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(propertyVar.typeName)
+        schemaProperty.isStringType = isStringTypeOrAlias(propertyVar.typeName)
+        schemaProperty.isByteVectorType = isByteVectorTypeOrAlias(propertyVar.typeName)
         schemaProperty.isRelation = fullTypeName.hasPrefix("ToOne<")
         schemaProperty.isToManyRelation = fullTypeName.hasPrefix("ToMany<")
         schemaProperty.toManyRelation = tmRelation
@@ -307,17 +305,17 @@ enum ObjectBoxGenerator {
         if schemaProperty.isByteVectorType {
             schemaEntity.hasByteVectorProperties = true
         }
-        schemaProperty.unwrappedPropertyType = currIVar.unwrappedTypeName
-        schemaProperty.dbName = currIVar.annotations["name"] as? String
+        schemaProperty.unwrappedPropertyType = propertyVar.unwrappedTypeName
+        schemaProperty.dbName = propertyVar.annotations["name"] as? String
         if let dbNameIsEmpty = schemaProperty.dbName?.isEmpty, dbNameIsEmpty { schemaProperty.dbName = nil }
         schemaProperty.name = schemaProperty.dbName ?? schemaProperty.propertyName
-        if let propertyUidObject = currIVar.annotations["uid"], let propertyUid = (propertyUidObject as? NSNumber)?.int64Value {
+        if let propertyUidObject = propertyVar.annotations["uid"], let propertyUid = (propertyUidObject as? NSNumber)?.int64Value {
             var propId = IdUid()
             propId.uid = propertyUid
             schemaProperty.modelId = propId
         }
         
-        if let convertDict = extractConvertAnnotation(currIVar.annotations["convert"]) {
+        if let convertDict = extractConvertAnnotation(propertyVar.annotations["convert"]) {
             let dbType: String
             if let firstDbType = convertDict["dbType"] {
                 dbType = firstDbType
@@ -358,9 +356,9 @@ enum ObjectBoxGenerator {
             schemaProperty.isByteVectorType = builtInByteVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
         }
         
-        if currIVar.annotations["index"] as? Int64 == 1 {
+        if propertyVar.annotations["index"] as? Int64 == 1 {
             schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
-        } else if let indexType = currIVar.annotations["index"] as? String {
+        } else if let indexType = propertyVar.annotations["index"] as? String {
             if (indexType == "hash") {
                 schemaProperty.indexType = .hashIndex
             } else if (indexType == "hash64") {
@@ -369,16 +367,16 @@ enum ObjectBoxGenerator {
                 schemaProperty.indexType = .valueIndex
             }
         }
-        if currIVar.annotations["unique"] as? Int64 == 1 {
+        if propertyVar.annotations["unique"] as? Int64 == 1 {
             schemaProperty.isUniqueIndex = true
             if (schemaProperty.indexType == .none) {
                 schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
             }
         }
 
-        if let objectIdAnnotationValue = currIVar.annotations["id"] {
+        if let objectIdAnnotationValue = propertyVar.annotations["id"] {
             if let existingIdProperty = schemaEntity.idProperty {
-                throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: currIVar.name,
+                throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: propertyVar.name,
                                                   existing: existingIdProperty.propertyName)
             }
             schemaProperty.isObjectId = true
@@ -395,7 +393,7 @@ enum ObjectBoxGenerator {
                 let templateTypesString = fullTypeName.drop(first: "EntityId<".count, last: 1)
                 let templateTypes = templateTypesString.split(separator: ",")
                 let idType = templateTypes[0]
-                if idType == currType.localName {
+                if idType == propertyType.localName {
                     schemaEntity.idCandidates.append(schemaProperty)
                 }
             }
@@ -426,10 +424,10 @@ enum ObjectBoxGenerator {
                                                  targetType: destinationType)
             relation.property = schemaProperty
             schemaEntity.relations.append(relation)
-            if let backlink = currIVar.annotations["backlink"] as? String {
+            if let backlink = propertyVar.annotations["backlink"] as? String {
                 print("warning: Found an // objectbox: backlink annotation on ToOne relation "
                     + "\"\(schemaProperty.propertyName)\". Did you mean to put "
-                    + "// objectbox: backlink = \"\(currIVar.name)\"  on the ToMany relation \"\(backlink)\" "
+                    + "// objectbox: backlink = \"\(propertyVar.name)\"  on the ToMany relation \"\(backlink)\" "
                     + "in \"\(destinationType)\"?")
             }
         }
@@ -441,13 +439,13 @@ enum ObjectBoxGenerator {
         schemaProperties.append(schemaProperty)
     }
     
-    static func processOneEntityType(_ currType: Type, entityBased isEntityBased: Bool, enums: [String: TypeName], into schemaData: Schema) throws {
+    static func processEntityType(_ entityType: Type, entityBased isEntityBased: Bool, enums: [String: TypeName], into schemaData: Schema) throws {
         let schemaEntity = SchemaEntity()
-        schemaEntity.className = currType.localName
-        schemaEntity.isValueType = currType.kind == "struct"
-        schemaEntity.modelUid = currType.annotations["uid"] as? Int64
-        schemaEntity.dbName = currType.annotations["name"] as? String
-        let syncAnnotation = currType.annotations["sync"]
+        schemaEntity.className = entityType.localName
+        schemaEntity.isValueType = entityType.kind == "struct"
+        schemaEntity.modelUid = entityType.annotations["uid"] as? Int64
+        schemaEntity.dbName = entityType.annotations["name"] as? String
+        let syncAnnotation = entityType.annotations["sync"]
         if syncAnnotation != nil {
             schemaEntity.flags.append(.syncEnabled)
 
@@ -483,14 +481,14 @@ enum ObjectBoxGenerator {
         schemaEntity.isEntitySubclass = isEntityBased
         
         var schemaProperties = Array<SchemaProperty>()
-        try currType.variables.forEach { currIVar in
+        try entityType.variables.forEach { propertyVar in
             warnIfAnnotations(otherThan: ObjectBoxGenerator.validPropertyAnnotationNames,
-                              in: Set(currIVar.annotations.keys), of: currIVar.name)
-            guard !currIVar.annotations.contains(reference: "transient") else { return } // Exits only this iteration of the foreach block
-            guard !currIVar.isStatic else { return } // Exits only this iteration of the foreach block
-            guard !currIVar.isComputed else { return } // Exits only this iteration of the foreach block
+                              in: Set(propertyVar.annotations.keys), of: propertyVar.name)
+            guard !propertyVar.annotations.contains(reference: "transient") else { return } // Exits only this iteration of the foreach block
+            guard !propertyVar.isStatic else { return } // Exits only this iteration of the foreach block
+            guard !propertyVar.isComputed else { return } // Exits only this iteration of the foreach block
             
-            try processOneEntityProperty(currIVar, in: currType, into: &schemaProperties, entity: schemaEntity, schema: schemaData, enums: enums)
+            try processProperty(propertyVar, in: entityType, into: &schemaProperties, entity: schemaEntity, schema: schemaData, enums: enums)
         }
         schemaProperties.last?.isLast = true
         schemaEntity.properties = schemaProperties
@@ -565,14 +563,14 @@ enum ObjectBoxGenerator {
             }
         }
         
-        try result.types.all.forEach { currType in
+        try result.types.all.forEach { entityType in
             warnIfAnnotations(otherThan: ObjectBoxGenerator.validTypeAnnotationNames,
-                              in: Set(currType.annotations.keys), of: currType.name)
-            let isEntityBased = currType.inheritedTypes.contains("Entity")
+                              in: Set(entityType.annotations.keys), of: entityType.name)
+            let isEntityBased = entityType.inheritedTypes.contains("Entity")
             // The annotation should be lowercase "entity", but given the protocol is uppercase, we allow that too,
             // as a convenience for users who use both and get their case mixed up:
-            if isEntityBased || currType.annotations["entity"] != nil || currType.annotations["Entity"] != nil {
-                try processOneEntityType(currType, entityBased: isEntityBased, enums: enums, into: schemaData)
+            if isEntityBased || entityType.annotations["entity"] != nil || entityType.annotations["Entity"] != nil {
+                try processEntityType(entityType, entityBased: isEntityBased, enums: enums, into: schemaData)
             }
         }
         

@@ -147,7 +147,9 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var toManyRelation: SchemaToManyRelation? = nil
     var isUniqueIndex: Bool = false
     var isUnsignedType: Bool = false
+    // TODO rename to propertyType
     var entityType = PropertyType.unknown
+    // TODO rename to propertyFlags
     var entityFlags: [PropertyFlags] = []
     var name: String = ""
     var isMutable = true
