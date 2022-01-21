@@ -9,7 +9,7 @@ import SourceryRuntime
 
 /// Builds the ObjectBox model in process() and exposes the model via exposeObjects()
 enum ObjectBoxGenerator {
-        
+
     enum Error: Swift.Error {
         case DuplicateIdAnnotation(entity: String, found: String, existing: String)
         case MissingIdOnEntity(entity: String)
@@ -24,7 +24,7 @@ enum ObjectBoxGenerator {
     static var classVisibility = "internal"
     static var debugDataURL: URL?
     static var buildTracker = BuildTracker()
-    
+
     static let builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate",
                                "TimeInterval", "NSTimeInterval", "Data", "NSData", "Array<UInt8>", "[UInt8]"]
     static let builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
@@ -78,7 +78,7 @@ enum ObjectBoxGenerator {
     private static var lastEntityId = IdUid()
     private static var lastIndexId = IdUid()
     private static var lastRelationId = IdUid()
-    
+
     static func printError(_ error: Swift.Error) {
         if let obxError = error as? IdSync.Error {
             switch(obxError) {
@@ -180,11 +180,11 @@ enum ObjectBoxGenerator {
             return
         }
     }
-    
+
     static func isBuiltInTypeOrAlias( _ typeName: TypeName? ) -> Bool {
         var isBuiltIn: Bool = false
         var currPropType = typeName
-        
+
         while let currPropTypeReadOnly = currPropType, !isBuiltIn {
             isBuiltIn = (builtInTypes + builtInUnsignedTypes).firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
             if !isBuiltIn && currPropTypeReadOnly.unwrappedTypeName.hasPrefix("EntityId<") {
@@ -192,56 +192,80 @@ enum ObjectBoxGenerator {
             }
             currPropType = currPropTypeReadOnly.actualTypeName
         }
-        
+
         return isBuiltIn
     }
-    
+
     static func isUnsignedTypeOrAlias( _ typeName: TypeName? ) -> Bool {
         var isUnsigned: Bool = false
         var currPropType = typeName
-        
+
         while let currPropTypeReadOnly = currPropType, !isUnsigned {
             isUnsigned = builtInUnsignedTypes.firstIndex(of: currPropTypeReadOnly.name) != nil
             currPropType = currPropTypeReadOnly.actualTypeName
         }
-        
+
         return isUnsigned
     }
-    
+
     /* Is this a string ivar that we need to save separately from the fixed-size types? */
     static func isStringTypeOrAlias( _ typeName: TypeName? ) -> Bool {
         var isStringType: Bool = false
         var currPropType = typeName
-        
+
         while let currPropTypeReadOnly = currPropType, !isStringType {
             isStringType = builtInStringTypes.firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
             currPropType = currPropTypeReadOnly.actualTypeName
         }
-        
+
         return isStringType
     }
-    
+
     static func isByteVectorTypeOrAlias( _ typeName: TypeName? ) -> Bool {
         var isByteVectorType: Bool = false
         var currPropType = typeName
-        
+
         while let currPropTypeReadOnly = currPropType, !isByteVectorType {
             isByteVectorType = builtInByteVectorTypes.firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
             currPropType = currPropTypeReadOnly.actualTypeName
         }
-        
+
         return isByteVectorType
     }
-    
-    static func entityType(for typeName: TypeName?) -> PropertyType {
+
+    static func mapPropertyType(_ propertyVar: SourceryVariable) -> PropertyType {
+        let defaultType = mapDefaultPropertyType(propertyVar.typeName)
+        if !propertyVar.annotations.isEmpty {
+            if propertyVar.annotations.contains(reference: "date-nano") {
+                if(defaultType == PropertyType.date) {  // TODO double-check
+                    return PropertyType.datenano
+                } else {
+                    // TODO log location info and abort
+                    Log.error("Annotation \"data-nano\" may only be placed only at types compatible with date")
+                }
+            }
+            if propertyVar.annotations.contains(reference: "flex") {
+                if(defaultType == PropertyType.byteVector) {
+                    return PropertyType.flex
+                } else {
+                    Log.error("Annotation \"flex\" may be placed only at bytes (for now)")
+                }
+            }
+        }
+
+        return defaultType
+    }
+
+    /// Default mapping just considering the type (not considering annotations)
+    static func mapDefaultPropertyType(_ typeName: TypeName?) -> PropertyType {
         var currPropType = typeName
-        
+
         while let currPropTypeReadOnly = currPropType {
             if let entityType = typeMappings[currPropTypeReadOnly.unwrappedTypeName] {
                 return entityType
             } else if currPropTypeReadOnly.name.hasPrefix("EntityId<") {
                 return .long
-            } else if currPropTypeReadOnly.name.hasPrefix("Id") {
+            } else if currPropTypeReadOnly.name.hasPrefix("Id") {  // TODO check full type name!
                 return .long
             } else if currPropTypeReadOnly.name.hasPrefix("ToOne<") {
                 return .relation
@@ -250,7 +274,7 @@ enum ObjectBoxGenerator {
         }
         return .unknown
     }
-    
+
     static func extractConvertAnnotation(_ annotation: Any?) -> [String: String]? {
         if let dict = annotation as? [String: String] {
             return dict
@@ -258,10 +282,10 @@ enum ObjectBoxGenerator {
         if let string = annotation as? String {
             return ["dbType": string]
         }
-        
+
         return nil
     }
-    
+
     static func processProperty(_ propertyVar: SourceryVariable, in propertyType: Type,
                                 into schemaProperties: inout [SchemaProperty],
                                 entity schemaEntity: SchemaEntity, schema schemaData: Schema,
@@ -284,13 +308,13 @@ enum ObjectBoxGenerator {
             tmRelation = relation
             schemaEntity.toManyRelations.append(relation)
         }
-        
+
         let schemaProperty = SchemaProperty()
         schemaProperty.entityName = propertyType.localName
         schemaProperty.propertyName = propertyVar.name
         schemaProperty.isMutable = propertyVar.isMutable
         schemaProperty.propertyType = fullTypeName
-        schemaProperty.entityType = entityType(for: propertyVar.typeName)
+        schemaProperty.entityType = mapPropertyType(propertyVar)
         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(propertyVar.typeName)
         schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(propertyVar.typeName)
         schemaProperty.isStringType = isStringTypeOrAlias(propertyVar.typeName)
@@ -314,7 +338,7 @@ enum ObjectBoxGenerator {
             propId.uid = propertyUid
             schemaProperty.modelId = propId
         }
-        
+
         if let convertDict = extractConvertAnnotation(propertyVar.annotations["convert"]) {
             let dbType: String
             if let firstDbType = convertDict["dbType"] {
@@ -343,11 +367,11 @@ enum ObjectBoxGenerator {
                     throw Error.convertAnnotationMissingConverterOrDefault(name: schemaProperty.propertyName, entity: schemaProperty.entityName)
                 }
             }
-            
+
             schemaProperty.typeBeforeConversion = schemaProperty.propertyType
             schemaProperty.propertyType = dbType
             schemaProperty.unwrappedPropertyType = dbType.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
-            
+
             if let entityType = typeMappings[schemaProperty.unwrappedPropertyType] {
                 schemaProperty.entityType = entityType
             }
@@ -355,7 +379,7 @@ enum ObjectBoxGenerator {
             schemaProperty.isStringType = builtInStringTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isByteVectorType = builtInByteVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
         }
-        
+
         if propertyVar.annotations["index"] as? Int64 == 1 {
             schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
         } else if let indexType = propertyVar.annotations["index"] as? String {
@@ -398,7 +422,7 @@ enum ObjectBoxGenerator {
                 }
             }
         }
-        
+
         if schemaProperty.isObjectId {
             schemaProperty.entityFlags.append(.id)
         }
@@ -431,14 +455,14 @@ enum ObjectBoxGenerator {
                     + "in \"\(destinationType)\"?")
             }
         }
-        
+
         if tmRelation != nil {
             tmRelation?.property = schemaProperty
         }
 
         schemaProperties.append(schemaProperty)
     }
-    
+
     static func processEntityType(_ entityType: Type, entityBased isEntityBased: Bool, enums: [String: TypeName], into schemaData: Schema) throws {
         let schemaEntity = SchemaEntity()
         schemaEntity.className = entityType.localName
@@ -479,7 +503,7 @@ enum ObjectBoxGenerator {
         if let dbNameIsEmpty = schemaEntity.dbName?.isEmpty, dbNameIsEmpty { schemaEntity.dbName = nil }
         schemaEntity.name = schemaEntity.dbName ?? schemaEntity.className
         schemaEntity.isEntitySubclass = isEntityBased
-        
+
         var schemaProperties = Array<SchemaProperty>()
         try entityType.variables.forEach { propertyVar in
             warnIfAnnotations(otherThan: ObjectBoxGenerator.validPropertyAnnotationNames,
@@ -487,12 +511,12 @@ enum ObjectBoxGenerator {
             guard !propertyVar.annotations.contains(reference: "transient") else { return } // Exits only this iteration of the foreach block
             guard !propertyVar.isStatic else { return } // Exits only this iteration of the foreach block
             guard !propertyVar.isComputed else { return } // Exits only this iteration of the foreach block
-            
+
             try processProperty(propertyVar, in: entityType, into: &schemaProperties, entity: schemaEntity, schema: schemaData, enums: enums)
         }
         schemaProperties.last?.isLast = true
         schemaEntity.properties = schemaProperties
-        
+
         if schemaEntity.idProperty == nil { // No explicit annotation?
             if schemaEntity.idCandidates.count <= 0 {
                 throw Error.MissingIdOnEntity(entity: schemaEntity.className)
@@ -515,7 +539,7 @@ enum ObjectBoxGenerator {
             // No other binding marks IDs as unsigned, so don't break compatibility.
             schemaEntity.idProperty?.entityFlags.removeAll(where: { $0 == .unsigned })
         }
-        
+
         schemaProperties.forEach { schemaProperty in
             var flagsList: [String] = []
             if schemaProperty.entityFlags.contains(.id) { flagsList.append(".id") }
@@ -529,11 +553,11 @@ enum ObjectBoxGenerator {
                 schemaProperty.flagsList = ", flags: [\(flagsList.joined(separator: ", "))]"
             }
         }
-        
+
         schemaData.entities.append(schemaEntity)
         schemaData.entitiesByName[schemaEntity.className] = schemaEntity
     }
-    
+
     static func warnIfAnnotations(otherThan validAnnotations: Set<String>,
                                   in annotations: Set<String>, of name: String) {
         let unknownAnnotations = annotations.filter {
@@ -543,26 +567,26 @@ enum ObjectBoxGenerator {
             print("error: \(name) has unknown annotations \(unknownAnnotations.joined(separator: ",")).")
         }
     }
-        
+
     static func startup(statistics: Bool, verbose: Bool) throws {
         buildTracker.statistics = statistics
         buildTracker.verbose = verbose
         try buildTracker.startup()
     }
-    
+
     /* Process the parsed syntax tree, possibly annotating or otherwise
         extending it. */
     // Called by Sourcery class, which is called by main
     static func process(parsingResult result: inout Sourcery.ParsingResult) throws {
         let schemaData = Schema()
-        
+
         var enums = [String: TypeName]()
         result.types.all.forEach { currType in
             if let enumType = currType as? Enum, let rawTypeName = enumType.rawTypeName {
                 enums[currType.name] = rawTypeName
             }
         }
-        
+
         try result.types.all.forEach { entityType in
             warnIfAnnotations(otherThan: ObjectBoxGenerator.validTypeAnnotationNames,
                               in: Set(entityType.annotations.keys), of: entityType.name)
@@ -573,12 +597,12 @@ enum ObjectBoxGenerator {
                 try processEntityType(entityType, entityBased: isEntityBased, enums: enums, into: schemaData)
             }
         }
-        
+
         let jsonFile = ObjectBoxGenerator.modelJsonFile ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("model.json")
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
         try idSync.write()
-        
+
         if let debugDataURL = ObjectBoxGenerator.debugDataURL {
             try "\(schemaData)".write(to: debugDataURL, atomically: true, encoding: .utf8)
         }
@@ -588,7 +612,7 @@ enum ObjectBoxGenerator {
         ObjectBoxGenerator.lastIndexId = schemaData.lastIndexId
         ObjectBoxGenerator.lastRelationId = schemaData.lastRelationId
     }
-    
+
     /* Modify the dictionary of global objects that Stencil sees. */
     // Called by StencilTemplate to expose our ObjectBox model to templates
     static func exposeObjects(to objectsDictionary: inout [String:Any]) {
