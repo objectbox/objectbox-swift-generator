@@ -40,7 +40,7 @@ public enum PropertyType: UInt16 {
     ///  Relation to another entity
     case relation = 11
     ///  High precision date/time stored as a 64 bit long representing nanoseconds since 1970-01-01 (unix epoch)
-    case datenano = 12
+    case dateNano = 12
     case flex = 13
     case reserved3 = 14
     case reserved4 = 15

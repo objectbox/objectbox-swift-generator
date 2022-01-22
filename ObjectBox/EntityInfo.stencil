@@ -29,7 +29,7 @@ extension {{ entity.className }}: ObjectBox.EntityInspectable {
         {% if entity.flags.count != 0 %}try entityBuilder.flags({{ entity.flagsStringList }}){% endif %}
         {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
         {% set indexParam %}{% if prop.modelIndexId %}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }}{% endif %}{% endset %}
-        try entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.unwrappedPropertyType }}.entityPropertyType{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
+        try entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.propertyTypeQualifiedName }}{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
         {% endfor %}
         {% for prop in entity.properties where prop.isRelation %}
         try entityBuilder.addToOneRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }})

@@ -240,7 +240,7 @@ enum ObjectBoxGenerator {
         if !propertyVar.annotations.isEmpty {
             if propertyVar.annotations.contains(reference: "date-nano") {
                 if(defaultType == PropertyType.date) {  // TODO double-check
-                    return PropertyType.datenano
+                    return PropertyType.dateNano
                 } else {
                     // TODO log location info and abort
                     Log.error("Annotation \"data-nano\" may only be placed only at types compatible with date")

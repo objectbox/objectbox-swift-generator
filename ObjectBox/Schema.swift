@@ -163,6 +163,12 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var isFirst = false // Helper for generating comma-separated lists in source code.
     var isLast = false // Helper for generating comma-separated lists in source code.
 
+    public var propertyTypeQualifiedName: String {
+        get {
+            "PropertyType.\(entityType)"
+        }
+    }
+
     public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {
         return lhs.entityName == rhs.entityName && lhs.name == rhs.name && lhs.propertyType == rhs.propertyType
     }
@@ -203,8 +209,7 @@ class SchemaRelation: CustomDebugStringConvertible {
     var property: SchemaProperty?
     var isToManyBacklink: Bool = false
 
-    init(name: String, type: String, targetType: String)
-    {
+    init(name: String, type: String, targetType: String) {
         self.relationName = name
         self.relationType = type
         self.relationTargetType = targetType
@@ -222,8 +227,7 @@ class SchemaToManyRelation: SchemaRelation {
     var backlinkProperty: String? // Only set on the actual backlink, NIL for the real standalone relation.
     var backlinkPropertyId: IdUid?
 
-    init(name: String, type: String, targetType: String, ownerType: String)
-    {
+    init(name: String, type: String, targetType: String, ownerType: String) {
         self.relationOwnerType = ownerType
         super.init(name: name, type: type, targetType: targetType)
     }
