@@ -83,7 +83,7 @@ enum ObjectBoxGenerator {
 
     static func printError(_ error: Swift.Error) {
         if let obxError = error as? IdSync.Error {
-            switch(obxError) {
+            switch (obxError) {
             case .IncompatibleVersion(let found, let expected):
                 Log.error("Model version \(expected) expected, but \(found) found.")
             case .DuplicateEntityName(let name):
@@ -154,7 +154,7 @@ enum ObjectBoxGenerator {
                 Log.error("Property \(property) of entity \(entity) exists twice.")
             }
         } else if let filterError = error as? ObjectBoxGenerator.Error {
-            switch( filterError ) {
+            switch (filterError) {
             case .DuplicateIdAnnotation(let entity, let found, let existing):
                 Log.error("Entity \(entity) has both \(found) and \(existing) annotated as '// objectbox: id'. "
                     + "There can only be one.")
@@ -183,7 +183,7 @@ enum ObjectBoxGenerator {
         }
     }
 
-    static func isBuiltInTypeOrAlias( _ typeName: TypeName? ) -> Bool {
+    static func isBuiltInTypeOrAlias(_ typeName: TypeName?) -> Bool {
         var isBuiltIn: Bool = false
         var currPropType = typeName
 
@@ -198,7 +198,7 @@ enum ObjectBoxGenerator {
         return isBuiltIn
     }
 
-    static func isUnsignedTypeOrAlias( _ typeName: TypeName? ) -> Bool {
+    static func isUnsignedTypeOrAlias(_ typeName: TypeName?) -> Bool {
         var isUnsigned: Bool = false
         var currPropType = typeName
 
@@ -211,7 +211,7 @@ enum ObjectBoxGenerator {
     }
 
     /* Is this a string ivar that we need to save separately from the fixed-size types? */
-    static func isStringTypeOrAlias( _ typeName: TypeName? ) -> Bool {
+    static func isStringTypeOrAlias(_ typeName: TypeName?) -> Bool {
         var isStringType: Bool = false
         var currPropType = typeName
 
@@ -223,7 +223,7 @@ enum ObjectBoxGenerator {
         return isStringType
     }
 
-    static func isByteVectorTypeOrAlias( _ typeName: TypeName? ) -> Bool {
+    static func isByteVectorTypeOrAlias(_ typeName: TypeName?) -> Bool {
         var isByteVectorType: Bool = false
         var currPropType = typeName
 
@@ -239,7 +239,7 @@ enum ObjectBoxGenerator {
         let defaultType = mapDefaultPropertyType(propertyVar.typeName)
         if !propertyVar.annotations.isEmpty {
             if propertyVar.annotations.contains(reference: "date-nano") {
-                if(defaultType == PropertyType.date) {  // TODO double-check
+                if (defaultType == PropertyType.date) {  // TODO double-check
                     return PropertyType.dateNano
                 } else {
                     // TODO log location info and abort
@@ -247,7 +247,7 @@ enum ObjectBoxGenerator {
                 }
             }
             if propertyVar.annotations.contains(reference: "flex") {
-                if(defaultType == PropertyType.byteVector) {
+                if (defaultType == PropertyType.byteVector) {
                     return PropertyType.flex
                 } else {
                     Log.error("Annotation \"flex\" may be placed only at bytes (for now)")
@@ -260,19 +260,19 @@ enum ObjectBoxGenerator {
 
     /// Default mapping just considering the type (not considering annotations)
     static func mapDefaultPropertyType(_ typeName: TypeName?) -> PropertyType {
-        var currPropType = typeName
-
-        while let currPropTypeReadOnly = currPropType {
-            if let entityType = typeMappings[currPropTypeReadOnly.unwrappedTypeName] {
+        var typeCandidateNullable = typeName
+        while let typeCandidate = typeCandidateNullable {
+            if let entityType = typeMappings[typeCandidate.unwrappedTypeName] {
                 return entityType
-            } else if currPropTypeReadOnly.name.hasPrefix("EntityId<") {
+            } else if typeCandidate.name.hasPrefix("EntityId<") {
                 return .long
-            } else if currPropTypeReadOnly.name.hasPrefix("Id") {  // TODO check full type name!
+            } else if typeCandidate.name.hasPrefix("Id") {  // TODO check full type name!
                 return .long
-            } else if currPropTypeReadOnly.name.hasPrefix("ToOne<") {
+            } else if typeCandidate.name.hasPrefix("ToOne<") {
                 return .relation
             }
-            currPropType = currPropTypeReadOnly.actualTypeName
+            print("Mapping not found: ", typeName, typeCandidate, typeCandidate.name, typeCandidate.actualTypeName)
+            typeCandidateNullable = typeCandidate.actualTypeName  // TODO does not seem to work; update Sourcery
         }
         return .unknown
     }
@@ -332,6 +332,7 @@ enum ObjectBoxGenerator {
             schemaEntity.hasByteVectorProperties = true
         }
         schemaProperty.unwrappedPropertyType = propertyVar.unwrappedTypeName
+        schemaProperty.initPropertyTypeQualifiedName()  // depends on PropertyType and unwrappedPropertyType
         schemaProperty.dbName = propertyVar.annotations["name"] as? String
         if let dbNameIsEmpty = schemaProperty.dbName?.isEmpty, dbNameIsEmpty { schemaProperty.dbName = nil }
         schemaProperty.name = schemaProperty.dbName ?? schemaProperty.propertyName
@@ -477,7 +478,7 @@ enum ObjectBoxGenerator {
 
             if let syncDict = syncAnnotation as? NSDictionary {
                 // These are critical: do strict checks to ensure nothing goes bad because of an typo
-                for(key, value) in syncDict {
+                for (key, value) in syncDict {
                     guard let keyString = key as? String else {
                         throw Error.IllegalDictionaryElements(entity: schemaEntity.className,
                                 message: "the sync annotation contains a non-string key")
@@ -617,7 +618,7 @@ enum ObjectBoxGenerator {
 
     /* Modify the dictionary of global objects that Stencil sees. */
     // Called by StencilTemplate to expose our ObjectBox model to templates
-    static func exposeObjects(to objectsDictionary: inout [String:Any]) {
+    static func exposeObjects(to objectsDictionary: inout [String: Any]) {
         objectsDictionary["entities"] = ObjectBoxGenerator.entities
         objectsDictionary["visibility"] = ObjectBoxGenerator.classVisibility;
         objectsDictionary["lastEntityId"] = ObjectBoxGenerator.lastEntityId

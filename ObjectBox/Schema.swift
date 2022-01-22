@@ -163,7 +163,18 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var isFirst = false // Helper for generating comma-separated lists in source code.
     var isLast = false // Helper for generating comma-separated lists in source code.
 
-    public var propertyTypeQualifiedName: String {
+    var propertyTypeQualifiedName: String = "n/a"  // Sourcery cannot access dynamic properties!?
+
+    public func initPropertyTypeQualifiedName() {
+        if(entityType != PropertyType.unknown) {
+            propertyTypeQualifiedName = propertyTypeQualifiedNameDyn
+        } else {
+            // this is some odd workaround for Sourcery not being able to resolve type aliases (go via a type extension)
+            propertyTypeQualifiedName = unwrappedPropertyType + ".entityPropertyType"
+        }
+    }
+
+    public var propertyTypeQualifiedNameDyn: String {
         get {
             "PropertyType.\(entityType)"
         }
