@@ -271,7 +271,8 @@ enum ObjectBoxGenerator {
             } else if typeCandidate.name.hasPrefix("ToOne<") {
                 return .relation
             }
-            print("Mapping not found: ", typeName, typeCandidate, typeCandidate.name, typeCandidate.actualTypeName)
+            print("Mapping not found: ", typeName as Any, typeCandidate, typeCandidate.name,
+                    typeCandidate.actualTypeName as Any)
             typeCandidateNullable = typeCandidate.actualTypeName  // TODO does not seem to work; update Sourcery
         }
         return .unknown
@@ -332,7 +333,6 @@ enum ObjectBoxGenerator {
             schemaEntity.hasByteVectorProperties = true
         }
         schemaProperty.unwrappedPropertyType = propertyVar.unwrappedTypeName
-        schemaProperty.initPropertyTypeQualifiedName()  // depends on PropertyType and unwrappedPropertyType
         schemaProperty.dbName = propertyVar.annotations["name"] as? String
         if let dbNameIsEmpty = schemaProperty.dbName?.isEmpty, dbNameIsEmpty { schemaProperty.dbName = nil }
         schemaProperty.name = schemaProperty.dbName ?? schemaProperty.propertyName
@@ -382,6 +382,7 @@ enum ObjectBoxGenerator {
             schemaProperty.isStringType = builtInStringTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isByteVectorType = builtInByteVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
         }
+        schemaProperty.initPropertyTypeQualifiedName()  // depends on PropertyType and unwrappedPropertyType
 
         if propertyVar.annotations["index"] as? Int64 == 1 {
             schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
