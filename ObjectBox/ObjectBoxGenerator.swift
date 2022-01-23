@@ -318,6 +318,7 @@ enum ObjectBoxGenerator {
         schemaProperty.isMutable = propertyVar.isMutable
         schemaProperty.propertyType = fullTypeName
         schemaProperty.entityType = mapPropertyType(propertyVar)
+        // TODO check if "is...Type" can be unified with converter checks below (add tests)
         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(propertyVar.typeName)
         schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(propertyVar.typeName)
         schemaProperty.isStringType = isStringTypeOrAlias(propertyVar.typeName)
@@ -382,7 +383,7 @@ enum ObjectBoxGenerator {
             schemaProperty.isStringType = builtInStringTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isByteVectorType = builtInByteVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
         }
-        schemaProperty.initPropertyTypeQualifiedName()  // depends on PropertyType and unwrappedPropertyType
+        schemaProperty.initPropertyType()  // depends on entityType (PropertyType) and unwrappedPropertyType
 
         if propertyVar.annotations["index"] as? Int64 == 1 {
             schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex

@@ -142,6 +142,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var isBuiltInType: Bool = false
     var isStringType: Bool = false
     var isByteVectorType: Bool = false
+    var isDateNanoType: Bool = false
     var isRelation: Bool = false
     var isToManyRelation: Bool = false
     var toManyRelation: SchemaToManyRelation? = nil
@@ -165,7 +166,8 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
 
     var propertyTypeQualifiedName: String = "n/a"  // Sourcery cannot access dynamic properties!?
 
-    public func initPropertyTypeQualifiedName() {
+    public func initPropertyType() {
+        isDateNanoType = entityType == PropertyType.dateNano
         if(entityType != PropertyType.unknown) {
             propertyTypeQualifiedName = propertyTypeQualifiedNameDyn
         } else {

@@ -139,7 +139,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
         propertyCollector.collect(id, at: 2 + 2 * {{ entity.idProperty.modelId.id }})
         {% for prop in entity.properties where not prop.isStringType and not prop.isByteVectorType and not prop.isObjectId and not prop.isRelation and not prop.isToManyRelation %}
-        propertyCollector.collect({{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }})
+        propertyCollector.collect{% if prop.isDateNanoType %}Nanos{% endif %}({{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endfor %}
         {% for prop in entity.properties where prop.isRelation %}
         try propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
@@ -231,7 +231,8 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         let entity = {{ entity.className }}()
 
     {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
-        entity.{{ prop.propertyName }} = {{ prop.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ prop.modelId.id }}){{ prop.conversionSuffix }}
+        entity.{{ prop.propertyName }} = {{ prop.conversionPrefix }}entityReader.read{%
+                if prop.isDateNanoType %}Nanos{% endif %}(at: 2 + 2 * {{ prop.modelId.id }}){{ prop.conversionSuffix }}
     {% endfor %}
 
     {% for prop in entity.properties where prop.isRelation %}
