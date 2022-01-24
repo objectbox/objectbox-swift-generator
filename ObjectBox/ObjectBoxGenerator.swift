@@ -72,6 +72,7 @@ enum ObjectBoxGenerator {
         "flex",
         "name",
         "id",
+        "id-companion",
         "index",
         "transient",
         "uid",
@@ -426,6 +427,13 @@ enum ObjectBoxGenerator {
 
         if schemaProperty.isObjectId {
             schemaProperty.entityFlags.append(.id)
+        }
+        if propertyVar.annotations.contains(reference: "id-companion") {
+            if schemaProperty.entityType != .date && schemaProperty.entityType != .dateNano {
+                throw Error.BadPropertyAnnotation(property: propertyVar.description,
+                        message: "The id-companion annotation is only supported for date and dateNano types but found: \(schemaProperty.entityType)")
+            }
+            schemaProperty.entityFlags.append(.idCompanion)
         }
         if !schemaProperty.isObjectId && schemaProperty.isUnsignedType {
             schemaProperty.entityFlags.append(.unsigned)
