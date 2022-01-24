@@ -113,9 +113,11 @@ public enum PropertyFlags: UInt32 {
     ///  For Time Series IDs, a companion property of type Date or DateNano represents the exact timestamp.
     ///  (In the future, ID companion string properties may be added as another supported type).
     case idCompanion = 16384
-    
 
-    public static var max: PropertyFlags { return .idCompanion }
+    /// Unique on-conflict strategy: the object being put replaces any existing conflicting object (deletes it).
+    case uniqueOnConflictReplace = 32768
+
+    public static var max: PropertyFlags { return .uniqueOnConflictReplace }
     public static var min: PropertyFlags { return .id }
 }
 

@@ -1,4 +1,4 @@
-//  Copyright © 2018-2019 ObjectBox. All rights reserved.
+//  Copyright © 2018-2022 ObjectBox. All rights reserved.
 
 import Foundation
 import PathKit
@@ -7,7 +7,16 @@ import StencilSwiftKit
 import StencilSwiftKit.Swift
 import SourceryRuntime
 
+extension SourceryVariable {
+    public override var description: String {
+        name + ": " + typeName.name
+    }
+}
+
 /// Builds the ObjectBox model in process() and exposes the model via exposeObjects()
+// TODO refactor: not static, e.g. have entities and stats as members
+// TODO refactor: extract methods from large methods
+// TODO stricter checks: e.g. check for unsupported annotations, e.g. typos
 enum ObjectBoxGenerator {
 
     enum Error: Swift.Error {
@@ -18,6 +27,7 @@ enum ObjectBoxGenerator {
         case convertAnnotationMissingType(name: String, entity: String)
         case convertAnnotationMissingConverterOrDefault(name: String, entity: String)
         case IllegalDictionaryElements(entity: String, message: String)
+        case BadPropertyAnnotation(property: String, message: String)
     }
 
     static var modelJsonFile: URL?
@@ -118,8 +128,8 @@ enum ObjectBoxGenerator {
                 Log.error("No entity with UID \(entity) exists.")
             case .PrintUid(let entity, let found, let unique):
                 Log.error("No UID given for entity \(entity). You can do the following:\n" +
-                    "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n" +
-                    "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)")
+                        "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n" +
+                        "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)")
             case .UIDTagNeedsValue(let entity):
                 Log.error("No UID given for entity \(entity).")
             case .CandidateUIDNotInPool(let uid):
@@ -132,8 +142,8 @@ enum ObjectBoxGenerator {
                 Log.error("Multiple matches between UIDs: \(uids.map { String($0) }.joined(separator: ", ")) and properties: \(names.joined(separator: ", ")).")
             case .PrintPropertyUid(let entity, let property, let found, let unique):
                 Log.error("No UID given for property \(property) of entity \(entity). You can do the following:\n" +
-                    "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n" +
-                    "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)")
+                        "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n" +
+                        "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)")
             case .PropertyUIDTagNeedsValue(let entity, let property):
                 Log.error("Property \(property) of entity \(entity) has an \"// objectbox: uid n\" annotation missing the number n.")
             case .PropertyCollision(let entity, let new, let old):
@@ -146,8 +156,8 @@ enum ObjectBoxGenerator {
                 Log.error("Multiple matches between UIDs: \(uids.map { String($0) }.joined(separator: ", ")) and relations: \(names.joined(separator: ", ")).")
             case .PrintRelationUid(let entity, let relation, let found, let unique):
                 Log.error("No UID given for relation \(relation) of entity \(entity). You can do the following:\n" +
-                    "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n" +
-                    "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)")
+                        "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n" +
+                        "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)")
             case .RelationUIDTagNeedsValue(let entity, let relation):
                 Log.error("Relation \(relation) of entity \(entity) has an \"// objectbox: uid n\" annotation missing the number n.")
             case .DuplicatePropertyName(let entity, let property):
@@ -157,25 +167,27 @@ enum ObjectBoxGenerator {
             switch (filterError) {
             case .DuplicateIdAnnotation(let entity, let found, let existing):
                 Log.error("Entity \(entity) has both \(found) and \(existing) annotated as '// objectbox: id'. "
-                    + "There can only be one.")
+                        + "There can only be one.")
             case .MissingIdOnEntity(let entity):
                 Log.error("Entity \(entity) needs an ID property of type Id or EntityId<\(entity)>, "
-                    + "or an annotated ID property of type Int64 or UInt64.")
+                        + "or an annotated ID property of type Int64 or UInt64.")
             case .AmbiguousIdOnEntity(let entity, let properties):
                 Log.error("Entity \(entity) has several properties of type EntityId<\(entity)>, but no entity ID. "
-                    + "Please designate one as this entity's ID using an '// objectbox: id' annotation. "
-                    + "Candidates are: \(properties.joined(separator: ", "))")
+                        + "Please designate one as this entity's ID using an '// objectbox: id' annotation. "
+                        + "Candidates are: \(properties.joined(separator: ", "))")
             case .MissingBacklinkOnToManyRelation(let entity, let relation):
                 Log.error("Missing backlink on to-many relation \(relation) of entity \(entity)")
             case .convertAnnotationMissingType(let name, let entity):
                 Log.error("Must specify a dbType in '// objectbox: convert = { \"dbType\": \"TYPE HERE\" }' annotation"
-                    + " of property \(name) of entity \(entity), or put it on a RawRepresentable enum.")
+                        + " of property \(name) of entity \(entity), or put it on a RawRepresentable enum.")
             case .convertAnnotationMissingConverterOrDefault(let name, let entity):
                 Log.error("Must specify a converter or default in '// objectbox: convert = { "
-                    + "\"dbType\": \"TYPE HERE\", \"default\": \"DEFAULT HERE\" }' annotation of "
-                    + "property \(name) of entity \(entity)")
+                        + "\"dbType\": \"TYPE HERE\", \"default\": \"DEFAULT HERE\" }' annotation of "
+                        + "property \(name) of entity \(entity)")
             case .IllegalDictionaryElements(let entity, let message):
                 Log.error("Illegal dictionary elements found in entity \(entity): \(message)")
+            default:  // Hmm, maybe this is enough for some errors?
+                Log.error("\(error)")
             }
         } else {
             Log.error("\(error)")
@@ -385,28 +397,12 @@ enum ObjectBoxGenerator {
         }
         schemaProperty.initPropertyType()  // depends on entityType (PropertyType) and unwrappedPropertyType
 
-        if propertyVar.annotations["index"] as? Int64 == 1 {
-            schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
-        } else if let indexType = propertyVar.annotations["index"] as? String {
-            if (indexType == "hash") {
-                schemaProperty.indexType = .hashIndex
-            } else if (indexType == "hash64") {
-                schemaProperty.indexType = .hash64Index
-            } else if (indexType == "value") {
-                schemaProperty.indexType = .valueIndex
-            }
-        }
-        if propertyVar.annotations["unique"] as? Int64 == 1 {
-            schemaProperty.isUniqueIndex = true
-            if (schemaProperty.indexType == .none) {
-                schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
-            }
-        }
+        try processPropertyIndexAndUniqueAnnotations(propertyVar, schemaProperty)
 
         if let objectIdAnnotationValue = propertyVar.annotations["id"] {
             if let existingIdProperty = schemaEntity.idProperty {
                 throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: propertyVar.name,
-                                                  existing: existingIdProperty.propertyName)
+                        existing: existingIdProperty.propertyName)
             }
             schemaProperty.isObjectId = true
             schemaEntity.idProperty = schemaProperty
@@ -434,30 +430,20 @@ enum ObjectBoxGenerator {
         if !schemaProperty.isObjectId && schemaProperty.isUnsignedType {
             schemaProperty.entityFlags.append(.unsigned)
         }
-        if schemaProperty.isUniqueIndex {
-            schemaProperty.entityFlags.append(.unique)
-        }
-        if schemaProperty.indexType == .hashIndex {
-            schemaProperty.entityFlags.append(.indexHash)
-        } else if schemaProperty.indexType == .hash64Index {
-            schemaProperty.entityFlags.append(.indexHash64)
-        }
-        if schemaProperty.indexType != .none {
-            schemaProperty.entityFlags.append(.indexed)
-        }
+
         if schemaProperty.isRelation && fullTypeName.hasPrefix("ToOne<") && fullTypeName.hasSuffix(">") {
             let templateTypesString = fullTypeName.drop(first: "ToOne<".count, last: 1)
             let templateTypes = templateTypesString.split(separator: ",")
             let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
             let relation = SchemaRelation(name: schemaProperty.propertyName, type: schemaProperty.propertyType,
-                                                 targetType: destinationType)
+                    targetType: destinationType)
             relation.property = schemaProperty
             schemaEntity.relations.append(relation)
             if let backlink = propertyVar.annotations["backlink"] as? String {
                 print("warning: Found an // objectbox: backlink annotation on ToOne relation "
-                    + "\"\(schemaProperty.propertyName)\". Did you mean to put "
-                    + "// objectbox: backlink = \"\(propertyVar.name)\"  on the ToMany relation \"\(backlink)\" "
-                    + "in \"\(destinationType)\"?")
+                        + "\"\(schemaProperty.propertyName)\". Did you mean to put "
+                        + "// objectbox: backlink = \"\(propertyVar.name)\"  on the ToMany relation \"\(backlink)\" "
+                        + "in \"\(destinationType)\"?")
             }
         }
 
@@ -466,6 +452,60 @@ enum ObjectBoxGenerator {
         }
 
         schemaProperties.append(schemaProperty)
+    }
+
+    static func processPropertyIndexAndUniqueAnnotations(_ propertyVar: SourceryVariable, _ schemaProperty: SchemaProperty) throws {
+        if (propertyVar.annotations.isEmpty) { return }
+
+        if propertyVar.annotations["index"] as? Int64 == 1 {
+            schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
+        } else if let indexType = propertyVar.annotations["index"] as? String {
+            if (indexType == "hash") {
+                schemaProperty.indexType = .hashIndex
+            } else if (indexType == "hash64") {
+                schemaProperty.indexType = .hash64Index
+            } else if (indexType == "value") {
+                schemaProperty.indexType = .valueIndex
+            }
+        }
+        // schemaProperty.indexType may also be set by unique; thus split index processing (continued below)
+
+        if propertyVar.annotations.contains(reference: "unique") {
+            schemaProperty.isUniqueIndex = true
+            schemaProperty.entityFlags.append(.unique)
+
+            let uniqueAnnotation = propertyVar.annotations["unique"]!
+            if let uniqueDict = uniqueAnnotation as? NSDictionary {
+                for (key, value) in uniqueDict {
+                    if (key as? String == "onConflict") {
+                        if (value as? String == "replace") {
+                            schemaProperty.entityFlags.append(.uniqueOnConflictReplace)
+                        } else {
+                            throw Error.BadPropertyAnnotation(property: propertyVar.description,
+                                    message: "Illegal onConflict value (only \"replace\" is currently supported): \(value)")
+                        }
+                    } else {
+                        throw Error.BadPropertyAnnotation(property: propertyVar.description,
+                                message: "Illegal key in unique annotation (only \"onConflict\" is currently supported: \(key)")
+                    }
+                }
+            } else if uniqueAnnotation as? Int != 1 {  // not plain?
+                throw Error.BadPropertyAnnotation(property: propertyVar.description,
+                        message: "Illegal unique annotation syntax: \(uniqueAnnotation.description)")
+            }
+            if (schemaProperty.indexType == .none) {
+                schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
+            }
+        }
+
+        if schemaProperty.indexType != .none {
+            schemaProperty.entityFlags.append(.indexed)
+            if schemaProperty.indexType == .hashIndex {
+                schemaProperty.entityFlags.append(.indexHash)
+            } else if schemaProperty.indexType == .hash64Index {
+                schemaProperty.entityFlags.append(.indexHash64)
+            }
+        }
     }
 
     static func processEntityType(_ entityType: Type, entityBased isEntityBased: Bool, enums: [String: TypeName], into schemaData: Schema) throws {
@@ -512,7 +552,7 @@ enum ObjectBoxGenerator {
         var schemaProperties = Array<SchemaProperty>()
         try entityType.variables.forEach { propertyVar in
             warnIfAnnotations(otherThan: ObjectBoxGenerator.validPropertyAnnotationNames,
-                              in: Set(propertyVar.annotations.keys), of: propertyVar.name)
+                    in: Set(propertyVar.annotations.keys), of: propertyVar.name)
             guard !propertyVar.annotations.contains(reference: "transient") else { return } // Exits only this iteration of the foreach block
             guard !propertyVar.isStatic else { return } // Exits only this iteration of the foreach block
             guard !propertyVar.isComputed else { return } // Exits only this iteration of the foreach block
@@ -554,6 +594,8 @@ enum ObjectBoxGenerator {
             if schemaProperty.entityFlags.contains(.indexHash64) { flagsList.append(".indexHash64") }
             if schemaProperty.entityFlags.contains(.indexed) { flagsList.append(".indexed") }
             if schemaProperty.entityFlags.contains(.idSelfAssignable) { flagsList.append(".idSelfAssignable") }
+            if schemaProperty.entityFlags.contains(.idCompanion) { flagsList.append(".idCompanion") }
+            if schemaProperty.entityFlags.contains(.uniqueOnConflictReplace) { flagsList.append(".uniqueOnConflictReplace") }
             if flagsList.count > 0 {
                 schemaProperty.flagsList = ", flags: [\(flagsList.joined(separator: ", "))]"
             }
@@ -594,7 +636,7 @@ enum ObjectBoxGenerator {
 
         try result.types.all.forEach { entityType in
             warnIfAnnotations(otherThan: ObjectBoxGenerator.validTypeAnnotationNames,
-                              in: Set(entityType.annotations.keys), of: entityType.name)
+                    in: Set(entityType.annotations.keys), of: entityType.name)
             let isEntityBased = entityType.inheritedTypes.contains("Entity")
             // The annotation should be lowercase "entity", but given the protocol is uppercase, we allow that too,
             // as a convenience for users who use both and get their case mixed up:
