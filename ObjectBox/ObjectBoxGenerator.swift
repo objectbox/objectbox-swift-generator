@@ -75,6 +75,7 @@ enum ObjectBoxGenerator {
         "id-companion",
         "index",
         "transient",
+        "type",
         "uid",
         "unique",
     ])
@@ -251,19 +252,39 @@ enum ObjectBoxGenerator {
     static func mapPropertyType(_ propertyVar: SourceryVariable) -> PropertyType {
         let defaultType = mapDefaultPropertyType(propertyVar.typeName)
         if !propertyVar.annotations.isEmpty {
+            var typeStr: String? = propertyVar.annotations["type"] as? String
             if propertyVar.annotations.contains(reference: "date-nano") {
-                if (defaultType == PropertyType.date) {  // TODO double-check
-                    return PropertyType.dateNano
-                } else {
+                guard typeStr == nil else {
                     // TODO log location info and abort
-                    Log.error("Annotation \"data-nano\" may only be placed only at types compatible with date")
+                    Log.error("Annotation \"data-nano\" cannot coexist with \"type\" annotation")
+                    return defaultType
                 }
+                typeStr = "date-nano"
             }
             if propertyVar.annotations.contains(reference: "flex") {
-                if (defaultType == PropertyType.byteVector) {
-                    return PropertyType.flex
+                guard typeStr == nil else {
+                    // TODO log location info and abort
+                    Log.error("Annotation \"flex\" cannot coexist with \"type\" annotation")
+                    return defaultType
+                }
+                typeStr = "flex"
+            }
+            if typeStr != nil {
+                if typeStr == "date-nano" {
+                    if (defaultType == PropertyType.date) {  // TODO double-check
+                        return PropertyType.dateNano
+                    } else {
+                        // TODO log location info and abort
+                        Log.error("Annotation \"data-nano\" may only be placed only at types compatible with date")
+                    }
+                } else if typeStr == "flex" {
+                    if (defaultType == PropertyType.byteVector) {
+                        return PropertyType.flex
+                    } else {
+                        Log.error("Annotation \"flex\" may be placed only at bytes (for now)")
+                    }
                 } else {
-                    Log.error("Annotation \"flex\" may be placed only at bytes (for now)")
+                    Log.error("Annotation \"type\" has an invalid value: \(typeStr!)")
                 }
             }
         }
