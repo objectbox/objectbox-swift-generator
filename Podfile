@@ -60,3 +60,13 @@ target 'SourceryFramework' do
   pathkit
   pod 'SourceKittenFramework', '0.23.1'
 end
+
+# This is a temporary workaround to make all dependencies target macOS 10.13
+# To replace this dependencies should be updated to versions that target 10.13+.
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '10.13'
+    end
+  end
+end
