@@ -1,5 +1,5 @@
 # Uncomment this line to define a global platform for your project
-platform :osx, '10.11'
+platform :osx, '10.13'
 
 workspace 'Sourcery.xcworkspace'
 use_frameworks!
