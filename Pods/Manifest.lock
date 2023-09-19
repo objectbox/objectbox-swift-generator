@@ -31,7 +31,7 @@ DEPENDENCIES:
   - Yams (= 2.0.0)
 
 SPEC REPOS:
-  https://github.com/cocoapods/specs.git:
+  https://github.com/CocoaPods/Specs.git:
     - AEXML
     - Commander
     - Nimble
@@ -68,6 +68,6 @@ SPEC CHECKSUMS:
   xcproj: 7a9fe0c5f00617c0fa306b37858f157c786aff42
   Yams: cb96472112d99e4b368f8dae9ab62e8a3eb8a3f9
 
-PODFILE CHECKSUM: 15b4049decb90205a89733e28787a2540910bed2
+PODFILE CHECKSUM: 12e3b6c361c6226dfd4a587bcf93ee16b3a5688f
 
-COCOAPODS: 1.6.1
+COCOAPODS: 1.12.1
