@@ -2,8 +2,8 @@ CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO
 FRAMEWORK_SEARCH_PATHS = $(inherited) "${PODS_CONFIGURATION_BUILD_DIR}/PathKit" "${PODS_CONFIGURATION_BUILD_DIR}/SWXMLHash" "${PODS_CONFIGURATION_BUILD_DIR}/SourceKittenFramework" "${PODS_CONFIGURATION_BUILD_DIR}/Yams"
 GCC_PREPROCESSOR_DEFINITIONS = $(inherited) COCOAPODS=1
 HEADER_SEARCH_PATHS = $(inherited) "${PODS_CONFIGURATION_BUILD_DIR}/PathKit/PathKit.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/SWXMLHash/SWXMLHash.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/SourceKittenFramework/SourceKittenFramework.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/Yams/Yams.framework/Headers"
-LD_RUNPATH_SEARCH_PATHS = $(inherited) /usr/lib/swift '@executable_path/../Frameworks' '@loader_path/Frameworks' "${DT_TOOLCHAIN_DIR}/usr/lib/swift/${PLATFORM_NAME}"
-LIBRARY_SEARCH_PATHS = $(inherited) "${DT_TOOLCHAIN_DIR}/usr/lib/swift/${PLATFORM_NAME}" /usr/lib/swift
+LD_RUNPATH_SEARCH_PATHS = $(inherited) /usr/lib/swift '@executable_path/../Frameworks' '@loader_path/Frameworks' "${TOOLCHAIN_DIR}/usr/lib/swift/${PLATFORM_NAME}"
+LIBRARY_SEARCH_PATHS = $(inherited) "${TOOLCHAIN_DIR}/usr/lib/swift/${PLATFORM_NAME}" /usr/lib/swift
 OTHER_CFLAGS = $(inherited) -isystem "${PODS_CONFIGURATION_BUILD_DIR}/PathKit/PathKit.framework/Headers" -isystem "${PODS_CONFIGURATION_BUILD_DIR}/SWXMLHash/SWXMLHash.framework/Headers" -isystem "${PODS_CONFIGURATION_BUILD_DIR}/SourceKittenFramework/SourceKittenFramework.framework/Headers" -isystem "${PODS_CONFIGURATION_BUILD_DIR}/Yams/Yams.framework/Headers" -iframework "${PODS_CONFIGURATION_BUILD_DIR}/PathKit" -iframework "${PODS_CONFIGURATION_BUILD_DIR}/SWXMLHash" -iframework "${PODS_CONFIGURATION_BUILD_DIR}/SourceKittenFramework" -iframework "${PODS_CONFIGURATION_BUILD_DIR}/Yams"
 OTHER_LDFLAGS = $(inherited) -framework "PathKit" -framework "SWXMLHash" -framework "SourceKittenFramework" -framework "Yams"
 OTHER_SWIFT_FLAGS = $(inherited) -D COCOAPODS
