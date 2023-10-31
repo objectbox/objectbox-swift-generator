@@ -460,7 +460,10 @@ enum ObjectBoxGenerator {
             schemaProperty.entityFlags.append(.unsigned)
         }
 
-        if schemaProperty.isRelation && fullTypeName.hasPrefix("ToOne<") && fullTypeName.hasSuffix(">") {
+        if schemaProperty.isRelation && fullTypeName.hasSuffix(">") {
+            schemaProperty.entityFlags.append(.indexed)
+            schemaProperty.entityFlags.append(.indexPartialSkipZero)
+
             let templateTypesString = fullTypeName.drop(first: "ToOne<".count, last: 1)
             let templateTypes = templateTypesString.split(separator: ",")
             let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
@@ -614,6 +617,7 @@ enum ObjectBoxGenerator {
             schemaEntity.idProperty?.entityFlags.removeAll(where: { $0 == .unsigned })
         }
 
+        // Collect flags (to be passed to store initializer) string for generated code.
         schemaProperties.forEach { schemaProperty in
             var flagsList: [String] = []
             if schemaProperty.entityFlags.contains(.id) { flagsList.append(".id") }
@@ -622,6 +626,7 @@ enum ObjectBoxGenerator {
             if schemaProperty.entityFlags.contains(.indexHash) { flagsList.append(".indexHash") }
             if schemaProperty.entityFlags.contains(.indexHash64) { flagsList.append(".indexHash64") }
             if schemaProperty.entityFlags.contains(.indexed) { flagsList.append(".indexed") }
+            if schemaProperty.entityFlags.contains(.indexPartialSkipZero) { flagsList.append(".indexPartialSkipZero") }
             if schemaProperty.entityFlags.contains(.idSelfAssignable) { flagsList.append(".idSelfAssignable") }
             if schemaProperty.entityFlags.contains(.idCompanion) { flagsList.append(".idCompanion") }
             if schemaProperty.entityFlags.contains(.uniqueOnConflictReplace) { flagsList.append(".uniqueOnConflictReplace") }

@@ -835,10 +835,6 @@ enum IdSync {
                 sourceIndexId = try existingProperty?.indexId ?? lastIndexId.incId(uid: uidHelper.create())
             }
             
-            if shouldHaveIndex {
-                schemaProperty.entityFlags.append(.indexed)
-            }
-            
             // No entry for this index yet? Add one!
             if shouldHaveIndex,
                 let existingEntryIndexId = sourceIndexId,
