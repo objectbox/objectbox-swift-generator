@@ -143,7 +143,13 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var isStringType: Bool = false
     var isByteVectorType: Bool = false
     var isDateNanoType: Bool = false
+    /// If this is a to-one relation property.
+    ///
+    /// See also ``isToManyRelation``.
     var isRelation: Bool = false
+    /// If this is a to-many relation property.
+    ///
+    /// See also ``isRelation``.
     var isToManyRelation: Bool = false
     var toManyRelation: SchemaToManyRelation? = nil
     var isUniqueIndex: Bool = false

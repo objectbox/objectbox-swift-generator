@@ -328,8 +328,10 @@ enum ObjectBoxGenerator {
                                 entity schemaEntity: SchemaEntity, schema schemaData: Schema,
                                 enums: [String: TypeName]) throws {
         let fullTypeName = propertyVar.typeName.name;
+        let isToOneRelation = fullTypeName.hasPrefix("ToOne<") && fullTypeName.hasSuffix(">")
+        let isToManyRelation = fullTypeName.hasPrefix("ToMany<") && fullTypeName.hasSuffix(">")
         var tmRelation: SchemaToManyRelation? = nil
-        if fullTypeName.hasPrefix("ToMany<") && fullTypeName.hasSuffix(">") {
+        if isToManyRelation {
             let templateTypesString = fullTypeName.drop(first: "ToMany<".count, last: 1)
             let templateTypes = templateTypesString.split(separator: ",")
             let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
@@ -357,8 +359,8 @@ enum ObjectBoxGenerator {
         schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(propertyVar.typeName)
         schemaProperty.isStringType = isStringTypeOrAlias(propertyVar.typeName)
         schemaProperty.isByteVectorType = isByteVectorTypeOrAlias(propertyVar.typeName)
-        schemaProperty.isRelation = fullTypeName.hasPrefix("ToOne<")
-        schemaProperty.isToManyRelation = fullTypeName.hasPrefix("ToMany<")
+        schemaProperty.isRelation = isToOneRelation
+        schemaProperty.isToManyRelation = isToManyRelation
         schemaProperty.toManyRelation = tmRelation
         schemaProperty.isFirst = schemaProperties.isEmpty
         if schemaProperty.isStringType {
@@ -460,7 +462,10 @@ enum ObjectBoxGenerator {
             schemaProperty.entityFlags.append(.unsigned)
         }
 
-        if schemaProperty.isRelation && fullTypeName.hasPrefix("ToOne<") && fullTypeName.hasSuffix(">") {
+        if isToOneRelation {
+            schemaProperty.entityFlags.append(.indexed)
+            schemaProperty.entityFlags.append(.indexPartialSkipZero)
+
             let templateTypesString = fullTypeName.drop(first: "ToOne<".count, last: 1)
             let templateTypes = templateTypesString.split(separator: ",")
             let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
@@ -614,6 +619,7 @@ enum ObjectBoxGenerator {
             schemaEntity.idProperty?.entityFlags.removeAll(where: { $0 == .unsigned })
         }
 
+        // Collect flags (to be passed to store initializer) string for generated code.
         schemaProperties.forEach { schemaProperty in
             var flagsList: [String] = []
             if schemaProperty.entityFlags.contains(.id) { flagsList.append(".id") }
@@ -622,6 +628,7 @@ enum ObjectBoxGenerator {
             if schemaProperty.entityFlags.contains(.indexHash) { flagsList.append(".indexHash") }
             if schemaProperty.entityFlags.contains(.indexHash64) { flagsList.append(".indexHash64") }
             if schemaProperty.entityFlags.contains(.indexed) { flagsList.append(".indexed") }
+            if schemaProperty.entityFlags.contains(.indexPartialSkipZero) { flagsList.append(".indexPartialSkipZero") }
             if schemaProperty.entityFlags.contains(.idSelfAssignable) { flagsList.append(".idSelfAssignable") }
             if schemaProperty.entityFlags.contains(.idCompanion) { flagsList.append(".idCompanion") }
             if schemaProperty.entityFlags.contains(.uniqueOnConflictReplace) { flagsList.append(".uniqueOnConflictReplace") }
