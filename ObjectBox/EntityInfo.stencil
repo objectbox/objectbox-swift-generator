@@ -353,8 +353,9 @@ extension ObjectBox.Store {
     ///     threading. For each thread, ObjectBox uses multiple readers. Their number (per thread) depends
     ///     on number of types, relations, and usage patterns. Thus, if you are working with many threads
     ///     (e.g. in a server-like scenario), it can make sense to increase the maximum number of readers.
-    ///     Note: The internal default is currently around 120.
-    ///           So when hitting this limit, try values around 200-500.
+    ///     Note: The internal default is currently around 120. So when hitting this limit, try values around 200-500.
+    ///   - readOnly: Opens the database in read-only mode, i.e. not allowing write transactions.
+    ///
     /// - important: This initializer is created by the code generator. If you only see the internal `init(model:...)`
     ///              initializer, trigger code generation by building your project.
     {{ visibility }} convenience init(directoryPath: String, maxDbSizeInKByte: UInt64 = 1024 * 1024,
