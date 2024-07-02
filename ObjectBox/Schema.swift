@@ -154,9 +154,9 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var toManyRelation: SchemaToManyRelation? = nil
     var isUniqueIndex: Bool = false
     var isUnsignedType: Bool = false
-    // TODO rename to propertyType
-    var entityType = PropertyType.unknown
-    // TODO rename to propertyFlags
+    /// The ObjectBox database ``PropertyType``.
+    var propertyType = PropertyType.unknown
+    /// One or more ``PropertyFlags``.
     var entityFlags: [PropertyFlags] = []
     var name: String = ""
     var isMutable = true
@@ -173,8 +173,8 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var propertyTypeQualifiedName: String = "n/a"  // Sourcery cannot access dynamic properties!?
 
     public func initPropertyType() {
-        isDateNanoType = entityType == PropertyType.dateNano
-        if(entityType != PropertyType.unknown) {
+        isDateNanoType = propertyType == PropertyType.dateNano
+        if(propertyType != PropertyType.unknown) {
             propertyTypeQualifiedName = propertyTypeQualifiedNameDyn
         } else {
             // this is some odd workaround for Sourcery not being able to resolve type aliases (go via a type extension)
@@ -184,7 +184,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
 
     public var propertyTypeQualifiedNameDyn: String {
         get {
-            "PropertyType.\(entityType)"
+            "PropertyType.\(propertyType)"
         }
     }
 

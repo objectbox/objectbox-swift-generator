@@ -323,7 +323,7 @@ enum ObjectBoxGenerator {
         return nil
     }
 
-    static func processProperty(_ propertyVar: SourceryVariable, in propertyType: Type,
+    static func processProperty(_ propertyVar: SourceryVariable, in entityType: Type,
                                 into schemaProperties: inout [SchemaProperty],
                                 entity schemaEntity: SchemaEntity, schema schemaData: Schema,
                                 enums: [String: TypeName]) throws {
@@ -335,7 +335,7 @@ enum ObjectBoxGenerator {
             let templateTypesString = fullTypeName.drop(first: "ToMany<".count, last: 1)
             let templateTypes = templateTypesString.split(separator: ",")
             let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-            let myType = propertyType.name
+            let myType = entityType.name
 
             let relation = SchemaToManyRelation(name: propertyVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
             if let propertyUid = propertyVar.annotations["uid"] as? Int64 {
@@ -349,11 +349,11 @@ enum ObjectBoxGenerator {
         }
 
         let schemaProperty = SchemaProperty()
-        schemaProperty.entityName = propertyType.localName
+        schemaProperty.entityName = entityType.localName
         schemaProperty.propertyName = propertyVar.name
         schemaProperty.isMutable = propertyVar.isMutable
         schemaProperty.propertySwiftType = fullTypeName
-        schemaProperty.entityType = mapPropertyType(propertyVar)
+        schemaProperty.propertyType = mapPropertyType(propertyVar)
         // TODO check if "is...Type" can be unified with converter checks below (add tests)
         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(propertyVar.typeName)
         schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(propertyVar.typeName)
@@ -412,14 +412,14 @@ enum ObjectBoxGenerator {
             schemaProperty.propertySwiftType = dbType
             schemaProperty.unwrappedPropertyType = dbType.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
 
-            if let entityType = typeMappings[schemaProperty.unwrappedPropertyType] {
-                schemaProperty.entityType = entityType
+            if let unwrappedPropertyType = typeMappings[schemaProperty.unwrappedPropertyType] {
+                schemaProperty.propertyType = unwrappedPropertyType
             }
             schemaProperty.isUnsignedType = builtInUnsignedTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isStringType = builtInStringTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isByteVectorType = builtInByteVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
         }
-        schemaProperty.initPropertyType()  // depends on entityType (PropertyType) and unwrappedPropertyType
+        schemaProperty.initPropertyType() // depends on propertyType (PropertyType) and unwrappedPropertyType
 
         try processPropertyIndexAndUniqueAnnotations(propertyVar, schemaProperty)
 
@@ -442,7 +442,7 @@ enum ObjectBoxGenerator {
                 let templateTypesString = fullTypeName.drop(first: "EntityId<".count, last: 1)
                 let templateTypes = templateTypesString.split(separator: ",")
                 let idType = templateTypes[0]
-                if idType == propertyType.localName {
+                if idType == entityType.localName {
                     schemaEntity.idCandidates.append(schemaProperty)
                 }
             }
@@ -452,9 +452,9 @@ enum ObjectBoxGenerator {
             schemaProperty.entityFlags.append(.id)
         }
         if propertyVar.annotations.contains(reference: "id-companion") {
-            if schemaProperty.entityType != .date && schemaProperty.entityType != .dateNano {
+            if schemaProperty.propertyType != .date && schemaProperty.propertyType != .dateNano {
                 throw Error.BadPropertyAnnotation(property: propertyVar.description,
-                        message: "The id-companion annotation is only supported for date and dateNano types but found: \(schemaProperty.entityType)")
+                        message: "The id-companion annotation is only supported for date and dateNano types but found: \(schemaProperty.propertyType)")
             }
             schemaProperty.entityFlags.append(.idCompanion)
         }
