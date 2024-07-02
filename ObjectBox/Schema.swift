@@ -130,6 +130,8 @@ enum SchemaIndexType {
 class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var modelId: IdUid?
     var propertyName: String = ""
+    /// Typically the name of the Swift type of the property (like `String`), but for some
+    /// properties the name of a special ObjectBox property type (like `FloatArrayPropertyType`).
     var propertySwiftType: String = ""
     var entityName: String = ""
     var unwrappedPropertyType: String = ""

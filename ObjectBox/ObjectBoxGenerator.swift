@@ -366,7 +366,33 @@ enum ObjectBoxGenerator {
         schemaProperty.entityName = entityType.localName
         schemaProperty.propertyName = propertyVar.name
         schemaProperty.isMutable = propertyVar.isMutable
-        schemaProperty.propertySwiftType = fullTypeName
+        
+        // Determine value type to use for generated Property field
+        // Remove ? suffix (like "String?" -> "String")
+        let typeNameNotNull: String
+        if fullTypeName.hasSuffix("?") {
+            typeNameNotNull = String(fullTypeName.dropLast())
+        } else {
+            typeNameNotNull = fullTypeName
+        }
+        // One of the property types as defined in the Swift library
+        // (ios-framework/CommonSource/Entities/EntityPropertyTypeImplementations.swift),
+        // or the Swift type.
+        let propertyType: String
+        if typeNameNotNull == "[Float]" {
+            // Float array: may be a special HNSW index property (annotation is parsed later)
+            let hasHnswIndex = propertyVar.annotations.contains(reference: "hnswIndex")
+            if hasHnswIndex {
+                propertyType = "HnswIndexPropertyType"
+            } else {
+                propertyType = "FloatArrayPropertyType"
+            }
+        } else {
+            // Use Swift type
+            propertyType = fullTypeName
+        }
+        schemaProperty.propertySwiftType = propertyType
+
         schemaProperty.propertyType = mapPropertyType(propertyVar)
         // TODO check if "is...Type" can be unified with converter checks below (add tests)
         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(propertyVar.typeName)
