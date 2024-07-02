@@ -77,7 +77,7 @@ class IdSyncTests: XCTestCase {
         entity.className = "FirstEntity"
         let prop = SchemaProperty()
         prop.propertyName = "identifikationsNummer"
-        prop.propertyType = "EntityId<FirstEntity>"
+        prop.propertySwiftType = "EntityId<FirstEntity>"
         prop.entityName = "FirstEntity"
         entity.properties.append(prop)
         schemaData.entities.append(entity)
@@ -126,12 +126,12 @@ class IdSyncTests: XCTestCase {
         entity.className = "FirstEntity"
         let prop = SchemaProperty()
         prop.propertyName = "id"
-        prop.propertyType = "EntityId<FirstEntity>"
+        prop.propertySwiftType = "EntityId<FirstEntity>"
         prop.entityName = "FirstEntity"
         entity.properties.append(prop)
         let prop2 = SchemaProperty()
         prop2.propertyName = "name"
-        prop2.propertyType = "String"
+        prop2.propertySwiftType = "String"
         prop2.entityName = "FirstEntity"
         entity.properties.append(prop2)
         schemaData.entities.append(entity)
@@ -140,12 +140,12 @@ class IdSyncTests: XCTestCase {
         entity2.className = "SecondEntity"
         let prop3 = SchemaProperty()
         prop3.propertyName = "id"
-        prop3.propertyType = "EntityId<SecondEntity>"
+        prop3.propertySwiftType = "EntityId<SecondEntity>"
         prop3.entityName = "SecondEntity"
         entity2.properties.append(prop3)
         let prop4 = SchemaProperty()
         prop4.propertyName = "name"
-        prop4.propertyType = "String"
+        prop4.propertySwiftType = "String"
         prop4.entityName = "SecondEntity"
         entity2.properties.append(prop4)
         schemaData.entities.append(entity2)

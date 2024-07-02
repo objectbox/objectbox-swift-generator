@@ -352,7 +352,7 @@ enum ObjectBoxGenerator {
         schemaProperty.entityName = propertyType.localName
         schemaProperty.propertyName = propertyVar.name
         schemaProperty.isMutable = propertyVar.isMutable
-        schemaProperty.propertyType = fullTypeName
+        schemaProperty.propertySwiftType = fullTypeName
         schemaProperty.entityType = mapPropertyType(propertyVar)
         // TODO check if "is...Type" can be unified with converter checks below (add tests)
         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(propertyVar.typeName)
@@ -401,15 +401,15 @@ enum ObjectBoxGenerator {
                 schemaProperty.unConversionSuffix = ".rawValue"
                 if let defaultValue = convertDict["default"] {
                     schemaProperty.conversionSuffix = ") ?? \(defaultValue)"
-                } else if schemaProperty.propertyType.hasSuffix("?") {
+                } else if schemaProperty.propertySwiftType.hasSuffix("?") {
                     schemaProperty.conversionSuffix = ")"
                 } else {
                     throw Error.convertAnnotationMissingConverterOrDefault(name: schemaProperty.propertyName, entity: schemaProperty.entityName)
                 }
             }
 
-            schemaProperty.typeBeforeConversion = schemaProperty.propertyType
-            schemaProperty.propertyType = dbType
+            schemaProperty.typeBeforeConversion = schemaProperty.propertySwiftType
+            schemaProperty.propertySwiftType = dbType
             schemaProperty.unwrappedPropertyType = dbType.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
 
             if let entityType = typeMappings[schemaProperty.unwrappedPropertyType] {
@@ -469,7 +469,7 @@ enum ObjectBoxGenerator {
             let templateTypesString = fullTypeName.drop(first: "ToOne<".count, last: 1)
             let templateTypes = templateTypesString.split(separator: ",")
             let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-            let relation = SchemaRelation(name: schemaProperty.propertyName, type: schemaProperty.propertyType,
+            let relation = SchemaRelation(name: schemaProperty.propertyName, type: schemaProperty.propertySwiftType,
                     targetType: destinationType)
             relation.property = schemaProperty
             schemaEntity.relations.append(relation)

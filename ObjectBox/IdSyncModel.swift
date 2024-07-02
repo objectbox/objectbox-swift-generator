@@ -855,8 +855,8 @@ enum IdSync {
                 schemaEntity.indexes.append(newIndex)
             }
             var relationTargetUnresolved: String? = nil
-            if schemaProperty.isRelation && schemaProperty.propertyType.hasPrefix("ToOne<") {
-                let templateTypeString = schemaProperty.propertyType.drop(first: "ToOne<".count, last: 1)
+            if schemaProperty.isRelation && schemaProperty.propertySwiftType.hasPrefix("ToOne<") {
+                let templateTypeString = schemaProperty.propertySwiftType.drop(first: "ToOne<".count, last: 1)
                 relationTargetUnresolved = templateTypeString
             }
 

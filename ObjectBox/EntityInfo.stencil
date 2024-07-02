@@ -32,7 +32,7 @@ extension {{ entity.className }}: ObjectBox.EntityInspectable {
         try entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.propertyTypeQualifiedName }}{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
         {% endfor %}
         {% for prop in entity.properties where prop.isRelation %}
-        try entityBuilder.addToOneRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertyType }}.Target.entityInfo{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }})
+        try entityBuilder.addToOneRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertySwiftType }}.Target.entityInfo{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }})
         {% endfor %}
         {% for tmRelation in entity.toManyRelations where not tmRelation.backlinkProperty %}
         try entityBuilder.addToManyRelation(id: {{ tmRelation.modelId.id }}, uid: {{ tmRelation.modelId.uid }},
@@ -49,13 +49,13 @@ extension {{ entity.className }} {
     ///
     /// You may want to use this in queries to specify fetch conditions, for example:
     ///
-    ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertyType == "Bool" %}{{ entity.className }}.{{ prop.propertyName }} == true{% else %}{{ entity.className }}.{{ prop.propertyName }} > 1234{% endif %} }
+    ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertySwiftType == "Bool" %}{{ entity.className }}.{{ prop.propertyName }} == true{% else %}{{ entity.className }}.{{ prop.propertyName }} > 1234{% endif %} }
     
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}, {% if prop.isObjectId %}{{prop.propertyType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.propertyType}}, {% if prop.isObjectId %}{{prop.propertyType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertySwiftType}}, {% if prop.isObjectId %}{{prop.propertySwiftType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.propertySwiftType}}, {% if prop.isObjectId %}{{prop.propertySwiftType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
     
     {% endfor %}
     {% for prop in entity.properties where prop.isRelation %}
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, EntityId<{{ prop.propertyType }}.Target>, {{ prop.propertyType }}.Target> { return Property(propertyId: {{ prop.modelId.id }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, EntityId<{{ prop.propertySwiftType }}.Target>, {{ prop.propertySwiftType }}.Target> { return Property(propertyId: {{ prop.modelId.id }}) }
 
     {% endfor %}
     {% for prop in entity.properties where prop.isToManyRelation %}
@@ -67,9 +67,9 @@ extension {{ entity.className }} {
     {% endfor %}
     {% if entity.idProperty.isMutable %}
 
-    {% if entity.idProperty.propertyType == "UInt64" or entity.idProperty.propertyType == "Id" %}
+    {% if entity.idProperty.propertySwiftType == "UInt64" or entity.idProperty.propertySwiftType == "Id" %}
     fileprivate{% if entity.isValueType %} mutating{% endif %} func __setId(identifier: ObjectBox.Id) {
-        self.{{ entity.idProperty.propertyName }} = {{ entity.idProperty.propertyType }}(identifier)
+        self.{{ entity.idProperty.propertyName }} = {{ entity.idProperty.propertySwiftType }}(identifier)
     }
     {% else %}
     fileprivate{% if entity.isValueType %} mutating{% endif %} func __setId(identifier: ObjectBox.Id) {
@@ -85,13 +85,13 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     ///
     /// You may want to use this in queries to specify fetch conditions, for example:
     ///
-    ///     box.query { {% if prop.isObjectId %}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertyType == "Bool" %}.{{ prop.propertyName }} == true{% else %}.{{ prop.propertyName }} > 1234{% endif %} }
+    ///     box.query { {% if prop.isObjectId %}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertySwiftType == "Bool" %}.{{ prop.propertyName }} == true{% else %}.{{ prop.propertyName }} > 1234{% endif %} }
 
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertyType}}, {% if prop.isObjectId %}{{prop.propertyType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.propertyType}}, {% if prop.isObjectId %}{{prop.propertyType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertySwiftType}}, {% if prop.isObjectId %}{{prop.propertySwiftType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.propertySwiftType}}, {% if prop.isObjectId %}{{prop.propertySwiftType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
 
     {% endfor %}
     {% for prop in entity.properties where prop.isRelation %}
-    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{ prop.propertyType }}.Target.EntityBindingType.IdType, {{ prop.propertyType }}.Target> { return Property<{{entity.className}}, {{ prop.propertyType }}.Target.EntityBindingType.IdType, {{ prop.propertyType }}.Target>(propertyId: {{ prop.modelId.id }}) }
+    {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{ prop.propertySwiftType }}.Target.EntityBindingType.IdType, {{ prop.propertySwiftType }}.Target> { return Property<{{entity.className}}, {{ prop.propertySwiftType }}.Target.EntityBindingType.IdType, {{ prop.propertySwiftType }}.Target>(propertyId: {{ prop.modelId.id }}) }
 
     {% endfor %}
     {% for prop in entity.properties where prop.isToManyRelation %}
@@ -107,7 +107,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 /// Generated service type to handle persisting and reading entity data. Exposed through `{{ entity.className }}.EntityBindingType`.
 {{ visibility }} class {{ entity.className }}Binding: ObjectBox.EntityBinding {
     {{ visibility }} typealias EntityType = {{ entity.className }}
-    {{ visibility }} typealias IdType = {{ entity.idProperty.propertyType }}
+    {{ visibility }} typealias IdType = {{ entity.idProperty.propertySwiftType }}
 
     {{ visibility }} required init() {}
 
@@ -206,7 +206,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
   {% endif %}
     {{ visibility }} func createEntity(entityReader: ObjectBox.FlatBufferReader, store: ObjectBox.Store) -> EntityType {
     {% if entity.isValueType %}
-        let entityId: {{ entity.idProperty.propertyType }} = {{ entity.idProperty.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ entity.idProperty.modelId.id }}){{ entity.idProperty.conversionSuffix }}
+        let entityId: {{ entity.idProperty.propertySwiftType }} = {{ entity.idProperty.conversionPrefix }}entityReader.read(at: 2 + 2 * {{ entity.idProperty.modelId.id }}){{ entity.idProperty.conversionSuffix }}
         let entity = {{ entity.className }}(
     {% for prop in entity.properties %}
     {% if prop.isObjectId %}
