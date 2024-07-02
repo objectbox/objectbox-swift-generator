@@ -130,7 +130,7 @@ enum SchemaIndexType {
 class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var modelId: IdUid?
     var propertyName: String = ""
-    var propertyType: String = ""
+    var propertySwiftType: String = ""
     var entityName: String = ""
     var unwrappedPropertyType: String = ""
     var dbName: String?
@@ -154,10 +154,10 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var toManyRelation: SchemaToManyRelation? = nil
     var isUniqueIndex: Bool = false
     var isUnsignedType: Bool = false
-    // TODO rename to propertyType
-    var entityType = PropertyType.unknown
-    // TODO rename to propertyFlags
-    var entityFlags: [PropertyFlags] = []
+    /// The ObjectBox database ``PropertyType``.
+    var propertyType = PropertyType.unknown
+    /// One or more ``PropertyFlags``.
+    var propertyFlags: [PropertyFlags] = []
     var name: String = ""
     var isMutable = true
     var flagsList: String = ""
@@ -173,8 +173,8 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var propertyTypeQualifiedName: String = "n/a"  // Sourcery cannot access dynamic properties!?
 
     public func initPropertyType() {
-        isDateNanoType = entityType == PropertyType.dateNano
-        if(entityType != PropertyType.unknown) {
+        isDateNanoType = propertyType == PropertyType.dateNano
+        if(propertyType != PropertyType.unknown) {
             propertyTypeQualifiedName = propertyTypeQualifiedNameDyn
         } else {
             // this is some odd workaround for Sourcery not being able to resolve type aliases (go via a type extension)
@@ -184,12 +184,12 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
 
     public var propertyTypeQualifiedNameDyn: String {
         get {
-            "PropertyType.\(entityType)"
+            "PropertyType.\(propertyType)"
         }
     }
 
     public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {
-        return lhs.entityName == rhs.entityName && lhs.name == rhs.name && lhs.propertyType == rhs.propertyType
+        return lhs.entityName == rhs.entityName && lhs.name == rhs.name && lhs.propertySwiftType == rhs.propertySwiftType
     }
 
     public var hashValue: Int {
@@ -202,7 +202,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
 
     public func hash(into hasher: inout Hasher) {
         name.hash(into: &hasher)
-        propertyType.hash(into: &hasher)
+        propertySwiftType.hash(into: &hasher)
         entityName.hash(into: &hasher)
     }
 
@@ -213,7 +213,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
             if (isUnsignedType) { moreData += "\n\t\t\tisUnsignedType = \(isUnsignedType)" }
             if (indexType != .none) { moreData += "\n\t\t\tindexType = \(indexType)" }
             if (isByteVectorType) { moreData += "\n\t\t\tisByteVectorType = \(isByteVectorType)" }
-            return "SchemaProperty {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\tmodelIndexId = \(String(describing: modelIndexId))\n\t\t\tbacklinkName = \(String(describing: backlinkName))\n\t\t\tbacklinkType = \(String(describing: backlinkType))\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
+            return "SchemaProperty {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tpropertyFlags = \(propertyFlags)\n\t\t\tpropertySwiftType = \(propertySwiftType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\tmodelIndexId = \(String(describing: modelIndexId))\n\t\t\tbacklinkName = \(String(describing: backlinkName))\n\t\t\tbacklinkType = \(String(describing: backlinkType))\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
         }
     }
 }

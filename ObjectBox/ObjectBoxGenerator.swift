@@ -323,7 +323,7 @@ enum ObjectBoxGenerator {
         return nil
     }
 
-    static func processProperty(_ propertyVar: SourceryVariable, in propertyType: Type,
+    static func processProperty(_ propertyVar: SourceryVariable, in entityType: Type,
                                 into schemaProperties: inout [SchemaProperty],
                                 entity schemaEntity: SchemaEntity, schema schemaData: Schema,
                                 enums: [String: TypeName]) throws {
@@ -335,7 +335,7 @@ enum ObjectBoxGenerator {
             let templateTypesString = fullTypeName.drop(first: "ToMany<".count, last: 1)
             let templateTypes = templateTypesString.split(separator: ",")
             let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-            let myType = propertyType.name
+            let myType = entityType.name
 
             let relation = SchemaToManyRelation(name: propertyVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
             if let propertyUid = propertyVar.annotations["uid"] as? Int64 {
@@ -349,11 +349,11 @@ enum ObjectBoxGenerator {
         }
 
         let schemaProperty = SchemaProperty()
-        schemaProperty.entityName = propertyType.localName
+        schemaProperty.entityName = entityType.localName
         schemaProperty.propertyName = propertyVar.name
         schemaProperty.isMutable = propertyVar.isMutable
-        schemaProperty.propertyType = fullTypeName
-        schemaProperty.entityType = mapPropertyType(propertyVar)
+        schemaProperty.propertySwiftType = fullTypeName
+        schemaProperty.propertyType = mapPropertyType(propertyVar)
         // TODO check if "is...Type" can be unified with converter checks below (add tests)
         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(propertyVar.typeName)
         schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(propertyVar.typeName)
@@ -401,25 +401,25 @@ enum ObjectBoxGenerator {
                 schemaProperty.unConversionSuffix = ".rawValue"
                 if let defaultValue = convertDict["default"] {
                     schemaProperty.conversionSuffix = ") ?? \(defaultValue)"
-                } else if schemaProperty.propertyType.hasSuffix("?") {
+                } else if schemaProperty.propertySwiftType.hasSuffix("?") {
                     schemaProperty.conversionSuffix = ")"
                 } else {
                     throw Error.convertAnnotationMissingConverterOrDefault(name: schemaProperty.propertyName, entity: schemaProperty.entityName)
                 }
             }
 
-            schemaProperty.typeBeforeConversion = schemaProperty.propertyType
-            schemaProperty.propertyType = dbType
+            schemaProperty.typeBeforeConversion = schemaProperty.propertySwiftType
+            schemaProperty.propertySwiftType = dbType
             schemaProperty.unwrappedPropertyType = dbType.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
 
-            if let entityType = typeMappings[schemaProperty.unwrappedPropertyType] {
-                schemaProperty.entityType = entityType
+            if let unwrappedPropertyType = typeMappings[schemaProperty.unwrappedPropertyType] {
+                schemaProperty.propertyType = unwrappedPropertyType
             }
             schemaProperty.isUnsignedType = builtInUnsignedTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isStringType = builtInStringTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isByteVectorType = builtInByteVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
         }
-        schemaProperty.initPropertyType()  // depends on entityType (PropertyType) and unwrappedPropertyType
+        schemaProperty.initPropertyType() // depends on propertyType (PropertyType) and unwrappedPropertyType
 
         try processPropertyIndexAndUniqueAnnotations(propertyVar, schemaProperty)
 
@@ -432,7 +432,7 @@ enum ObjectBoxGenerator {
             schemaEntity.idProperty = schemaProperty
             if let objectAnnotationDict = objectIdAnnotationValue as? NSDictionary {
                 if let assignableBool = objectAnnotationDict["assignable"] as? Bool, assignableBool == true {
-                    schemaProperty.entityFlags.append(.idSelfAssignable)
+                    schemaProperty.propertyFlags.append(.idSelfAssignable)
                 }
             }
         } else {
@@ -442,34 +442,34 @@ enum ObjectBoxGenerator {
                 let templateTypesString = fullTypeName.drop(first: "EntityId<".count, last: 1)
                 let templateTypes = templateTypesString.split(separator: ",")
                 let idType = templateTypes[0]
-                if idType == propertyType.localName {
+                if idType == entityType.localName {
                     schemaEntity.idCandidates.append(schemaProperty)
                 }
             }
         }
 
         if schemaProperty.isObjectId {
-            schemaProperty.entityFlags.append(.id)
+            schemaProperty.propertyFlags.append(.id)
         }
         if propertyVar.annotations.contains(reference: "id-companion") {
-            if schemaProperty.entityType != .date && schemaProperty.entityType != .dateNano {
+            if schemaProperty.propertyType != .date && schemaProperty.propertyType != .dateNano {
                 throw Error.BadPropertyAnnotation(property: propertyVar.description,
-                        message: "The id-companion annotation is only supported for date and dateNano types but found: \(schemaProperty.entityType)")
+                        message: "The id-companion annotation is only supported for date and dateNano types but found: \(schemaProperty.propertyType)")
             }
-            schemaProperty.entityFlags.append(.idCompanion)
+            schemaProperty.propertyFlags.append(.idCompanion)
         }
         if !schemaProperty.isObjectId && schemaProperty.isUnsignedType {
-            schemaProperty.entityFlags.append(.unsigned)
+            schemaProperty.propertyFlags.append(.unsigned)
         }
 
         if isToOneRelation {
-            schemaProperty.entityFlags.append(.indexed)
-            schemaProperty.entityFlags.append(.indexPartialSkipZero)
+            schemaProperty.propertyFlags.append(.indexed)
+            schemaProperty.propertyFlags.append(.indexPartialSkipZero)
 
             let templateTypesString = fullTypeName.drop(first: "ToOne<".count, last: 1)
             let templateTypes = templateTypesString.split(separator: ",")
             let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-            let relation = SchemaRelation(name: schemaProperty.propertyName, type: schemaProperty.propertyType,
+            let relation = SchemaRelation(name: schemaProperty.propertyName, type: schemaProperty.propertySwiftType,
                     targetType: destinationType)
             relation.property = schemaProperty
             schemaEntity.relations.append(relation)
@@ -506,14 +506,14 @@ enum ObjectBoxGenerator {
 
         if propertyVar.annotations.contains(reference: "unique") {
             schemaProperty.isUniqueIndex = true
-            schemaProperty.entityFlags.append(.unique)
+            schemaProperty.propertyFlags.append(.unique)
 
             let uniqueAnnotation = propertyVar.annotations["unique"]!
             if let uniqueDict = uniqueAnnotation as? NSDictionary {
                 for (key, value) in uniqueDict {
                     if (key as? String == "onConflict") {
                         if (value as? String == "replace") {
-                            schemaProperty.entityFlags.append(.uniqueOnConflictReplace)
+                            schemaProperty.propertyFlags.append(.uniqueOnConflictReplace)
                         } else {
                             throw Error.BadPropertyAnnotation(property: propertyVar.description,
                                     message: "Illegal onConflict value (only \"replace\" is currently supported): \(value)")
@@ -533,11 +533,11 @@ enum ObjectBoxGenerator {
         }
 
         if schemaProperty.indexType != .none {
-            schemaProperty.entityFlags.append(.indexed)
+            schemaProperty.propertyFlags.append(.indexed)
             if schemaProperty.indexType == .hashIndex {
-                schemaProperty.entityFlags.append(.indexHash)
+                schemaProperty.propertyFlags.append(.indexHash)
             } else if schemaProperty.indexType == .hash64Index {
-                schemaProperty.entityFlags.append(.indexHash64)
+                schemaProperty.propertyFlags.append(.indexHash64)
             }
         }
     }
@@ -614,24 +614,24 @@ enum ObjectBoxGenerator {
                 }
             }
             schemaEntity.idProperty?.isObjectId = true
-            schemaEntity.idProperty?.entityFlags.append(.id)
+            schemaEntity.idProperty?.propertyFlags.append(.id)
             // No other binding marks IDs as unsigned, so don't break compatibility.
-            schemaEntity.idProperty?.entityFlags.removeAll(where: { $0 == .unsigned })
+            schemaEntity.idProperty?.propertyFlags.removeAll(where: { $0 == .unsigned })
         }
 
         // Collect flags (to be passed to store initializer) string for generated code.
         schemaProperties.forEach { schemaProperty in
             var flagsList: [String] = []
-            if schemaProperty.entityFlags.contains(.id) { flagsList.append(".id") }
-            if schemaProperty.entityFlags.contains(.unsigned) { flagsList.append(".unsigned") }
-            if schemaProperty.entityFlags.contains(.unique) { flagsList.append(".unique") }
-            if schemaProperty.entityFlags.contains(.indexHash) { flagsList.append(".indexHash") }
-            if schemaProperty.entityFlags.contains(.indexHash64) { flagsList.append(".indexHash64") }
-            if schemaProperty.entityFlags.contains(.indexed) { flagsList.append(".indexed") }
-            if schemaProperty.entityFlags.contains(.indexPartialSkipZero) { flagsList.append(".indexPartialSkipZero") }
-            if schemaProperty.entityFlags.contains(.idSelfAssignable) { flagsList.append(".idSelfAssignable") }
-            if schemaProperty.entityFlags.contains(.idCompanion) { flagsList.append(".idCompanion") }
-            if schemaProperty.entityFlags.contains(.uniqueOnConflictReplace) { flagsList.append(".uniqueOnConflictReplace") }
+            if schemaProperty.propertyFlags.contains(.id) { flagsList.append(".id") }
+            if schemaProperty.propertyFlags.contains(.unsigned) { flagsList.append(".unsigned") }
+            if schemaProperty.propertyFlags.contains(.unique) { flagsList.append(".unique") }
+            if schemaProperty.propertyFlags.contains(.indexHash) { flagsList.append(".indexHash") }
+            if schemaProperty.propertyFlags.contains(.indexHash64) { flagsList.append(".indexHash64") }
+            if schemaProperty.propertyFlags.contains(.indexed) { flagsList.append(".indexed") }
+            if schemaProperty.propertyFlags.contains(.indexPartialSkipZero) { flagsList.append(".indexPartialSkipZero") }
+            if schemaProperty.propertyFlags.contains(.idSelfAssignable) { flagsList.append(".idSelfAssignable") }
+            if schemaProperty.propertyFlags.contains(.idCompanion) { flagsList.append(".idCompanion") }
+            if schemaProperty.propertyFlags.contains(.uniqueOnConflictReplace) { flagsList.append(".uniqueOnConflictReplace") }
             if flagsList.count > 0 {
                 schemaProperty.flagsList = ", flags: [\(flagsList.joined(separator: ", "))]"
             }
