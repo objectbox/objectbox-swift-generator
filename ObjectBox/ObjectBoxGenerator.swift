@@ -432,7 +432,7 @@ enum ObjectBoxGenerator {
             schemaEntity.idProperty = schemaProperty
             if let objectAnnotationDict = objectIdAnnotationValue as? NSDictionary {
                 if let assignableBool = objectAnnotationDict["assignable"] as? Bool, assignableBool == true {
-                    schemaProperty.entityFlags.append(.idSelfAssignable)
+                    schemaProperty.propertyFlags.append(.idSelfAssignable)
                 }
             }
         } else {
@@ -449,22 +449,22 @@ enum ObjectBoxGenerator {
         }
 
         if schemaProperty.isObjectId {
-            schemaProperty.entityFlags.append(.id)
+            schemaProperty.propertyFlags.append(.id)
         }
         if propertyVar.annotations.contains(reference: "id-companion") {
             if schemaProperty.propertyType != .date && schemaProperty.propertyType != .dateNano {
                 throw Error.BadPropertyAnnotation(property: propertyVar.description,
                         message: "The id-companion annotation is only supported for date and dateNano types but found: \(schemaProperty.propertyType)")
             }
-            schemaProperty.entityFlags.append(.idCompanion)
+            schemaProperty.propertyFlags.append(.idCompanion)
         }
         if !schemaProperty.isObjectId && schemaProperty.isUnsignedType {
-            schemaProperty.entityFlags.append(.unsigned)
+            schemaProperty.propertyFlags.append(.unsigned)
         }
 
         if isToOneRelation {
-            schemaProperty.entityFlags.append(.indexed)
-            schemaProperty.entityFlags.append(.indexPartialSkipZero)
+            schemaProperty.propertyFlags.append(.indexed)
+            schemaProperty.propertyFlags.append(.indexPartialSkipZero)
 
             let templateTypesString = fullTypeName.drop(first: "ToOne<".count, last: 1)
             let templateTypes = templateTypesString.split(separator: ",")
@@ -506,14 +506,14 @@ enum ObjectBoxGenerator {
 
         if propertyVar.annotations.contains(reference: "unique") {
             schemaProperty.isUniqueIndex = true
-            schemaProperty.entityFlags.append(.unique)
+            schemaProperty.propertyFlags.append(.unique)
 
             let uniqueAnnotation = propertyVar.annotations["unique"]!
             if let uniqueDict = uniqueAnnotation as? NSDictionary {
                 for (key, value) in uniqueDict {
                     if (key as? String == "onConflict") {
                         if (value as? String == "replace") {
-                            schemaProperty.entityFlags.append(.uniqueOnConflictReplace)
+                            schemaProperty.propertyFlags.append(.uniqueOnConflictReplace)
                         } else {
                             throw Error.BadPropertyAnnotation(property: propertyVar.description,
                                     message: "Illegal onConflict value (only \"replace\" is currently supported): \(value)")
@@ -533,11 +533,11 @@ enum ObjectBoxGenerator {
         }
 
         if schemaProperty.indexType != .none {
-            schemaProperty.entityFlags.append(.indexed)
+            schemaProperty.propertyFlags.append(.indexed)
             if schemaProperty.indexType == .hashIndex {
-                schemaProperty.entityFlags.append(.indexHash)
+                schemaProperty.propertyFlags.append(.indexHash)
             } else if schemaProperty.indexType == .hash64Index {
-                schemaProperty.entityFlags.append(.indexHash64)
+                schemaProperty.propertyFlags.append(.indexHash64)
             }
         }
     }
@@ -614,24 +614,24 @@ enum ObjectBoxGenerator {
                 }
             }
             schemaEntity.idProperty?.isObjectId = true
-            schemaEntity.idProperty?.entityFlags.append(.id)
+            schemaEntity.idProperty?.propertyFlags.append(.id)
             // No other binding marks IDs as unsigned, so don't break compatibility.
-            schemaEntity.idProperty?.entityFlags.removeAll(where: { $0 == .unsigned })
+            schemaEntity.idProperty?.propertyFlags.removeAll(where: { $0 == .unsigned })
         }
 
         // Collect flags (to be passed to store initializer) string for generated code.
         schemaProperties.forEach { schemaProperty in
             var flagsList: [String] = []
-            if schemaProperty.entityFlags.contains(.id) { flagsList.append(".id") }
-            if schemaProperty.entityFlags.contains(.unsigned) { flagsList.append(".unsigned") }
-            if schemaProperty.entityFlags.contains(.unique) { flagsList.append(".unique") }
-            if schemaProperty.entityFlags.contains(.indexHash) { flagsList.append(".indexHash") }
-            if schemaProperty.entityFlags.contains(.indexHash64) { flagsList.append(".indexHash64") }
-            if schemaProperty.entityFlags.contains(.indexed) { flagsList.append(".indexed") }
-            if schemaProperty.entityFlags.contains(.indexPartialSkipZero) { flagsList.append(".indexPartialSkipZero") }
-            if schemaProperty.entityFlags.contains(.idSelfAssignable) { flagsList.append(".idSelfAssignable") }
-            if schemaProperty.entityFlags.contains(.idCompanion) { flagsList.append(".idCompanion") }
-            if schemaProperty.entityFlags.contains(.uniqueOnConflictReplace) { flagsList.append(".uniqueOnConflictReplace") }
+            if schemaProperty.propertyFlags.contains(.id) { flagsList.append(".id") }
+            if schemaProperty.propertyFlags.contains(.unsigned) { flagsList.append(".unsigned") }
+            if schemaProperty.propertyFlags.contains(.unique) { flagsList.append(".unique") }
+            if schemaProperty.propertyFlags.contains(.indexHash) { flagsList.append(".indexHash") }
+            if schemaProperty.propertyFlags.contains(.indexHash64) { flagsList.append(".indexHash64") }
+            if schemaProperty.propertyFlags.contains(.indexed) { flagsList.append(".indexed") }
+            if schemaProperty.propertyFlags.contains(.indexPartialSkipZero) { flagsList.append(".indexPartialSkipZero") }
+            if schemaProperty.propertyFlags.contains(.idSelfAssignable) { flagsList.append(".idSelfAssignable") }
+            if schemaProperty.propertyFlags.contains(.idCompanion) { flagsList.append(".idCompanion") }
+            if schemaProperty.propertyFlags.contains(.uniqueOnConflictReplace) { flagsList.append(".uniqueOnConflictReplace") }
             if flagsList.count > 0 {
                 schemaProperty.flagsList = ", flags: [\(flagsList.joined(separator: ", "))]"
             }

@@ -869,7 +869,7 @@ enum IdSync {
             
             let property = Property(name: schemaProperty.name, id: sourceId, indexId: sourceIndexId,
                                     relationTargetUnresolved: relationTargetUnresolved,
-                                    type: schemaProperty.propertyType.rawValue, flags: schemaProperty.entityFlags.rawValue)
+                                    type: schemaProperty.propertyType.rawValue, flags: schemaProperty.propertyFlags.rawValue)
             
             schemaProperty.modelId = property.id
             schemaProperty.modelIndexId = property.indexId
