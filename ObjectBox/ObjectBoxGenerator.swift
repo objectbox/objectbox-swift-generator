@@ -40,6 +40,7 @@ enum ObjectBoxGenerator {
     static let builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
     static let builtInStringTypes = ["String", "NSString"]
     static let builtInByteVectorTypes = ["Data", "NSData", "[UInt8]", "Array<UInt8>"]
+    static let builtInScalarVectorTypes = ["[Float]"]
     static let typeMappings: [String: PropertyType] = [
         "Bool": .bool,
         "UInt8": .byte,
@@ -64,6 +65,7 @@ enum ObjectBoxGenerator {
         "NSData": .byteVector,
         "Array<UInt8>": .byteVector,
         "[UInt8]": .byteVector,
+        "[Float]": .floatVector,
     ]
     private static let validPropertyAnnotationNames = Set([
         "backlink",
@@ -248,6 +250,18 @@ enum ObjectBoxGenerator {
 
         return isByteVectorType
     }
+    
+    static func isScalarVectorTypeOrAlias(_ typeName: TypeName?) -> Bool {
+        var isScalarVectorType: Bool = false
+        var currPropType = typeName
+
+        while let currPropTypeReadOnly = currPropType, !isScalarVectorType {
+            isScalarVectorType = builtInScalarVectorTypes.firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
+            currPropType = currPropTypeReadOnly.actualTypeName
+        }
+
+        return isScalarVectorType
+    }
 
     static func mapPropertyType(_ propertyVar: SourceryVariable) -> PropertyType {
         let defaultType = mapDefaultPropertyType(propertyVar.typeName)
@@ -359,6 +373,7 @@ enum ObjectBoxGenerator {
         schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(propertyVar.typeName)
         schemaProperty.isStringType = isStringTypeOrAlias(propertyVar.typeName)
         schemaProperty.isByteVectorType = isByteVectorTypeOrAlias(propertyVar.typeName)
+        schemaProperty.isScalarVectorType = isScalarVectorTypeOrAlias(propertyVar.typeName)
         schemaProperty.isRelation = isToOneRelation
         schemaProperty.isToManyRelation = isToManyRelation
         schemaProperty.toManyRelation = tmRelation
@@ -418,6 +433,7 @@ enum ObjectBoxGenerator {
             schemaProperty.isUnsignedType = builtInUnsignedTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isStringType = builtInStringTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isByteVectorType = builtInByteVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
+            schemaProperty.isScalarVectorType = builtInScalarVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
         }
         schemaProperty.initPropertyType() // depends on propertyType (PropertyType) and unwrappedPropertyType
 
