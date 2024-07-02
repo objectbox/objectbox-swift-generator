@@ -71,6 +71,7 @@ enum ObjectBoxGenerator {
         "backlink",
         "convert",
         "date-nano",
+        "hnswIndex",
         "flex",
         "name",
         "id",
@@ -464,6 +465,8 @@ enum ObjectBoxGenerator {
         schemaProperty.initPropertyType() // depends on propertyType (PropertyType) and unwrappedPropertyType
 
         try processPropertyIndexAndUniqueAnnotations(propertyVar, schemaProperty)
+        
+        try processPropertyHnswIndexAnnotation(propertyVar, schemaProperty)
 
         if let objectIdAnnotationValue = propertyVar.annotations["id"] {
             if let existingIdProperty = schemaEntity.idProperty {
@@ -612,6 +615,22 @@ enum ObjectBoxGenerator {
                 schemaProperty.propertyFlags.append(.indexHash64)
             }
         }
+    }
+    
+    static func processPropertyHnswIndexAnnotation(_ propertyVar: SourceryVariable, _ schemaProperty: SchemaProperty) throws {
+        let hnswAnnotation = propertyVar.annotations["hnswIndex"]
+        if hnswAnnotation == nil {
+            return
+        }
+        
+        // Error if not used on float vector
+        if schemaProperty.propertyType != PropertyType.floatVector {
+            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "hnswIndex is only supported for float vector properties.")
+        }
+        
+        schemaProperty.indexType = .valueIndex
+        schemaProperty.propertyFlags.append(.indexed)
+        // TODO parse HNSW params, add model classes
     }
 
     static func processEntityType(_ entityType: Type, entityBased isEntityBased: Bool, enums: [String: TypeName], into schemaData: Schema) throws {
