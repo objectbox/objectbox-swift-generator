@@ -1,4 +1,4 @@
-//  Copyright © 2018-2022 ObjectBox. All rights reserved.
+//  Copyright © 2018-2024 ObjectBox. All rights reserved.
 
 import Foundation
 import PathKit
@@ -627,10 +627,12 @@ enum ObjectBoxGenerator {
         if schemaProperty.propertyType != PropertyType.floatVector {
             throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "hnswIndex is only supported for float vector properties.")
         }
-        
+
+        // Implicitly create an index
         schemaProperty.indexType = .valueIndex
         schemaProperty.propertyFlags.append(.indexed)
-        // TODO parse HNSW params, add model classes
+
+        schemaProperty.hnswParams = try SchemaHnswParams.fromAnnotation(propertyVar: propertyVar, hnswAnnotation: hnswAnnotation)
     }
 
     static func processEntityType(_ entityType: Type, entityBased isEntityBased: Bool, enums: [String: TypeName], into schemaData: Schema) throws {

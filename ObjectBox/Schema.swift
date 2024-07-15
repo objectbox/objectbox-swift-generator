@@ -1,8 +1,9 @@
 //
-// Copyright 2020 ObjectBox Ltd. All rights reserved.
+// Copyright 2020-2024 ObjectBox Ltd. All rights reserved.
 //
 
 import Foundation
+import SourceryRuntime
 
 struct IdUid: Codable, CustomDebugStringConvertible {
     var id: Int32 = 0
@@ -161,6 +162,8 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var propertyType = PropertyType.unknown
     /// One or more ``PropertyFlags``.
     var propertyFlags: [PropertyFlags] = []
+    /// Optional parameters to configure an HNSW index for this property.
+    var hnswParams: SchemaHnswParams?
     var name: String = ""
     var isMutable = true
     var flagsList: String = ""
@@ -217,6 +220,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
             if (indexType != .none) { moreData += "\n\t\t\tindexType = \(indexType)" }
             if (isByteVectorType) { moreData += "\n\t\t\tisByteVectorType = \(isByteVectorType)" }
             if (isScalarVectorType) { moreData += "\n\t\t\tisScalarVectorType = \(isScalarVectorType)" }
+            if (hnswParams != nil) { moreData += "\n\t\t\thnswParams = \(hnswParams!)" }
             return "SchemaProperty {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tpropertyFlags = \(propertyFlags)\n\t\t\tpropertySwiftType = \(propertySwiftType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\tmodelIndexId = \(String(describing: modelIndexId))\n\t\t\tbacklinkName = \(String(describing: backlinkName))\n\t\t\tbacklinkType = \(String(describing: backlinkType))\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
         }
     }
@@ -273,6 +277,113 @@ class SchemaIndex: CustomDebugStringConvertible {
     public var debugDescription: String {
         get {
             return "SchemaIndex {\n\t\t\tmodelId = \(modelId)\n\t\t\tproperties = \(properties)\n\t\t}\n"
+        }
+    }
+}
+
+class SchemaHnswParams: CustomDebugStringConvertible {
+    
+    var dimensions: Int
+    var neighborsPerNode: UInt32?
+    var indexingSearchCount: UInt32?
+    /// An array code string of HnswFlags as defined in the ObjectBox Swift library.
+    var flags: String?
+    /// The name of a HnswDistanceType as defined in the ObjectBox Swift library.
+    var distanceType: String?
+    var reparationBacklinkProbability: Float?
+    var vectorCacheHintSizeKB: Int?
+    
+    init(dimensions: Int) {
+        self.dimensions = dimensions
+    }
+
+    static func fromAnnotation(propertyVar: SourceryVariable, hnswAnnotation: Any?) throws -> SchemaHnswParams? {
+        let hnswDict = hnswAnnotation as? [String: Any] // Note: null check as part of dimensions check
+        // Example:
+        // objectbox:hnswIndex: dimensions=2, neighborsPerNode=30, indexingSearchCount=100, flags="debuglogs,debuglogsdetailed,reparationlimitcandidates,vectorcachesimdpaddingoff", distanceType="euclidean", reparationBacklinkProbability=0.95, vectorCacheHintSizeKB=2097152
+        let dimensions: Int
+        if let dimensionsOpt = hnswDict?["dimensions"] as? Int {
+            try check({dimensionsOpt > 0}, property: propertyVar, message: "hnswIndex dimensions must be > 0.")
+            dimensions = dimensionsOpt
+        } else {
+            throw ObjectBoxGenerator.Error.BadPropertyAnnotation(property: propertyVar.description, message: "hnswIndex requires at least the parameter dimensions.")
+        }
+        let hnswParams = SchemaHnswParams(dimensions: dimensions)
+
+        if let neighborsPerNode = hnswDict!["neighborsPerNode"] as? UInt32 {
+            try check({neighborsPerNode > 0}, property: propertyVar, message: "hnswIndex neighborsPerNode must be > 0.")
+            hnswParams.neighborsPerNode = neighborsPerNode
+        }
+        if let indexingSearchCount = hnswDict!["indexingSearchCount"] as? UInt32 {
+            try check({indexingSearchCount > 0}, property: propertyVar, message: "hnswIndex indexingSearchCount must be > 0.")
+            hnswParams.indexingSearchCount = indexingSearchCount
+        }
+        if let flagsString = hnswDict!["flags"] as? String {
+            let flags = flagsString.components(separatedBy: ",")
+            var flagsList: [String] = []
+            if flags.contains("debuglogs") {
+                flagsList.append("HnswFlags.debuglogs")
+            }
+            if flags.contains("debuglogsdetailed") {
+                flagsList.append("HnswFlags.debuglogsdetailed")
+            }
+            if flags.contains("reparationlimitcandidates") {
+                flagsList.append("HnswFlags.reparationlimitcandidates")
+            }
+            if flags.contains("vectorcachesimdpaddingoff") {
+                flagsList.append("HnswFlags.vectorcachesimdpaddingoff")
+            }
+            hnswParams.flags = "[" + flagsList.joined(separator: ", ") + "]"
+        }
+        if let distanceType = hnswDict!["distanceType"] as? String {
+            hnswParams.distanceType = mapDistanceType(distanceType)
+        }
+        if let repairProb = hnswDict!["reparationBacklinkProbability"] as? Float {
+            try check({repairProb > 0 && repairProb <= 1.0}, property: propertyVar, message: "hnswIndex reparationBacklinkProbability must be > 0.0 and <= 1.0.")
+            hnswParams.reparationBacklinkProbability = repairProb
+        }
+        if let cacheHintSize = hnswDict!["vectorCacheHintSizeKB"] as? Int {
+            try check({cacheHintSize > 0}, property: propertyVar, message: "hnswIndex vectorCacheHintSizeKB must be > 0.")
+            hnswParams.vectorCacheHintSizeKB = cacheHintSize
+        }
+
+        return hnswParams
+    }
+    
+    static func mapDistanceType(_ name: String) -> String? {
+        // As defined in ios-framework/CommonSource/Entities/HnswParams.swift
+        switch name {
+        case "euclidean":
+            return "HnswDistanceType.euclidean"
+        case "cosine":
+            return "HnswDistanceType.cosine"
+        case "dotproduct":
+            return "HnswDistanceType.dotproduct"
+        case "dotproductnonnormalized":
+            return "HnswDistanceType.dotproductnonnormalized"
+        default:
+            return nil
+        }
+    }
+
+    static func check(_ condition: () -> Bool, property: SourceryVariable, message: String) throws {
+        guard condition() else {
+            throw ObjectBoxGenerator.Error.BadPropertyAnnotation(property: property.description, message: message)
+        }
+    }
+
+    public var debugDescription: String {
+        get {
+            let indent = "\t\t\t\t"
+            return "SchemaHnswParams {\n"
+            + "\(indent)dimensions = \(dimensions)\n"
+            + "\(indent)neighborsPerNode = \(String(describing: neighborsPerNode))\n"
+            + "\(indent)indexingSearchCount = \(String(describing: indexingSearchCount))\n"
+            + "\(indent)flags = \(flags?.description)\n"
+            + "\(indent)distanceType = \(String(describing: distanceType))\n"
+            + "\(indent)reparationBacklinkProbability = \(String(describing: reparationBacklinkProbability))\n"
+            + "\(indent)vectorCacheHintSizeKB = \(String(describing: vectorCacheHintSizeKB))\n"
+            + "\t\t\t}"
         }
     }
 }
