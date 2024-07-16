@@ -51,7 +51,7 @@ extension {{ entity.className }} {
     ///
     /// You may want to use this in queries to specify fetch conditions, for example:
     ///
-    ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertySwiftType == "Bool" %}{{ entity.className }}.{{ prop.propertyName }} == true{% else %}{{ entity.className }}.{{ prop.propertyName }} > 1234{% endif %} }
+    ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertySwiftType == "Bool" %}{{ entity.className }}.{{ prop.propertyName }} == true{% elif prop.isScalarVectorType %}{{ entity.className }}.{{ prop.propertyName }}.isNotNil(){% else %}{{ entity.className }}.{{ prop.propertyName }} > 1234{% endif %} }
     
     {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertySwiftType}}, {% if prop.isObjectId %}{{prop.propertySwiftType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.propertySwiftType}}, {% if prop.isObjectId %}{{prop.propertySwiftType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
     
@@ -87,7 +87,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     ///
     /// You may want to use this in queries to specify fetch conditions, for example:
     ///
-    ///     box.query { {% if prop.isObjectId %}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertySwiftType == "Bool" %}.{{ prop.propertyName }} == true{% else %}.{{ prop.propertyName }} > 1234{% endif %} }
+    ///     box.query { {% if prop.isObjectId %}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertySwiftType == "Bool" %}.{{ prop.propertyName }} == true{% elif prop.isScalarVectorType %}.{{ prop.propertyName }}.isNotNil(){% else %}.{{ prop.propertyName }} > 1234{% endif %} }
 
     {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertySwiftType}}, {% if prop.isObjectId %}{{prop.propertySwiftType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.propertySwiftType}}, {% if prop.isObjectId %}{{prop.propertySwiftType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
 
