@@ -1,4 +1,4 @@
-//  Copyright © 2018-2022 ObjectBox. All rights reserved.
+//  Copyright © 2018-2024 ObjectBox. All rights reserved.
 
 import Foundation
 import PathKit
@@ -40,6 +40,7 @@ enum ObjectBoxGenerator {
     static let builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
     static let builtInStringTypes = ["String", "NSString"]
     static let builtInByteVectorTypes = ["Data", "NSData", "[UInt8]", "Array<UInt8>"]
+    static let builtInScalarVectorTypes = ["[Float]"]
     static let typeMappings: [String: PropertyType] = [
         "Bool": .bool,
         "UInt8": .byte,
@@ -64,11 +65,13 @@ enum ObjectBoxGenerator {
         "NSData": .byteVector,
         "Array<UInt8>": .byteVector,
         "[UInt8]": .byteVector,
+        "[Float]": .floatVector,
     ]
     private static let validPropertyAnnotationNames = Set([
         "backlink",
         "convert",
         "date-nano",
+        "hnswIndex",
         "flex",
         "name",
         "id",
@@ -248,6 +251,18 @@ enum ObjectBoxGenerator {
 
         return isByteVectorType
     }
+    
+    static func isScalarVectorTypeOrAlias(_ typeName: TypeName?) -> Bool {
+        var isScalarVectorType: Bool = false
+        var currPropType = typeName
+
+        while let currPropTypeReadOnly = currPropType, !isScalarVectorType {
+            isScalarVectorType = builtInScalarVectorTypes.firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
+            currPropType = currPropTypeReadOnly.actualTypeName
+        }
+
+        return isScalarVectorType
+    }
 
     static func mapPropertyType(_ propertyVar: SourceryVariable) -> PropertyType {
         let defaultType = mapDefaultPropertyType(propertyVar.typeName)
@@ -352,13 +367,40 @@ enum ObjectBoxGenerator {
         schemaProperty.entityName = entityType.localName
         schemaProperty.propertyName = propertyVar.name
         schemaProperty.isMutable = propertyVar.isMutable
-        schemaProperty.propertySwiftType = fullTypeName
+        
+        // Determine value type to use for generated Property field
+        // Remove ? suffix (like "String?" -> "String")
+        let typeNameNotNull: String
+        if fullTypeName.hasSuffix("?") {
+            typeNameNotNull = String(fullTypeName.dropLast())
+        } else {
+            typeNameNotNull = fullTypeName
+        }
+        // One of the property types as defined in the Swift library
+        // (ios-framework/CommonSource/Entities/EntityPropertyTypeImplementations.swift),
+        // or the Swift type.
+        let propertyType: String
+        if typeNameNotNull == "[Float]" {
+            // Float array: may be a special HNSW index property (annotation is parsed later)
+            let hasHnswIndex = propertyVar.annotations.contains(reference: "hnswIndex")
+            if hasHnswIndex {
+                propertyType = "HnswIndexPropertyType"
+            } else {
+                propertyType = "FloatArrayPropertyType"
+            }
+        } else {
+            // Use Swift type
+            propertyType = fullTypeName
+        }
+        schemaProperty.propertySwiftType = propertyType
+
         schemaProperty.propertyType = mapPropertyType(propertyVar)
         // TODO check if "is...Type" can be unified with converter checks below (add tests)
         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(propertyVar.typeName)
         schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(propertyVar.typeName)
         schemaProperty.isStringType = isStringTypeOrAlias(propertyVar.typeName)
         schemaProperty.isByteVectorType = isByteVectorTypeOrAlias(propertyVar.typeName)
+        schemaProperty.isScalarVectorType = isScalarVectorTypeOrAlias(propertyVar.typeName)
         schemaProperty.isRelation = isToOneRelation
         schemaProperty.isToManyRelation = isToManyRelation
         schemaProperty.toManyRelation = tmRelation
@@ -418,10 +460,13 @@ enum ObjectBoxGenerator {
             schemaProperty.isUnsignedType = builtInUnsignedTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isStringType = builtInStringTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isByteVectorType = builtInByteVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
+            schemaProperty.isScalarVectorType = builtInScalarVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
         }
         schemaProperty.initPropertyType() // depends on propertyType (PropertyType) and unwrappedPropertyType
 
         try processPropertyIndexAndUniqueAnnotations(propertyVar, schemaProperty)
+        
+        try processPropertyHnswIndexAnnotation(propertyVar, schemaProperty)
 
         if let objectIdAnnotationValue = propertyVar.annotations["id"] {
             if let existingIdProperty = schemaEntity.idProperty {
@@ -489,27 +534,57 @@ enum ObjectBoxGenerator {
     }
 
     static func processPropertyIndexAndUniqueAnnotations(_ propertyVar: SourceryVariable, _ schemaProperty: SchemaProperty) throws {
-        if (propertyVar.annotations.isEmpty) { return }
-
-        if propertyVar.annotations["index"] as? Int64 == 1 {
-            schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
-        } else if let indexType = propertyVar.annotations["index"] as? String {
-            if (indexType == "hash") {
-                schemaProperty.indexType = .hashIndex
-            } else if (indexType == "hash64") {
-                schemaProperty.indexType = .hash64Index
-            } else if (indexType == "value") {
-                schemaProperty.indexType = .valueIndex
+        let hasIndexAnnotation = propertyVar.annotations.contains(reference: "index")
+        let hasUniqueAnnotation = propertyVar.annotations.contains(reference: "unique")
+        if !hasIndexAnnotation && !hasUniqueAnnotation {
+            return // does not have regular index annotations
+        }
+        
+        // Error if used on unsupported type
+        let doesNotSupportIndex =
+        schemaProperty.propertyType == PropertyType.float
+        || schemaProperty.propertyType == PropertyType.double
+        || schemaProperty.propertyType == PropertyType.byteVector
+        || schemaProperty.propertyType == PropertyType.shortVector
+        || schemaProperty.propertyType == PropertyType.charVector
+        || schemaProperty.propertyType == PropertyType.intVector
+        || schemaProperty.propertyType == PropertyType.longVector
+        || schemaProperty.propertyType == PropertyType.floatVector
+        || schemaProperty.propertyType == PropertyType.doubleVector
+        || schemaProperty.propertyType == PropertyType.stringVector
+        if doesNotSupportIndex {
+            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "index or unique is not supported for this type of property.")
+        }
+        
+        // Parse any index configuration options...
+        if (hasIndexAnnotation) {
+            if let indexType = propertyVar.annotations["index"] as? String {
+                if (indexType == "hash") {
+                    schemaProperty.indexType = .hashIndex
+                } else if (indexType == "hash64") {
+                    schemaProperty.indexType = .hash64Index
+                } else if (indexType == "value") {
+                    schemaProperty.indexType = .valueIndex
+                }
             }
         }
-        // schemaProperty.indexType may also be set by unique; thus split index processing (continued below)
+        // ...or use the default index configuration
+        if (schemaProperty.indexType == .none) {
+            schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
+        }
 
-        if propertyVar.annotations.contains(reference: "unique") {
+        // Error if hash index used on unsupported type
+        let supportsHashIndex = schemaProperty.propertyType == PropertyType.string
+        if (!supportsHashIndex && (schemaProperty.indexType == .hashIndex || schemaProperty.indexType == .hash64Index)) {
+            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "A hash index is only supported for string properties.")
+        }
+        
+        if hasUniqueAnnotation {
             schemaProperty.isUniqueIndex = true
             schemaProperty.propertyFlags.append(.unique)
-
-            let uniqueAnnotation = propertyVar.annotations["unique"]!
-            if let uniqueDict = uniqueAnnotation as? NSDictionary {
+            
+            let uniqueConfiguration = propertyVar.annotations["unique"]
+            if let uniqueDict = uniqueConfiguration as? NSDictionary {
                 for (key, value) in uniqueDict {
                     if (key as? String == "onConflict") {
                         if (value as? String == "replace") {
@@ -523,15 +598,15 @@ enum ObjectBoxGenerator {
                                 message: "Illegal key in unique annotation (only \"onConflict\" is currently supported: \(key)")
                     }
                 }
-            } else if uniqueAnnotation as? Int != 1 {  // not plain?
+            } 
+            // Note: is just 1 if no value is specified (like "objectbox: unique"), error if there is a value
+            else if uniqueConfiguration as? Int != 1 {  // not plain?
                 throw Error.BadPropertyAnnotation(property: propertyVar.description,
-                        message: "Illegal unique annotation syntax: \(uniqueAnnotation.description)")
-            }
-            if (schemaProperty.indexType == .none) {
-                schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
+                                                  message: "Illegal unique annotation syntax: \(String(describing: uniqueConfiguration))")
             }
         }
 
+        // Map to property flags
         if schemaProperty.indexType != .none {
             schemaProperty.propertyFlags.append(.indexed)
             if schemaProperty.indexType == .hashIndex {
@@ -540,6 +615,24 @@ enum ObjectBoxGenerator {
                 schemaProperty.propertyFlags.append(.indexHash64)
             }
         }
+    }
+    
+    static func processPropertyHnswIndexAnnotation(_ propertyVar: SourceryVariable, _ schemaProperty: SchemaProperty) throws {
+        let hnswAnnotation = propertyVar.annotations["hnswIndex"]
+        if hnswAnnotation == nil {
+            return
+        }
+        
+        // Error if not used on float vector
+        if schemaProperty.propertyType != PropertyType.floatVector {
+            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "hnswIndex is only supported for float vector properties.")
+        }
+
+        // Implicitly create an index
+        schemaProperty.indexType = .valueIndex
+        schemaProperty.propertyFlags.append(.indexed)
+
+        schemaProperty.hnswParams = try SchemaHnswParams.fromAnnotation(propertyVar: propertyVar, hnswAnnotation: hnswAnnotation)
     }
 
     static func processEntityType(_ entityType: Type, entityBased isEntityBased: Bool, enums: [String: TypeName], into schemaData: Schema) throws {

@@ -29,7 +29,9 @@ extension {{ entity.className }}: ObjectBox.EntityInspectable {
         {% if entity.flags.count != 0 %}try entityBuilder.flags({{ entity.flagsStringList }}){% endif %}
         {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
         {% set indexParam %}{% if prop.modelIndexId %}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }}{% endif %}{% endset %}
+        {% set hnswParams %}{% if prop.hnswParams %}.hnswParams(dimensions: {{ prop.hnswParams.dimensions }}, neighborsPerNode: {{ prop.hnswParams.neighborsPerNode|default:"nil" }}, indexingSearchCount: {{ prop.hnswParams.indexingSearchCount|default:"nil" }}, flags: {{ prop.hnswParams.flags|default:"nil" }}, distanceType: {{ prop.hnswParams.distanceType|default:"nil" }}, reparationBacklinkProbability: {{ prop.hnswParams.reparationBacklinkProbability|default:"nil" }}, vectorCacheHintSizeKB: {{ prop.hnswParams.vectorCacheHintSizeKB|default:"nil" }}){% endif %}{% endset %}
         try entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.propertyTypeQualifiedName }}{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
+            {{ hnswParams }}
         {% endfor %}
         {% for prop in entity.properties where prop.isRelation %}
         try entityBuilder.addToOneRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.propertySwiftType }}.Target.entityInfo{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }})
@@ -49,7 +51,7 @@ extension {{ entity.className }} {
     ///
     /// You may want to use this in queries to specify fetch conditions, for example:
     ///
-    ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertySwiftType == "Bool" %}{{ entity.className }}.{{ prop.propertyName }} == true{% else %}{{ entity.className }}.{{ prop.propertyName }} > 1234{% endif %} }
+    ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertySwiftType == "Bool" %}{{ entity.className }}.{{ prop.propertyName }} == true{% elif prop.isScalarVectorType %}{{ entity.className }}.{{ prop.propertyName }}.isNotNil(){% else %}{{ entity.className }}.{{ prop.propertyName }} > 1234{% endif %} }
     
     {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertySwiftType}}, {% if prop.isObjectId %}{{prop.propertySwiftType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.propertySwiftType}}, {% if prop.isObjectId %}{{prop.propertySwiftType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
     
@@ -85,7 +87,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     ///
     /// You may want to use this in queries to specify fetch conditions, for example:
     ///
-    ///     box.query { {% if prop.isObjectId %}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertySwiftType == "Bool" %}.{{ prop.propertyName }} == true{% else %}.{{ prop.propertyName }} > 1234{% endif %} }
+    ///     box.query { {% if prop.isObjectId %}.{{ prop.propertyName }} == myId{% elif prop.isStringType %}.{{ prop.propertyName }}.startsWith("X"){% elif prop.propertySwiftType == "Bool" %}.{{ prop.propertyName }} == true{% elif prop.isScalarVectorType %}.{{ prop.propertyName }}.isNotNil(){% else %}.{{ prop.propertyName }} > 1234{% endif %} }
 
     {{ visibility }} static var {{ prop.propertyName }}: Property<{{entity.className}}, {{prop.propertySwiftType}}, {% if prop.isObjectId %}{{prop.propertySwiftType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.propertySwiftType}}, {% if prop.isObjectId %}{{prop.propertySwiftType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
 
@@ -134,18 +136,20 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         let propertyOffset_{{ prop.propertyName }} = propertyCollector.prepare(string: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }})
         {% elif prop.isByteVectorType %}
         let propertyOffset_{{ prop.propertyName }} = propertyCollector.prepare(bytes: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }})
+        {% elif prop.isScalarVectorType %}
+        let propertyOffset_{{ prop.propertyName }} = propertyCollector.prepare(values: {{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }})
         {% endif %}
         {% endfor %}
 
         propertyCollector.collect(id, at: 2 + 2 * {{ entity.idProperty.modelId.id }})
-        {% for prop in entity.properties where not prop.isStringType and not prop.isByteVectorType and not prop.isObjectId and not prop.isRelation and not prop.isToManyRelation %}
+        {% for prop in entity.properties where not prop.isStringType and not prop.isByteVectorType and not prop.isScalarVectorType and not prop.isObjectId and not prop.isRelation and not prop.isToManyRelation %}
         propertyCollector.collect{% if prop.isDateNanoType %}Nanos{% endif %}({{ prop.unConversionPrefix }}entity.{{ prop.propertyName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endfor %}
         {% for prop in entity.properties where prop.isRelation %}
         try propertyCollector.collect(entity.{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
         {% endfor %}
         {% for prop in entity.properties %}
-        {% if prop.isStringType or prop.isByteVectorType %}
+        {% if prop.isStringType or prop.isByteVectorType or prop.isScalarVectorType %}
         propertyCollector.collect(dataOffset: propertyOffset_{{ prop.propertyName }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endif %}
         {% endfor %}
