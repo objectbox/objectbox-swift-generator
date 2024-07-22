@@ -300,7 +300,7 @@ class SchemaHnswParams: CustomDebugStringConvertible {
     static func fromAnnotation(propertyVar: SourceryVariable, hnswAnnotation: Any?) throws -> SchemaHnswParams? {
         let hnswDict = hnswAnnotation as? [String: Any] // Note: null check as part of dimensions check
         // Example:
-        // objectbox:hnswIndex: dimensions=2, neighborsPerNode=30, indexingSearchCount=100, flags="debuglogs,debuglogsdetailed,reparationlimitcandidates,vectorcachesimdpaddingoff", distanceType="euclidean", reparationBacklinkProbability=0.95, vectorCacheHintSizeKB=2097152
+        // objectbox:hnswIndex: dimensions=2, neighborsPerNode=30, indexingSearchCount=100, flags="debugLogs,debugLogsDetailed,reparationLimitCandidates,vectorCacheSimdPaddingOff", distanceType="euclidean", reparationBacklinkProbability=0.95, vectorCacheHintSizeKB=2097152
         let dimensions: Int
         if let dimensionsOpt = hnswDict?["dimensions"] as? Int {
             try check({dimensionsOpt > 0}, property: propertyVar, message: "hnswIndex dimensions must be > 0.")
@@ -321,17 +321,17 @@ class SchemaHnswParams: CustomDebugStringConvertible {
         if let flagsString = hnswDict!["flags"] as? String {
             let flags = flagsString.components(separatedBy: ",")
             var flagsList: [String] = []
-            if flags.contains("debuglogs") {
-                flagsList.append("HnswFlags.debuglogs")
+            if flags.contains("debugLogs") {
+                flagsList.append("HnswFlags.debugLogs")
             }
-            if flags.contains("debuglogsdetailed") {
-                flagsList.append("HnswFlags.debuglogsdetailed")
+            if flags.contains("debugLogsDetailed") {
+                flagsList.append("HnswFlags.debugLogsDetailed")
             }
-            if flags.contains("reparationlimitcandidates") {
-                flagsList.append("HnswFlags.reparationlimitcandidates")
+            if flags.contains("reparationLimitCandidates") {
+                flagsList.append("HnswFlags.reparationLimitCandidates")
             }
-            if flags.contains("vectorcachesimdpaddingoff") {
-                flagsList.append("HnswFlags.vectorcachesimdpaddingoff")
+            if flags.contains("vectorCacheSimdPaddingOff") {
+                flagsList.append("HnswFlags.vectorCacheSimdPaddingOff")
             }
             hnswParams.flags = "[" + flagsList.joined(separator: ", ") + "]"
         }
@@ -357,10 +357,10 @@ class SchemaHnswParams: CustomDebugStringConvertible {
             return "HnswDistanceType.euclidean"
         case "cosine":
             return "HnswDistanceType.cosine"
-        case "dotproduct":
-            return "HnswDistanceType.dotproduct"
-        case "dotproductnonnormalized":
-            return "HnswDistanceType.dotproductnonnormalized"
+        case "dotProduct":
+            return "HnswDistanceType.dotProduct"
+        case "dotProductNonNormalized":
+            return "HnswDistanceType.dotProductNonNormalized"
         default:
             return nil
         }
