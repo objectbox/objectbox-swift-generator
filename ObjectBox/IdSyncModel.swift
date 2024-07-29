@@ -2,14 +2,12 @@
 
 import Foundation
 
-
 enum IdSync {
-    
+
     /* Model classes that get populated from our model.json file using Codable protocol. */
 
-    
     // Todo: Unify ID/Id spelling. Swift usually does ID.
-    
+
     enum Error: Swift.Error {
         case IncompatibleVersion(found: Int64, expected: Int64)
         case DuplicateEntityName(String)
@@ -43,7 +41,7 @@ enum IdSync {
         case RelationUIDTagNeedsValue(entity: String, relation: String)
         case DuplicatePropertyName(entity: String, property: String)
     }
-    
+
     class Property: Codable {
         var id = IdUid()
         var name = ""
@@ -61,7 +59,7 @@ enum IdSync {
             case flags
             case relationTarget
         }
-        
+
         init(name: String, id: IdUid, indexId: IdUid?, relationTargetUnresolved: String?, type: UInt16, flags: UInt32) {
             self.id = id
             self.name = name
@@ -74,47 +72,47 @@ enum IdSync {
         func contains(uid: Int64) -> Bool {
             if id.uid == uid { return true }
             if let indexId = indexId, indexId.uid == uid { return true }
-            
+
             return false
         }
     }
-    
+
     class Relation: Codable, CustomDebugStringConvertible {
         var id = IdUid()
         var name = ""
         var targetId: IdUid?
-        
+
         private enum CodingKeys: String, CodingKey {
             case id
             case name
             case targetId
         }
-        
+
         init(name: String, id: IdUid) {
             self.name = name
             self.id = id
         }
-        
+
         func contains(uid: Int64) -> Bool {
             if id.uid == uid { return true }
-            
+
             return false
         }
-        
+
         var debugDescription: String {
             return "Relation(\(id), \(name), \(String(describing: targetId)))"
         }
     }
-    
+
     class Entity: Codable, Hashable, Equatable, CustomDebugStringConvertible {
         var id = IdUid()
         var name = ""
         var flags: UInt32?
         var lastPropertyId: IdUid?
-        var properties: Array<Property>?
-        var relations: Array<Relation>?
+        var properties: [Property]?
+        var relations: [Relation]?
         var isEntitySubclass = false
-        
+
         private enum CodingKeys: String, CodingKey {
             case id
             case name
@@ -123,7 +121,7 @@ enum IdSync {
             case properties
             case relations
         }
-        
+
         init(name: String, id: IdUid, flags: UInt32, properties: [Property], relations: [Relation], lastPropertyId: IdUid, isEntitySubclass: Bool) {
             self.id = id
             self.name = name
@@ -133,11 +131,11 @@ enum IdSync {
             self.lastPropertyId = lastPropertyId
             self.isEntitySubclass = isEntitySubclass
         }
-        
+
         func contains(uid: Int64) -> Bool {
             if id.uid == uid { return true }
             if lastPropertyId?.uid == uid { return true }
-            
+
             if let properties = properties {
                 for currProperty in properties {
                     if currProperty.contains(uid: uid) { return true }
@@ -156,13 +154,11 @@ enum IdSync {
         public static func == (lhs: Entity, rhs: Entity) -> Bool {
             return lhs.name == rhs.name
         }
-        
+
         public var hashValue: Int {
-            get {
-                var hasher = Hasher()
-                self.hash(into: &hasher)
-                return hasher.finalize()
-            }
+            var hasher = Hasher()
+            self.hash(into: &hasher)
+            return hasher.finalize()
         }
 
         public func hash(into hasher: inout Hasher) {
@@ -173,7 +169,7 @@ enum IdSync {
             return "IdSync.Entity{ \(name), \(id) }"
         }
     }
-    
+
     // Our file format that gets serialized to JSON and back:
     class IdSyncModel: Codable {
         /// Version we write out.
@@ -187,7 +183,7 @@ enum IdSync {
         var _note1: String? = "KEEP THIS FILE! Check it into a version control system (VCS) like git."
         var _note2: String? = "ObjectBox manages crucial IDs for your object model. See docs for details."
         var _note3: String? = "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs."
-        
+
         var version: Int64 = 1
         var modelVersion: Int64 = IdSyncModel.modelVersion
         /** Declare JSONs we produce are backward compatible with which older parsers. */
@@ -197,27 +193,27 @@ enum IdSync {
         var lastRelationId: IdUid?
         // TODO use this once we support sequences
         var lastSequenceId: IdUid?
-        
+
         var entities: [Entity]? = []
-        
+
         /**
          * Previously allocated UIDs (e.g. via "@Uid" without value) to use to provide UIDs for new entities,
          * properties, or relations.
          */
-        var newUidPool: Array<Int64>?
-        
+        var newUidPool: [Int64]?
+
         /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredEntityUids: Array<Int64>?
-        
+        var retiredEntityUids: [Int64]?
+
         /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredPropertyUids: Array<Int64>?
-        
+        var retiredPropertyUids: [Int64]?
+
         /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredIndexUids: Array<Int64>?
-        
+        var retiredIndexUids: [Int64]?
+
         /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredRelationUids: Array<Int64>?
-        
+        var retiredRelationUids: [Int64]?
+
         private enum CodingKeys: String, CodingKey {
             case _note1
             case _note2
@@ -236,8 +232,8 @@ enum IdSync {
             case retiredIndexUids
             case retiredRelationUids
         }
-        
-        init(lastEntityId: IdUid? = nil, lastIndexId: IdUid? = nil, lastRelationId: IdUid? = nil, lastSequenceId: IdUid? = nil, entities: Array<Entity>? = nil, retiredEntityUids: Array<Int64>? = nil, retiredPropertyUids: Array<Int64>? = nil, retiredIndexUids: Array<Int64>? = nil, retiredRelationUids: Array<Int64>? = nil) {
+
+        init(lastEntityId: IdUid? = nil, lastIndexId: IdUid? = nil, lastRelationId: IdUid? = nil, lastSequenceId: IdUid? = nil, entities: [Entity]? = nil, retiredEntityUids: [Int64]? = nil, retiredPropertyUids: [Int64]? = nil, retiredIndexUids: [Int64]? = nil, retiredRelationUids: [Int64]? = nil) {
             self.lastEntityId = lastEntityId
             self.lastIndexId = lastIndexId
             self.lastRelationId = lastRelationId
@@ -248,7 +244,7 @@ enum IdSync {
             self.retiredIndexUids = retiredIndexUids
             self.retiredRelationUids = retiredRelationUids
         }
-        
+
         func contains(uid: Int64) -> Bool {
             if let lastEntityId = lastEntityId, lastEntityId.uid == uid {
                 return true
@@ -281,17 +277,17 @@ enum IdSync {
             return false
         }
     }
-    
+
     class UidHelper {
-        weak var model: IdSyncModel? = nil
+        weak var model: IdSyncModel?
         var existingUids = Set<Int64>()
-        
+
         static var randomNumberStart: Int64 = 0
-        
+
         func addExistingIds(_ newIds: [Int64]) throws {
             try newIds.forEach { try addExistingId($0) }
         }
-        
+
         func addExistingId(_ inID: Int64) throws {
             try verify(inID)
             guard !existingUids.contains(inID) else {
@@ -299,7 +295,7 @@ enum IdSync {
             }
             existingUids.insert(inID)
         }
-        
+
         static func random_int64() -> Int64 {
             if UidHelper.randomNumberStart > 0 {
                 UidHelper.randomNumberStart += 999
@@ -311,7 +307,7 @@ enum IdSync {
                 return Int64.random(in: 1 ... Int64.max)
             }
         }
-        
+
         func create() throws -> Int64 {
             var newId: Int64
             for _ in 1 ... 1000 {
@@ -321,11 +317,11 @@ enum IdSync {
                     return newId
                 }
             }
-            
+
             throw Error.OutOfUIDs
         }
-        
-        func verify(_ inID: Int64) throws  {
+
+        func verify(_ inID: Int64) throws {
             guard inID >= 0 else {
                 throw Error.UIDOutOfRange(inID)
             }
@@ -339,45 +335,45 @@ enum IdSync {
     // Main class used for performing the sync between our JSON file and the AST:
     class IdSync {
         let modelRead: IdSyncModel
-        
+
         var lastEntityId: IdUid
         var lastRelationId: IdUid
         var lastIndexId: IdUid
         var lastSequenceId: IdUid
-        
+
         var retiredEntityUids: [Int64]
         var retiredPropertyUids: [Int64]
         var retiredIndexUids: [Int64]
         var retiredRelationUids: [Int64]
-        
+
         var newUidPool = Set<Int64>()
-        
+
         var jsonFile: URL
-        
+
         let uidHelper = UidHelper()
-        
-        private var entitiesReadByUid = Dictionary<Int64, Entity>() // Entities that were in the model.json
-        private var entitiesReadByName = Dictionary<String, Entity>() // Entities that were in the model.json
-        private var entitiesByUid = Dictionary<Int64, Entity>() // Entities in the model.json or seen in code.
-        private var entitiesByName = Dictionary<String, Entity>() // Entities in the model.json or seen in code.
+
+        private var entitiesReadByUid = [Int64: Entity]() // Entities that were in the model.json
+        private var entitiesReadByName = [String: Entity]() // Entities that were in the model.json
+        private var entitiesByUid = [Int64: Entity]() // Entities in the model.json or seen in code.
+        private var entitiesByName = [String: Entity]() // Entities in the model.json or seen in code.
         private var parsedUids = Set<Int64>()
 
-        private var entitiesBySchemaEntity = Dictionary<SchemaEntity, Entity>()
-        private var propertiesBySchemaProperty = Dictionary<SchemaProperty, Property>()
-        
+        private var entitiesBySchemaEntity = [SchemaEntity: Entity]()
+        private var propertiesBySchemaProperty = [SchemaProperty: Property]()
+
         private var entities = [Entity]()
 
         init(jsonFile: URL) throws {
             self.jsonFile = jsonFile
-            
+
             var model: IdSyncModel?
             if let data = try? Data(contentsOf: jsonFile) {
                 let decoder = JSONDecoder()
                 model = try? decoder.decode(IdSyncModel.self, from: data)
             }
-            
+
             modelRead = model ?? IdSyncModel()
-            
+
             if modelRead.modelVersion < IdSyncModel.modelVersionMin {
                 throw Error.IncompatibleVersion(found: modelRead.modelVersion, expected: IdSyncModel.modelVersionParserMinimum)
             } else if modelRead.modelVersion > modelRead.modelVersion {
@@ -385,28 +381,28 @@ enum IdSync {
                     throw Error.IncompatibleVersion(found: modelRead.modelVersion, expected: IdSyncModel.modelVersionParserMinimum)
                 }
             }
-            
+
             lastEntityId = modelRead.lastEntityId ?? IdUid()
             lastRelationId = modelRead.lastRelationId ?? IdUid()
             lastIndexId = modelRead.lastIndexId ?? IdUid()
             lastSequenceId = modelRead.lastSequenceId ?? IdUid()
-            
+
             retiredEntityUids = modelRead.retiredEntityUids ?? []
             retiredPropertyUids = modelRead.retiredPropertyUids ?? []
             retiredIndexUids = modelRead.retiredIndexUids ?? []
             retiredRelationUids = modelRead.retiredRelationUids ?? []
 
             newUidPool.formUnion(modelRead.newUidPool ?? [])
-            
+
             try uidHelper.addExistingIds( modelRead.retiredEntityUids ?? [] )
             try uidHelper.addExistingIds( modelRead.retiredPropertyUids ?? [] )
             try uidHelper.addExistingIds( modelRead.retiredIndexUids ?? [] )
             try uidHelper.addExistingIds( modelRead.retiredRelationUids ?? [] )
 
             try validateIds(modelRead)
-            
+
             uidHelper.model = modelRead
-            
+
             try modelRead.entities?.forEach { entity in
                 try uidHelper.addExistingId(entity.id.uid)
                 try entity.properties?.forEach { try uidHelper.addExistingId($0.id.uid) }
@@ -420,7 +416,7 @@ enum IdSync {
                 entitiesByName[loweredEntityName] = entity
             }
         }
-        
+
         func validateIds(_ model: IdSyncModel) throws {
             var entityIds = Set<Int32>()
             try model.entities?.forEach { entity in
@@ -428,29 +424,29 @@ enum IdSync {
                     throw Error.DuplicateEntityID(name: entity.name, id: entity.id.id)
                 }
                 entityIds.insert(entity.id.id)
-                
+
                 guard let lastEntityId = model.lastEntityId else {
                     throw Error.MissingLastEntityID
                 }
-                
+
                 if entity.id.id == lastEntityId.id {
                     if entity.id.uid != lastEntityId.uid {
                         throw Error.LastEntityIdUIDMismatch(name: entity.name, id: entity.id.id, found: entity.id.uid, expected: lastEntityId.uid)
                     }
                 } else if entity.id.id > lastEntityId.id {
-                    throw Error.EntityIdGreaterThanLast(name: entity.name, found:entity.id.id, last: lastEntityId.id)
+                    throw Error.EntityIdGreaterThanLast(name: entity.name, found: entity.id.id, last: lastEntityId.id)
                 }
-                
+
                 var propertyIds = Set<Int32>()
                 try entity.properties?.forEach { property in
                     guard propertyIds.insert(property.id.id).inserted else {
                         throw Error.DuplicatePropertyID(entity: entity.name, name: property.name, id: property.id.id)
                     }
-                    
+
                     guard let lastPropertyId = entity.lastPropertyId else {
                         throw Error.MissingLastPropertyID(entity: entity.name)
                     }
-                    
+
                     if property.id.id == lastPropertyId.id {
                         if property.id.uid != lastPropertyId.uid {
                             throw Error.LastPropertyIdUIDMismatch(entity: entity.name, name: property.name, id: property.id.id, found: property.id.uid, expected: lastPropertyId.uid)
@@ -461,15 +457,15 @@ enum IdSync {
                 }
             }
         }
-        
+
         func updateRetiredUids(_ entities: [Entity]) {
             var oldEntityUids = Set<Int64>(entitiesReadByUid.keys)
             oldEntityUids.subtract(entities.map { $0.id.uid })
             retiredEntityUids.append(contentsOf: oldEntityUids)
-            
-            var oldPropertyUids = collectPropertyUids(Array<Entity>(entitiesReadByUid.values))
+
+            var oldPropertyUids = collectPropertyUids([Entity](entitiesReadByUid.values))
             let newPropertyUids = collectPropertyUids(entities)
-            
+
             oldPropertyUids.propertyUids.subtract(newPropertyUids.propertyUids)
             retiredPropertyUids.append(contentsOf: oldPropertyUids.propertyUids)
 
@@ -479,12 +475,12 @@ enum IdSync {
             oldPropertyUids.relationUids.subtract(newPropertyUids.relationUids)
             retiredRelationUids.append(contentsOf: oldPropertyUids.relationUids)
         }
-        
-        func collectPropertyUids(_ entities: Array<Entity>) -> (propertyUids: Set<Int64>, indexUids: Set<Int64>, relationUids: Set<Int64>) {
+
+        func collectPropertyUids(_ entities: [Entity]) -> (propertyUids: Set<Int64>, indexUids: Set<Int64>, relationUids: Set<Int64>) {
             var propertyUids = Set<Int64>()
             var indexUids = Set<Int64>()
             var relationUids = Set<Int64>()
-            
+
             entities.forEach { currEntity in
                 currEntity.properties?.forEach { currProperty in
                     propertyUids.insert(currProperty.id.uid)
@@ -494,20 +490,20 @@ enum IdSync {
                 }
                 currEntity.relations?.forEach { relationUids.insert($0.id.uid) }
             }
-            
+
             return (propertyUids: propertyUids, indexUids: indexUids, relationUids: relationUids)
         }
-        
+
         func writeModel(_ entities: [Entity]) throws {
             let model = IdSyncModel(lastEntityId: lastEntityId, lastIndexId: lastIndexId, lastRelationId: lastRelationId, lastSequenceId: lastSequenceId, entities: entities, retiredEntityUids: retiredEntityUids, retiredPropertyUids: retiredPropertyUids, retiredIndexUids: retiredIndexUids, retiredRelationUids: retiredRelationUids)
             try writeModel(model)
         }
-        
+
         func writeModel(_ model: IdSyncModel) throws {
             try validateBeforeWrite(model)
             model.modelVersion = IdSyncModel.modelVersion
             model.modelVersionParserMinimum = IdSyncModel.modelVersionParserMinimum
-            
+
 //            let encoder = JSONEncoder()
 //            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 //            let jsonData = try encoder.encode(model)
@@ -528,7 +524,7 @@ enum IdSync {
             }
             try jsonData.write(to: jsonFile)
         }
-        
+
         /// Must call this before the actual jsonData.write() to ensure we don't
         /// write invalid data to a previously valid file and make things worse.
         func validateBeforeWrite(_ model: IdSyncModel) throws {
@@ -538,16 +534,16 @@ enum IdSync {
                 if !entityNames.insert(currEntity.name.lowercased()).inserted {
                     throw Error.DuplicateEntityName(currEntity.name)
                 }
-                
+
                 var propertyNames = Set<String>()
                 try currEntity.properties?.forEach { currProperty in
                     if !propertyNames.insert(currProperty.name.lowercased()).inserted {
-                        throw Error.DuplicatePropertyName(entity: currEntity.name, property:currProperty.name)
+                        throw Error.DuplicatePropertyName(entity: currEntity.name, property: currProperty.name)
                     }
                 }
            }
         }
-        
+
         func ensureRelationsHaveIds(schema: Schema) {
             schema.entities.forEach { currSchemaEntity in
                 currSchemaEntity.toManyRelations.forEach { currRelation in
@@ -560,14 +556,14 @@ enum IdSync {
                 }
             }
         }
-        
+
         func assignRelationTargetIds(schema: Schema) {
             schema.entities.forEach { currSchemaEntity in
                 currSchemaEntity.toManyRelations.forEach { currRelation in
                     if let relatedEntity = schema.entitiesByName[currRelation.relationTargetType] {
                         if let id = relatedEntity.modelId, let uid = relatedEntity.modelUid {
                             currRelation.targetId = IdUid(id: id, uid: uid)
-                            
+
                             if !currRelation.isToManyBacklink {
                                 if let existingEntity = try? findEntity(name: currSchemaEntity.className, uid: nil) {
                                     if let existingRelation = try? findRelation(entity: existingEntity,
@@ -597,12 +593,12 @@ enum IdSync {
                 }
             }
         }
-        
+
         func sync(schema: Schema) throws {
             guard entitiesBySchemaEntity.isEmpty && propertiesBySchemaProperty.isEmpty else {
                 throw Error.SyncMayOnlyBeCalledOnce
             }
-            
+
             entities = (try schema.entities.map { try syncEntity($0) }).sorted { $0.id.id < $1.id.id }
             for currEntity in entities {
                 entitiesByName[currEntity.name.lowercased()] = currEntity
@@ -612,18 +608,18 @@ enum IdSync {
 
             ensureRelationsHaveIds(schema: schema)
             assignRelationTargetIds(schema: schema)
-            
+
             updateRetiredUids(entities)
 
             schema.lastEntityId = lastEntityId
             schema.lastIndexId = lastIndexId
             schema.lastRelationId = lastRelationId
         }
-        
+
         func write() throws {
             try writeModel(entities)
         }
-        
+
         func updateRelatedTargetsOfProperties(entities: [Entity], schema: Schema) throws {
             try entities.forEach { entity in
                 if let properties = entity.properties {
@@ -640,7 +636,6 @@ enum IdSync {
             }
         }
 
-        
         func findEntity(name: String, uid: Int64?) throws -> Entity? {
             if let uid = uid, uid != 0, uid != 1 {
                 if let foundEntity = entitiesByUid[uid] {
@@ -691,10 +686,10 @@ enum IdSync {
                 return filtered.first
             }
         }
-        
+
         func findRelation(entity: Entity, name: String, uid: Int64?) throws -> Relation? {
             guard entity.relations != nil else { return nil }
-            
+
             if let uid = uid, uid != 0, uid != 1 {
                 let filtered = entity.relations?.filter { $0.id.uid == uid } ?? []
                 if filtered.isEmpty {
@@ -716,7 +711,7 @@ enum IdSync {
                 return filtered.first
             }
         }
-        
+
         func syncEntity(_ schemaEntity: SchemaEntity) throws -> Entity {
             let entityName = schemaEntity.dbName ?? schemaEntity.className
             let entityUid = schemaEntity.modelUid
@@ -751,7 +746,7 @@ enum IdSync {
                     throw Error.UIDTagNeedsValue(entity: entityName)
                 }
             }
-            
+
             var lastPropertyId: IdUid
             if let existingEntity = existingEntity, let lastExistingEntityPropertyId = existingEntity.lastPropertyId {
                 lastPropertyId = lastExistingEntityPropertyId
@@ -760,30 +755,30 @@ enum IdSync {
             }
             let properties = try syncProperties(schemaEntity: schemaEntity, existingEntity: existingEntity, lastPropertyId: &lastPropertyId)
             let relations = try syncRelations(schemaEntity: schemaEntity, existingEntity: existingEntity)
-            
+
             var sourceId: IdUid
             if let existingEntity = existingEntity {
                 sourceId = existingEntity.id
             } else {
                 sourceId = lastEntityId.incId(uid: try newUid(entityUid)) // Create new id
             }
-            
+
             let entity = Entity(name: entityName, id: sourceId, flags: schemaEntity.flags.rawValue,
                     properties: properties, relations: relations, lastPropertyId: lastPropertyId,
                     isEntitySubclass: schemaEntity.isEntitySubclass)
-            
+
             schemaEntity.modelUid = entity.id.uid
             schemaEntity.modelId = entity.id.id
             schemaEntity.lastPropertyId = entity.lastPropertyId
-            
+
             entitiesBySchemaEntity[schemaEntity] = entity
-            
+
             return entity
         }
-        
+
         func syncProperties(schemaEntity: SchemaEntity, existingEntity: Entity?, lastPropertyId: inout IdUid) throws -> [Property] {
-            
-            var properties = Array<Property>()
+
+            var properties = [Property]()
             for parsedProperty in schemaEntity.properties {
                 // Don't write a typeless property entry for a to-many backlink into the model.json.
                 //  We need an entry for each ToMany for codegen for a struct's init() call in the schema entity, but
@@ -797,10 +792,10 @@ enum IdSync {
                 }
             }
             properties.sort { $0.id.id < $1.id.id }
-            
+
             return properties
         }
-        
+
         func syncProperty(existingEntity: Entity?, schemaEntity: SchemaEntity, schemaProperty: SchemaProperty, lastPropertyId: inout IdUid) throws -> Property {
             let propertyUid = schemaProperty.modelId?.uid
             let printUid = propertyUid == 1
@@ -811,7 +806,7 @@ enum IdSync {
                 }
                 existingProperty = try findProperty(entity: existingEntity, name: schemaProperty.name, uid: propertyUid)
             }
-            
+
             if printUid {
                 if let existingProperty = existingProperty {
                     let uniqueUID = try uidHelper.create()
@@ -823,7 +818,7 @@ enum IdSync {
                     throw Error.PropertyUIDTagNeedsValue(entity: schemaEntity.className, property: schemaProperty.propertyName)
                 }
             }
-            
+
             let shouldHaveIndex = schemaProperty.indexType != .none || schemaProperty.isRelation
             var sourceIndexId: IdUid? = shouldHaveIndex ? existingProperty?.indexId : nil
             // check entity for index as Property.Index is only auto-set for to-ones
@@ -834,7 +829,7 @@ enum IdSync {
             } else if existingProperty?.indexId == nil && shouldHaveIndex {
                 sourceIndexId = try existingProperty?.indexId ?? lastIndexId.incId(uid: uidHelper.create())
             }
-            
+
             // No entry for this index yet? Add one!
             if shouldHaveIndex,
                 let existingEntryIndexId = sourceIndexId,
@@ -845,7 +840,7 @@ enum IdSync {
                 schemaEntity.indexes.append(schemaIndex)
                 sourceIndexId = existingEntryIndexId
             }
-            
+
             if schemaProperty.isRelation && sourceIndexId == nil {
                 let newId = try lastIndexId.incId(uid: uidHelper.create())
                 sourceIndexId = newId
@@ -854,7 +849,7 @@ enum IdSync {
                 newIndex.properties = [schemaProperty.name]
                 schemaEntity.indexes.append(newIndex)
             }
-            var relationTargetUnresolved: String? = nil
+            var relationTargetUnresolved: String?
             if schemaProperty.isRelation && schemaProperty.propertySwiftType.hasPrefix("ToOne<") {
                 let templateTypeString = schemaProperty.propertySwiftType.drop(first: "ToOne<".count, last: 1)
                 relationTargetUnresolved = templateTypeString
@@ -866,32 +861,32 @@ enum IdSync {
             } else {
                 sourceId = try lastPropertyId.incId(uid: newUid(propertyUid))
             }
-            
+
             let property = Property(name: schemaProperty.name, id: sourceId, indexId: sourceIndexId,
                                     relationTargetUnresolved: relationTargetUnresolved,
                                     type: schemaProperty.propertyType.rawValue, flags: schemaProperty.propertyFlags.rawValue)
-            
+
             schemaProperty.modelId = property.id
             schemaProperty.modelIndexId = property.indexId
-            
+
             let collision = propertiesBySchemaProperty.updateValue(property, forKey: schemaProperty)
             if let collision = collision {
                 throw Error.PropertyCollision(entity: schemaEntity.className, new: property.name, old: collision.name)
             }
-            
+
             return property
         }
-        
+
         func syncRelations(schemaEntity: SchemaEntity, existingEntity: Entity?) throws -> [Relation] {
-            var relations = Array<Relation>()
-            
+            var relations = [Relation]()
+
             try schemaEntity.toManyRelations.forEach { schemaRelation in
                 if schemaRelation.backlinkProperty == nil { // Only add the forward-relations to the relation list.
                     let relation = try syncRelation(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaRelation: schemaRelation)
                     if relation.id.id > lastRelationId.id {
                         lastRelationId.id = relation.id.id
                     }
-                    
+
                     relations.append(relation)
                 }
             }
@@ -911,7 +906,7 @@ enum IdSync {
                 }
                 existingRelation = try findRelation(entity: existingEntity, name: name, uid: relationUid)
             }
-            
+
             if printUid {
                 if let existingRelation = existingRelation {
                     let uniqueUID = try uidHelper.create()
@@ -923,39 +918,39 @@ enum IdSync {
                     throw Error.RelationUIDTagNeedsValue(entity: schemaEntity.className, relation: schemaRelation.relationName)
                 }
             }
-            
+
             let sourceId: IdUid
             if let existingRelationId = existingRelation?.id {
                 sourceId = existingRelationId
             } else {
                 sourceId = try lastRelationId.incId(uid: newUid(relationUid))
             }
-            
+
             let relation = Relation(name: name, id: sourceId)
             if let existingEntity = existingEntity {
                 appendOrUpdate(relation, inPossiblyNilArray: &existingEntity.relations)
             }
-            
+
             schemaRelation.modelId = relation.id
             return relation
         }
-        
+
         func appendOrUpdate(_ element: Relation, inPossiblyNilArray array: inout [Relation]?) {
             guard array != nil else { array = [element]; return }
-            
+
             if let idx = array?.firstIndex(where: { $0.name == element.name }) {
                 array?[idx] = element
             } else {
                 array?.append(element)
             }
         }
-        
+
         func newUid(_ candidate: Int64?) throws -> Int64 {
             if let candidate = candidate,
                 newUidPool.remove(candidate) == nil {
                 throw Error.CandidateUIDNotInPool(candidate)
             }
-            
+
             return try candidate ?? uidHelper.create()
         }
     }

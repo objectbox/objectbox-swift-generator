@@ -65,7 +65,7 @@ enum ObjectBoxGenerator {
         "NSData": .byteVector,
         "Array<UInt8>": .byteVector,
         "[UInt8]": .byteVector,
-        "[Float]": .floatVector,
+        "[Float]": .floatVector
     ]
     private static let validPropertyAnnotationNames = Set([
         "backlink",
@@ -80,7 +80,7 @@ enum ObjectBoxGenerator {
         "transient",
         "type",
         "uid",
-        "unique",
+        "unique"
     ])
     private static let validTypeAnnotationNames = Set([
         "entity",
@@ -98,7 +98,7 @@ enum ObjectBoxGenerator {
 
     static func printError(_ error: Swift.Error) {
         if let obxError = error as? IdSync.Error {
-            switch (obxError) {
+            switch obxError {
             case .IncompatibleVersion(let found, let expected):
                 Log.error("Model version \(expected) expected, but \(found) found.")
             case .DuplicateEntityName(let name):
@@ -169,7 +169,7 @@ enum ObjectBoxGenerator {
                 Log.error("Property \(property) of entity \(entity) exists twice.")
             }
         } else if let filterError = error as? ObjectBoxGenerator.Error {
-            switch (filterError) {
+            switch filterError {
             case .DuplicateIdAnnotation(let entity, let found, let existing):
                 Log.error("Entity \(entity) has both \(found) and \(existing) annotated as '// objectbox: id'. "
                         + "There can only be one.")
@@ -251,7 +251,7 @@ enum ObjectBoxGenerator {
 
         return isByteVectorType
     }
-    
+
     static func isScalarVectorTypeOrAlias(_ typeName: TypeName?) -> Bool {
         var isScalarVectorType: Bool = false
         var currPropType = typeName
@@ -286,14 +286,14 @@ enum ObjectBoxGenerator {
             }
             if typeStr != nil {
                 if typeStr == "date-nano" {
-                    if (defaultType == PropertyType.date) {  // TODO double-check
+                    if defaultType == PropertyType.date {  // TODO double-check
                         return PropertyType.dateNano
                     } else {
                         // TODO log location info and abort
                         Log.error("Annotation \"data-nano\" may only be placed only at types compatible with date")
                     }
                 } else if typeStr == "flex" {
-                    if (defaultType == PropertyType.byteVector) {
+                    if defaultType == PropertyType.byteVector {
                         return PropertyType.flex
                     } else {
                         Log.error("Annotation \"flex\" may be placed only at bytes (for now)")
@@ -338,14 +338,15 @@ enum ObjectBoxGenerator {
         return nil
     }
 
+    // swiftlint:disable:next function_body_length
     static func processProperty(_ propertyVar: SourceryVariable, in entityType: Type,
                                 into schemaProperties: inout [SchemaProperty],
                                 entity schemaEntity: SchemaEntity, schema schemaData: Schema,
                                 enums: [String: TypeName]) throws {
-        let fullTypeName = propertyVar.typeName.name;
+        let fullTypeName = propertyVar.typeName.name
         let isToOneRelation = fullTypeName.hasPrefix("ToOne<") && fullTypeName.hasSuffix(">")
         let isToManyRelation = fullTypeName.hasPrefix("ToMany<") && fullTypeName.hasSuffix(">")
-        var tmRelation: SchemaToManyRelation? = nil
+        var tmRelation: SchemaToManyRelation?
         if isToManyRelation {
             let templateTypesString = fullTypeName.drop(first: "ToMany<".count, last: 1)
             let templateTypes = templateTypesString.split(separator: ",")
@@ -367,7 +368,7 @@ enum ObjectBoxGenerator {
         schemaProperty.entityName = entityType.localName
         schemaProperty.propertyName = propertyVar.name
         schemaProperty.isMutable = propertyVar.isMutable
-        
+
         // Determine value type to use for generated Property field
         // Remove ? suffix (like "String?" -> "String")
         let typeNameNotNull: String
@@ -465,7 +466,7 @@ enum ObjectBoxGenerator {
         schemaProperty.initPropertyType() // depends on propertyType (PropertyType) and unwrappedPropertyType
 
         try processPropertyIndexAndUniqueAnnotations(propertyVar, schemaProperty)
-        
+
         try processPropertyHnswIndexAnnotation(propertyVar, schemaProperty)
 
         if let objectIdAnnotationValue = propertyVar.annotations["id"] {
@@ -539,7 +540,7 @@ enum ObjectBoxGenerator {
         if !hasIndexAnnotation && !hasUniqueAnnotation {
             return // does not have regular index annotations
         }
-        
+
         // Error if used on unsupported type
         let doesNotSupportIndex =
         schemaProperty.propertyType == PropertyType.float
@@ -555,39 +556,39 @@ enum ObjectBoxGenerator {
         if doesNotSupportIndex {
             throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "index or unique is not supported for this type of property.")
         }
-        
+
         // Parse any index configuration options...
-        if (hasIndexAnnotation) {
+        if hasIndexAnnotation {
             if let indexType = propertyVar.annotations["index"] as? String {
-                if (indexType == "hash") {
+                if indexType == "hash" {
                     schemaProperty.indexType = .hashIndex
-                } else if (indexType == "hash64") {
+                } else if indexType == "hash64" {
                     schemaProperty.indexType = .hash64Index
-                } else if (indexType == "value") {
+                } else if indexType == "value" {
                     schemaProperty.indexType = .valueIndex
                 }
             }
         }
         // ...or use the default index configuration
-        if (schemaProperty.indexType == .none) {
+        if schemaProperty.indexType == .none {
             schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
         }
 
         // Error if hash index used on unsupported type
         let supportsHashIndex = schemaProperty.propertyType == PropertyType.string
-        if (!supportsHashIndex && (schemaProperty.indexType == .hashIndex || schemaProperty.indexType == .hash64Index)) {
+        if !supportsHashIndex && (schemaProperty.indexType == .hashIndex || schemaProperty.indexType == .hash64Index) {
             throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "A hash index is only supported for string properties.")
         }
-        
+
         if hasUniqueAnnotation {
             schemaProperty.isUniqueIndex = true
             schemaProperty.propertyFlags.append(.unique)
-            
+
             let uniqueConfiguration = propertyVar.annotations["unique"]
             if let uniqueDict = uniqueConfiguration as? NSDictionary {
                 for (key, value) in uniqueDict {
-                    if (key as? String == "onConflict") {
-                        if (value as? String == "replace") {
+                    if key as? String == "onConflict" {
+                        if value as? String == "replace" {
                             schemaProperty.propertyFlags.append(.uniqueOnConflictReplace)
                         } else {
                             throw Error.BadPropertyAnnotation(property: propertyVar.description,
@@ -598,7 +599,7 @@ enum ObjectBoxGenerator {
                                 message: "Illegal key in unique annotation (only \"onConflict\" is currently supported: \(key)")
                     }
                 }
-            } 
+            }
             // Note: is just 1 if no value is specified (like "objectbox: unique"), error if there is a value
             else if uniqueConfiguration as? Int != 1 {  // not plain?
                 throw Error.BadPropertyAnnotation(property: propertyVar.description,
@@ -616,13 +617,13 @@ enum ObjectBoxGenerator {
             }
         }
     }
-    
+
     static func processPropertyHnswIndexAnnotation(_ propertyVar: SourceryVariable, _ schemaProperty: SchemaProperty) throws {
         let hnswAnnotation = propertyVar.annotations["hnswIndex"]
         if hnswAnnotation == nil {
             return
         }
-        
+
         // Error if not used on float vector
         if schemaProperty.propertyType != PropertyType.floatVector {
             throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "hnswIndex is only supported for float vector properties.")
@@ -676,7 +677,7 @@ enum ObjectBoxGenerator {
         schemaEntity.name = schemaEntity.dbName ?? schemaEntity.className
         schemaEntity.isEntitySubclass = isEntityBased
 
-        var schemaProperties = Array<SchemaProperty>()
+        var schemaProperties = [SchemaProperty]()
         try entityType.variables.forEach { propertyVar in
             warnIfAnnotations(otherThan: ObjectBoxGenerator.validPropertyAnnotationNames,
                     in: Set(propertyVar.annotations.keys), of: propertyVar.name)
@@ -690,7 +691,7 @@ enum ObjectBoxGenerator {
         schemaEntity.properties = schemaProperties
 
         if schemaEntity.idProperty == nil { // No explicit annotation?
-            if schemaEntity.idCandidates.count <= 0 {
+            if schemaEntity.idCandidates.isEmpty {
                 throw Error.MissingIdOnEntity(entity: schemaEntity.className)
             } else if schemaEntity.idCandidates.count == 1 {
                 schemaEntity.idProperty = schemaEntity.idCandidates[0]
@@ -725,7 +726,7 @@ enum ObjectBoxGenerator {
             if schemaProperty.propertyFlags.contains(.idSelfAssignable) { flagsList.append(".idSelfAssignable") }
             if schemaProperty.propertyFlags.contains(.idCompanion) { flagsList.append(".idCompanion") }
             if schemaProperty.propertyFlags.contains(.uniqueOnConflictReplace) { flagsList.append(".uniqueOnConflictReplace") }
-            if flagsList.count > 0 {
+            if !flagsList.isEmpty {
                 schemaProperty.flagsList = ", flags: [\(flagsList.joined(separator: ", "))]"
             }
         }
@@ -739,7 +740,7 @@ enum ObjectBoxGenerator {
         let unknownAnnotations = annotations.filter {
             !validAnnotations.contains($0)
         }
-        if unknownAnnotations.count > 0 {
+        if !unknownAnnotations.isEmpty {
             print("error: \(name) has unknown annotations \(unknownAnnotations.joined(separator: ",")).")
         }
     }
@@ -793,7 +794,7 @@ enum ObjectBoxGenerator {
     // Called by StencilTemplate to expose our ObjectBox model to templates
     static func exposeObjects(to objectsDictionary: inout [String: Any]) {
         objectsDictionary["entities"] = ObjectBoxGenerator.entities
-        objectsDictionary["visibility"] = ObjectBoxGenerator.classVisibility;
+        objectsDictionary["visibility"] = ObjectBoxGenerator.classVisibility
         objectsDictionary["lastEntityId"] = ObjectBoxGenerator.lastEntityId
         objectsDictionary["lastIndexId"] = ObjectBoxGenerator.lastIndexId
         objectsDictionary["lastRelationId"] = ObjectBoxGenerator.lastRelationId
