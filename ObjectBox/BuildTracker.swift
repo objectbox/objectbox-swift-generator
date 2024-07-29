@@ -62,7 +62,7 @@ class BuildTracker {
         let eventInfo = try JSONSerialization.data(withJSONObject: eventInfoDict, options: options)
         var urlString = BuildTracker.baseURL
         let base64EncodedProperties = eventInfo.base64EncodedString()
-        guard base64EncodedProperties.count > 0 else {
+        guard !base64EncodedProperties.isEmpty else {
             print("warning: Couldn't base64-encode statistics. This does not affect your generated code.")
             return
         }

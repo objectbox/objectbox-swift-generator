@@ -690,7 +690,7 @@ enum ObjectBoxGenerator {
         schemaEntity.properties = schemaProperties
 
         if schemaEntity.idProperty == nil { // No explicit annotation?
-            if schemaEntity.idCandidates.count <= 0 {
+            if schemaEntity.idCandidates.isEmpty {
                 throw Error.MissingIdOnEntity(entity: schemaEntity.className)
             } else if schemaEntity.idCandidates.count == 1 {
                 schemaEntity.idProperty = schemaEntity.idCandidates[0]
@@ -725,7 +725,7 @@ enum ObjectBoxGenerator {
             if schemaProperty.propertyFlags.contains(.idSelfAssignable) { flagsList.append(".idSelfAssignable") }
             if schemaProperty.propertyFlags.contains(.idCompanion) { flagsList.append(".idCompanion") }
             if schemaProperty.propertyFlags.contains(.uniqueOnConflictReplace) { flagsList.append(".uniqueOnConflictReplace") }
-            if flagsList.count > 0 {
+            if !flagsList.isEmpty {
                 schemaProperty.flagsList = ", flags: [\(flagsList.joined(separator: ", "))]"
             }
         }
@@ -739,7 +739,7 @@ enum ObjectBoxGenerator {
         let unknownAnnotations = annotations.filter {
             !validAnnotations.contains($0)
         }
-        if unknownAnnotations.count > 0 {
+        if !unknownAnnotations.isEmpty {
             print("error: \(name) has unknown annotations \(unknownAnnotations.joined(separator: ",")).")
         }
     }
