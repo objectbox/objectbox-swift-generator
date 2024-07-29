@@ -156,11 +156,9 @@ enum IdSync {
         }
 
         public var hashValue: Int {
-            get {
-                var hasher = Hasher()
-                self.hash(into: &hasher)
-                return hasher.finalize()
-            }
+            var hasher = Hasher()
+            self.hash(into: &hasher)
+            return hasher.finalize()
         }
 
         public func hash(into hasher: inout Hasher) {

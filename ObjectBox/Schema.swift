@@ -41,9 +41,7 @@ struct IdUid: Codable, CustomDebugStringConvertible {
     }
 
     public var debugDescription: String {
-        get {
-            return "IdUid(\(id):\(uid))"
-        }
+        return "IdUid(\(id):\(uid))"
     }
 }
 
@@ -57,9 +55,7 @@ class Schema: CustomDebugStringConvertible {
     var lastIndexId = IdUid()
 
     public var debugDescription: String {
-        get {
-            return "Schema {\n\tentities = \(entities)\nlastEntityId = \(lastEntityId)\n\tlastRelationId = \(lastRelationId)\n\tlastIndexId = \(lastIndexId)\n}\n"
-        }
+        return "Schema {\n\tentities = \(entities)\nlastEntityId = \(lastEntityId)\n\tlastRelationId = \(lastRelationId)\n\tlastIndexId = \(lastIndexId)\n}\n"
     }
 }
 
@@ -87,11 +83,9 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
     public static func == (lhs: SchemaEntity, rhs: SchemaEntity) -> Bool { lhs.name == rhs.name }
 
     public var hashValue: Int {
-        get {
-            var hasher = Hasher()
-            self.hash(into: &hasher)
-            return hasher.finalize()
-        }
+        var hasher = Hasher()
+        self.hash(into: &hasher)
+        return hasher.finalize()
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -99,25 +93,21 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
     }
 
     public var flagsStringListDynamic: String {
-        get {
-            var flagsList: [String] = []
-            if flags.contains(.useNoArgConstructor) { flagsList.append(".useNoArgConstructor") }  // Not used in Swift
-            if flags.contains(.syncEnabled) { flagsList.append(".syncEnabled") }
-            if flags.contains(.sharedGlobalIds) { flagsList.append(".sharedGlobalIds") }
-            if flagsList.isEmpty {
-                return ""
-            } else if flagsList.count == 1 {
-                return flagsList[0]
-            } else {
-                return "[" + flagsList.joined(separator: ", ") + "]"
-            }
+        var flagsList: [String] = []
+        if flags.contains(.useNoArgConstructor) { flagsList.append(".useNoArgConstructor") }  // Not used in Swift
+        if flags.contains(.syncEnabled) { flagsList.append(".syncEnabled") }
+        if flags.contains(.sharedGlobalIds) { flagsList.append(".sharedGlobalIds") }
+        if flagsList.isEmpty {
+            return ""
+        } else if flagsList.count == 1 {
+            return flagsList[0]
+        } else {
+            return "[" + flagsList.joined(separator: ", ") + "]"
         }
     }
 
     public var debugDescription: String {
-        get {
-            return "SchemaEntity {\n\t\tmodelId = \(String(describing: modelId))\n\t\tmodelUid = \(String(describing: modelUid))\n\t\tclassName = \(className)\n\t\tdbName = \(String(describing: dbName))\n\t\tproperties = \(properties)\n\t\tindexes = \(indexes)\n\t\trelations = \(relations)\n\t\ttoManyRelations = \(toManyRelations)\n\t\tlastPropertyId = \(String(describing: lastPropertyId))\n\t\tisEntitySubclass = \(isEntitySubclass)\n\t\tisValueType = \(isValueType)\n\t\thasStringProperties = \(hasStringProperties)\n\t\tidProperty = \(String(describing: idProperty))\n\t\tidCandidates = \(idCandidates)\n\t}\n"
-        }
+        return "SchemaEntity {\n\t\tmodelId = \(String(describing: modelId))\n\t\tmodelUid = \(String(describing: modelUid))\n\t\tclassName = \(className)\n\t\tdbName = \(String(describing: dbName))\n\t\tproperties = \(properties)\n\t\tindexes = \(indexes)\n\t\trelations = \(relations)\n\t\ttoManyRelations = \(toManyRelations)\n\t\tlastPropertyId = \(String(describing: lastPropertyId))\n\t\tisEntitySubclass = \(isEntitySubclass)\n\t\tisValueType = \(isValueType)\n\t\thasStringProperties = \(hasStringProperties)\n\t\tidProperty = \(String(describing: idProperty))\n\t\tidCandidates = \(idCandidates)\n\t}\n"
     }
 }
 
@@ -189,9 +179,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     }
 
     public var propertyTypeQualifiedNameDyn: String {
-        get {
-            "PropertyType.\(propertyType)"
-        }
+        "PropertyType.\(propertyType)"
     }
 
     public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {
@@ -199,11 +187,9 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     }
 
     public var hashValue: Int {
-        get {
-            var hasher = Hasher()
-            self.hash(into: &hasher)
-            return hasher.finalize()
-        }
+        var hasher = Hasher()
+        self.hash(into: &hasher)
+        return hasher.finalize()
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -213,16 +199,14 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     }
 
     public var debugDescription: String {
-        get {
-            var moreData = ""
-            if isUniqueIndex { moreData += "\n\t\t\tisUniqueIndex = \(isUniqueIndex)" }
-            if isUnsignedType { moreData += "\n\t\t\tisUnsignedType = \(isUnsignedType)" }
-            if indexType != .none { moreData += "\n\t\t\tindexType = \(indexType)" }
-            if isByteVectorType { moreData += "\n\t\t\tisByteVectorType = \(isByteVectorType)" }
-            if isScalarVectorType { moreData += "\n\t\t\tisScalarVectorType = \(isScalarVectorType)" }
-            if hnswParams != nil { moreData += "\n\t\t\thnswParams = \(hnswParams!)" }
-            return "SchemaProperty {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tpropertyFlags = \(propertyFlags)\n\t\t\tpropertySwiftType = \(propertySwiftType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\tmodelIndexId = \(String(describing: modelIndexId))\n\t\t\tbacklinkName = \(String(describing: backlinkName))\n\t\t\tbacklinkType = \(String(describing: backlinkType))\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
-        }
+        var moreData = ""
+        if isUniqueIndex { moreData += "\n\t\t\tisUniqueIndex = \(isUniqueIndex)" }
+        if isUnsignedType { moreData += "\n\t\t\tisUnsignedType = \(isUnsignedType)" }
+        if indexType != .none { moreData += "\n\t\t\tindexType = \(indexType)" }
+        if isByteVectorType { moreData += "\n\t\t\tisByteVectorType = \(isByteVectorType)" }
+        if isScalarVectorType { moreData += "\n\t\t\tisScalarVectorType = \(isScalarVectorType)" }
+        if hnswParams != nil { moreData += "\n\t\t\thnswParams = \(hnswParams!)" }
+        return "SchemaProperty {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tpropertyFlags = \(propertyFlags)\n\t\t\tpropertySwiftType = \(propertySwiftType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\tmodelIndexId = \(String(describing: modelIndexId))\n\t\t\tbacklinkName = \(String(describing: backlinkName))\n\t\t\tbacklinkType = \(String(describing: backlinkType))\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
     }
 }
 
@@ -243,9 +227,7 @@ class SchemaRelation: CustomDebugStringConvertible {
     }
 
     public var debugDescription: String {
-        get {
-            return "SchemaRelation {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\trelationName = \(relationName)\n\t\t\trelationType = \(relationType)\n\t\t\trelationTargetType = \(relationTargetType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t}\n"
-        }
+        return "SchemaRelation {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\trelationName = \(relationName)\n\t\t\trelationType = \(relationType)\n\t\t\trelationTargetType = \(relationTargetType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t}\n"
     }
 }
 
@@ -260,13 +242,11 @@ class SchemaToManyRelation: SchemaRelation {
     }
 
     override public var debugDescription: String {
-        get {
-            var extraVars = ""
-            if let backlinkPropertyId = backlinkPropertyId {
-                extraVars.append("\n\t\tbacklinkPropertyId = \(backlinkPropertyId)")
-            }
-            return "SchemaToManyRelation {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\trelationName = \(relationName)\n\t\t\trelationType = \(relationType)\n\t\t\trelationTargetType = \(relationTargetType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\trelationOwnerType = \(relationOwnerType)\n\t\t\tbacklinkProperty = \(String(describing: backlinkProperty))\(extraVars)\n\t\t}\n"
+        var extraVars = ""
+        if let backlinkPropertyId = backlinkPropertyId {
+            extraVars.append("\n\t\tbacklinkPropertyId = \(backlinkPropertyId)")
         }
+        return "SchemaToManyRelation {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\trelationName = \(relationName)\n\t\t\trelationType = \(relationType)\n\t\t\trelationTargetType = \(relationTargetType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\trelationOwnerType = \(relationOwnerType)\n\t\t\tbacklinkProperty = \(String(describing: backlinkProperty))\(extraVars)\n\t\t}\n"
     }
 }
 
@@ -275,9 +255,7 @@ class SchemaIndex: CustomDebugStringConvertible {
     var properties = [String]()
 
     public var debugDescription: String {
-        get {
-            return "SchemaIndex {\n\t\t\tmodelId = \(modelId)\n\t\t\tproperties = \(properties)\n\t\t}\n"
-        }
+        return "SchemaIndex {\n\t\t\tmodelId = \(modelId)\n\t\t\tproperties = \(properties)\n\t\t}\n"
     }
 }
 
@@ -373,17 +351,15 @@ class SchemaHnswParams: CustomDebugStringConvertible {
     }
 
     public var debugDescription: String {
-        get {
-            let indent = "\t\t\t\t"
-            return "SchemaHnswParams {\n"
-            + "\(indent)dimensions = \(dimensions)\n"
-            + "\(indent)neighborsPerNode = \(String(describing: neighborsPerNode))\n"
-            + "\(indent)indexingSearchCount = \(String(describing: indexingSearchCount))\n"
-            + "\(indent)flags = \(String(describing: flags?.description))\n"
-            + "\(indent)distanceType = \(String(describing: distanceType))\n"
-            + "\(indent)reparationBacklinkProbability = \(String(describing: reparationBacklinkProbability))\n"
-            + "\(indent)vectorCacheHintSizeKB = \(String(describing: vectorCacheHintSizeKB))\n"
-            + "\t\t\t}"
-        }
+        let indent = "\t\t\t\t"
+        return "SchemaHnswParams {\n"
+        + "\(indent)dimensions = \(dimensions)\n"
+        + "\(indent)neighborsPerNode = \(String(describing: neighborsPerNode))\n"
+        + "\(indent)indexingSearchCount = \(String(describing: indexingSearchCount))\n"
+        + "\(indent)flags = \(String(describing: flags?.description))\n"
+        + "\(indent)distanceType = \(String(describing: distanceType))\n"
+        + "\(indent)reparationBacklinkProbability = \(String(describing: reparationBacklinkProbability))\n"
+        + "\(indent)vectorCacheHintSizeKB = \(String(describing: vectorCacheHintSizeKB))\n"
+        + "\t\t\t}"
     }
 }
