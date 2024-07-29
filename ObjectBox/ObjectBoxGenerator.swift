@@ -338,6 +338,7 @@ enum ObjectBoxGenerator {
         return nil
     }
 
+    // swiftlint:disable:next function_body_length
     static func processProperty(_ propertyVar: SourceryVariable, in entityType: Type,
                                 into schemaProperties: inout [SchemaProperty],
                                 entity schemaEntity: SchemaEntity, schema schemaData: Schema,
