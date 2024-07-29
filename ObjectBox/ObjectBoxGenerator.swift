@@ -676,7 +676,7 @@ enum ObjectBoxGenerator {
         schemaEntity.name = schemaEntity.dbName ?? schemaEntity.className
         schemaEntity.isEntitySubclass = isEntityBased
 
-        var schemaProperties = Array<SchemaProperty>()
+        var schemaProperties = [SchemaProperty]()
         try entityType.variables.forEach { propertyVar in
             warnIfAnnotations(otherThan: ObjectBoxGenerator.validPropertyAnnotationNames,
                     in: Set(propertyVar.annotations.keys), of: propertyVar.name)

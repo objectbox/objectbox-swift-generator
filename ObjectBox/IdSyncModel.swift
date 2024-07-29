@@ -109,8 +109,8 @@ enum IdSync {
         var name = ""
         var flags: UInt32?
         var lastPropertyId: IdUid?
-        var properties: Array<Property>?
-        var relations: Array<Relation>?
+        var properties: [Property]?
+        var relations: [Relation]?
         var isEntitySubclass = false
 
         private enum CodingKeys: String, CodingKey {
@@ -202,19 +202,19 @@ enum IdSync {
          * Previously allocated UIDs (e.g. via "@Uid" without value) to use to provide UIDs for new entities,
          * properties, or relations.
          */
-        var newUidPool: Array<Int64>?
+        var newUidPool: [Int64]?
 
         /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredEntityUids: Array<Int64>?
+        var retiredEntityUids: [Int64]?
 
         /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredPropertyUids: Array<Int64>?
+        var retiredPropertyUids: [Int64]?
 
         /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredIndexUids: Array<Int64>?
+        var retiredIndexUids: [Int64]?
 
         /** Previously used UIDs, which are now deleted. Archived to ensure no collisions. */
-        var retiredRelationUids: Array<Int64>?
+        var retiredRelationUids: [Int64]?
 
         private enum CodingKeys: String, CodingKey {
             case _note1
@@ -235,7 +235,7 @@ enum IdSync {
             case retiredRelationUids
         }
 
-        init(lastEntityId: IdUid? = nil, lastIndexId: IdUid? = nil, lastRelationId: IdUid? = nil, lastSequenceId: IdUid? = nil, entities: Array<Entity>? = nil, retiredEntityUids: Array<Int64>? = nil, retiredPropertyUids: Array<Int64>? = nil, retiredIndexUids: Array<Int64>? = nil, retiredRelationUids: Array<Int64>? = nil) {
+        init(lastEntityId: IdUid? = nil, lastIndexId: IdUid? = nil, lastRelationId: IdUid? = nil, lastSequenceId: IdUid? = nil, entities: [Entity]? = nil, retiredEntityUids: [Int64]? = nil, retiredPropertyUids: [Int64]? = nil, retiredIndexUids: [Int64]? = nil, retiredRelationUids: [Int64]? = nil) {
             self.lastEntityId = lastEntityId
             self.lastIndexId = lastIndexId
             self.lastRelationId = lastRelationId
@@ -354,14 +354,14 @@ enum IdSync {
 
         let uidHelper = UidHelper()
 
-        private var entitiesReadByUid = Dictionary<Int64, Entity>() // Entities that were in the model.json
-        private var entitiesReadByName = Dictionary<String, Entity>() // Entities that were in the model.json
-        private var entitiesByUid = Dictionary<Int64, Entity>() // Entities in the model.json or seen in code.
-        private var entitiesByName = Dictionary<String, Entity>() // Entities in the model.json or seen in code.
+        private var entitiesReadByUid = [Int64: Entity]() // Entities that were in the model.json
+        private var entitiesReadByName = [String: Entity]() // Entities that were in the model.json
+        private var entitiesByUid = [Int64: Entity]() // Entities in the model.json or seen in code.
+        private var entitiesByName = [String: Entity]() // Entities in the model.json or seen in code.
         private var parsedUids = Set<Int64>()
 
-        private var entitiesBySchemaEntity = Dictionary<SchemaEntity, Entity>()
-        private var propertiesBySchemaProperty = Dictionary<SchemaProperty, Property>()
+        private var entitiesBySchemaEntity = [SchemaEntity: Entity]()
+        private var propertiesBySchemaProperty = [SchemaProperty: Property]()
 
         private var entities = [Entity]()
 
@@ -465,7 +465,7 @@ enum IdSync {
             oldEntityUids.subtract(entities.map { $0.id.uid })
             retiredEntityUids.append(contentsOf: oldEntityUids)
 
-            var oldPropertyUids = collectPropertyUids(Array<Entity>(entitiesReadByUid.values))
+            var oldPropertyUids = collectPropertyUids([Entity](entitiesReadByUid.values))
             let newPropertyUids = collectPropertyUids(entities)
 
             oldPropertyUids.propertyUids.subtract(newPropertyUids.propertyUids)
@@ -478,7 +478,7 @@ enum IdSync {
             retiredRelationUids.append(contentsOf: oldPropertyUids.relationUids)
         }
 
-        func collectPropertyUids(_ entities: Array<Entity>) -> (propertyUids: Set<Int64>, indexUids: Set<Int64>, relationUids: Set<Int64>) {
+        func collectPropertyUids(_ entities: [Entity]) -> (propertyUids: Set<Int64>, indexUids: Set<Int64>, relationUids: Set<Int64>) {
             var propertyUids = Set<Int64>()
             var indexUids = Set<Int64>()
             var relationUids = Set<Int64>()
@@ -780,7 +780,7 @@ enum IdSync {
 
         func syncProperties(schemaEntity: SchemaEntity, existingEntity: Entity?, lastPropertyId: inout IdUid) throws -> [Property] {
 
-            var properties = Array<Property>()
+            var properties = [Property]()
             for parsedProperty in schemaEntity.properties {
                 // Don't write a typeless property entry for a to-many backlink into the model.json.
                 //  We need an entry for each ToMany for codegen for a struct's init() call in the schema entity, but
@@ -880,7 +880,7 @@ enum IdSync {
         }
 
         func syncRelations(schemaEntity: SchemaEntity, existingEntity: Entity?) throws -> [Relation] {
-            var relations = Array<Relation>()
+            var relations = [Relation]()
 
             try schemaEntity.toManyRelations.forEach { schemaRelation in
                 if schemaRelation.backlinkProperty == nil { // Only add the forward-relations to the relation list.

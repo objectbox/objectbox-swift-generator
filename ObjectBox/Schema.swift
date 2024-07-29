@@ -69,17 +69,17 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
     var modelUid: Int64?
     var className: String = ""
     var dbName: String?
-    var properties = Array<SchemaProperty>()
-    var indexes = Array<SchemaIndex>()
-    var relations = Array<SchemaRelation>()
-    var toManyRelations = Array<SchemaToManyRelation>()
+    var properties = [SchemaProperty]()
+    var indexes = [SchemaIndex]()
+    var relations = [SchemaRelation]()
+    var toManyRelations = [SchemaToManyRelation]()
     var lastPropertyId: IdUid?
     var isEntitySubclass = false
     var isValueType = false
     var hasStringProperties = false // transient properties are ignored for this.
     var hasByteVectorProperties = false // transient properties are ignored for this.
     var idProperty: SchemaProperty?
-    var idCandidates = Array<SchemaProperty>()
+    var idCandidates = [SchemaProperty]()
     var name: String = ""
     var flags: [EntityFlags] = []
     var flagsStringList: String = ""
@@ -272,7 +272,7 @@ class SchemaToManyRelation: SchemaRelation {
 
 class SchemaIndex: CustomDebugStringConvertible {
     var modelId = IdUid()
-    var properties = Array<String>()
+    var properties = [String]()
 
     public var debugDescription: String {
         get {
