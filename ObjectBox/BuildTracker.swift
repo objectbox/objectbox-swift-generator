@@ -14,7 +14,7 @@ class BuildTracker {
     private static let buildCountDefaultsKey = "OBXBuildCount"
     /// Key under which we save the time of last successful send to preferences so we don't send more often than daily.
     private static let lastSuccessfulSendTimeDefaultsKey = "OBXLastSuccessfulSendTime"
-    
+
     /// Send at most once per day, but use 23 hours so we don't skip a day on a DST change or early work start:
     private static let hoursBetweenBuildMessages = TimeInterval(23.0)
     /// 1 hour expressed in seconds:
@@ -31,7 +31,7 @@ class BuildTracker {
         let locale = Locale.current
         let country = BuildTracker.countryMappings[locale.regionCode?.uppercased() ?? ""] ?? ""
         let language = BuildTracker.languageMappings[locale.languageCode?.lowercased() ?? ""] ?? ""
-        
+
         var eventInfo = [String: Any]()
         var eventProperties = [String: Any]()
         eventInfo["event"] = name
@@ -46,7 +46,7 @@ class BuildTracker {
         eventInfo["properties"] = eventProperties
         return eventInfo
     }
-    
+
     /// Build a URL request for the given properties, unique ID and event name and send them out asynchronously.
     /// https://developer.mixpanel.com/docs/http#section-event-request-parameters
     func sendEvent(name: String, uniqueID: String? = nil, properties: [String: Any] = [:]) throws {
@@ -67,13 +67,13 @@ class BuildTracker {
             return
         }
         urlString.append(base64EncodedProperties)
-        
+
         if verbose {
             print("Trying to send statistics: <<\(String(data: eventInfo, encoding: .utf8) ?? "")>>")
         }
-        
+
         // Actually send them off:
-        let task = URLSession.shared.dataTask(with: URL(string: urlString)!) { data, response, error in
+        let task = URLSession.shared.dataTask(with: URL(string: urlString)!) { _, response, error in
             guard error == nil, let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 if self.verbose {
                     print("warning: Couldn't send statistics: \((response as? HTTPURLResponse)?.statusCode ?? 0) "
@@ -82,18 +82,18 @@ class BuildTracker {
                 }
                 return
             }
-            
+
             // Successfully sent? Reset counter and remember when we last sent so we don't call home too often:
             UserDefaults.standard.set(0, forKey: BuildTracker.buildCountDefaultsKey)
             UserDefaults.standard.set(Date().timeIntervalSinceReferenceDate, forKey: BuildTracker.lastSuccessfulSendTimeDefaultsKey)
-            
+
             if self.verbose {
                 print("Successfully sent statistics.")
             }
         }
         task.resume()
     }
-    
+
     /// Return a string identifying any CI system we may be running under right now.
     func checkCI() -> String? {
         // https://docs.travis-ci.com/user/environment-variables/#Default-Environment-Variables
@@ -114,30 +114,30 @@ class BuildTracker {
         } else if ProcessInfo.processInfo.environment["CI"] != nil {
             return "Other"
         }
-        
+
         return nil
     }
-    
+
     /// Send the build statistics request at startup, unless user asked not to:
     func startup() throws {
         if statistics {
             var buildCount = (UserDefaults.standard.object(forKey: BuildTracker.buildCountDefaultsKey) as? Int) ?? 0
             buildCount += 1
             UserDefaults.standard.set(buildCount, forKey: BuildTracker.buildCountDefaultsKey)
-            
+
             let lastSuccessfulSendTime = UserDefaults.standard.double(forKey: BuildTracker.lastSuccessfulSendTimeDefaultsKey)
             let nowSeconds = Date().timeIntervalSinceReferenceDate
             let timeSinceLastSend = nowSeconds - lastSuccessfulSendTime
             let minTimeBetweenSends = BuildTracker.hourInSeconds * BuildTracker.hoursBetweenBuildMessages
             guard timeSinceLastSend > minTimeBetweenSends else { return }
-            
+
             // Give installation a unique identifier so we can get a rough idea of how many people use this:
             let existingInstallationID = UserDefaults.standard.string(forKey: BuildTracker.installationIDDefaultsKey)
             let installationUID = existingInstallationID ?? UUID().uuidString
             if existingInstallationID == nil {
                 UserDefaults.standard.set(installationUID, forKey: BuildTracker.installationIDDefaultsKey)
             }
-            
+
             // Grab some info from Xcode-set environment variables, if available:
             let minSysVersion: String
             if let deploymentTargetVarName = ProcessInfo.processInfo.environment["DEPLOYMENT_TARGET_CLANG_ENV_NAME"] {
@@ -151,7 +151,7 @@ class BuildTracker {
             let version = ProcessInfo.processInfo.operatingSystemVersion
             let xcodeVersion = ProcessInfo.processInfo.environment["XCODE_VERSION_ACTUAL"] ?? ""
             let myVersion = Sourcery.version
-            
+
             var properties: [String: Any] = [
                 "BuildOS": "macOS",
                 "BuildOSVersion": "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)",
@@ -163,11 +163,11 @@ class BuildTracker {
                 "Xcode": xcodeVersion,
                 "Version": myVersion
                 ]
-            
+
             if let ci = checkCI() {
                 properties["CI"] = ci
             }
-            
+
             try sendEvent(name: "Build", uniqueID: installationUID, properties: properties)
         }
     }

@@ -155,7 +155,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     ///
     /// See also ``isRelation``.
     var isToManyRelation: Bool = false
-    var toManyRelation: SchemaToManyRelation? = nil
+    var toManyRelation: SchemaToManyRelation?
     var isUniqueIndex: Bool = false
     var isUnsignedType: Bool = false
     /// The ObjectBox database ``PropertyType``.
@@ -282,7 +282,7 @@ class SchemaIndex: CustomDebugStringConvertible {
 }
 
 class SchemaHnswParams: CustomDebugStringConvertible {
-    
+
     var dimensions: Int
     var neighborsPerNode: UInt32?
     var indexingSearchCount: UInt32?
@@ -292,7 +292,7 @@ class SchemaHnswParams: CustomDebugStringConvertible {
     var distanceType: String?
     var reparationBacklinkProbability: Float?
     var vectorCacheHintSizeKB: Int?
-    
+
     init(dimensions: Int) {
         self.dimensions = dimensions
     }
@@ -349,7 +349,7 @@ class SchemaHnswParams: CustomDebugStringConvertible {
 
         return hnswParams
     }
-    
+
     static func mapDistanceType(_ name: String) -> String? {
         // As defined in ios-framework/CommonSource/Entities/HnswParams.swift
         switch name {

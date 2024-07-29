@@ -7,20 +7,19 @@ import Nimble
 @testable import SourceryRuntime
 import PathKit
 
-
 class IdSyncTests: XCTestCase {
     func testEmptyFile() throws {
         let schemaData = Schema()
-        
+
         let jsonFile = URL(fileURLWithPath: "/tmp").appendingPathComponent("model.json")
         try? FileManager.default.removeItem(at: jsonFile)
 
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
         try idSync.write()
-        
+
         XCTAssertEqual(schemaData.entities.count, 0)
-        
+
         let data = try? Data(contentsOf: jsonFile)
         XCTAssertNotNil(data)
         var jsonContents: IdSync.IdSyncModel?
@@ -39,16 +38,16 @@ class IdSyncTests: XCTestCase {
         let entity = SchemaEntity()
         entity.className = "FirstEntity"
         schemaData.entities.append(entity)
-        
+
         let jsonFile = URL(fileURLWithPath: "/tmp").appendingPathComponent("model.json")
         try? FileManager.default.removeItem(at: jsonFile)
-        
+
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
         try idSync.write()
 
         XCTAssertEqual(schemaData.entities.count, 1)
-        
+
         let data = try? Data(contentsOf: jsonFile)
         XCTAssertNotNil(data)
         var jsonContents: IdSync.IdSyncModel?
@@ -70,7 +69,7 @@ class IdSyncTests: XCTestCase {
             }
         }
     }
-    
+
     func testOneMinimalClassFile() throws {
         let schemaData = Schema()
         let entity = SchemaEntity()
@@ -81,16 +80,16 @@ class IdSyncTests: XCTestCase {
         prop.entityName = "FirstEntity"
         entity.properties.append(prop)
         schemaData.entities.append(entity)
-        
+
         let jsonFile = URL(fileURLWithPath: "/tmp").appendingPathComponent("model.json")
         try? FileManager.default.removeItem(at: jsonFile)
-        
+
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
         try idSync.write()
 
         XCTAssertEqual(schemaData.entities.count, 1)
-        
+
         let data = try? Data(contentsOf: jsonFile)
         XCTAssertNotNil(data)
         var jsonContents: IdSync.IdSyncModel?
@@ -135,7 +134,7 @@ class IdSyncTests: XCTestCase {
         prop2.entityName = "FirstEntity"
         entity.properties.append(prop2)
         schemaData.entities.append(entity)
-        
+
         let entity2 = SchemaEntity()
         entity2.className = "SecondEntity"
         let prop3 = SchemaProperty()
@@ -149,22 +148,22 @@ class IdSyncTests: XCTestCase {
         prop4.entityName = "SecondEntity"
         entity2.properties.append(prop4)
         schemaData.entities.append(entity2)
-        
+
         return schemaData
     }
-    
+
     func testMultiClassMultiPropertyClassFile() throws {
         let schemaData = multiPropertyClassSchema()
 
         let jsonFile = URL(fileURLWithPath: "/tmp").appendingPathComponent("model.json")
         try? FileManager.default.removeItem(at: jsonFile)
-        
+
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
         try idSync.write()
 
         XCTAssertEqual(schemaData.entities.count, 2)
-        
+
         let data = try? Data(contentsOf: jsonFile)
         XCTAssertNotNil(data)
         var jsonContents: IdSync.IdSyncModel?
@@ -205,7 +204,7 @@ class IdSyncTests: XCTestCase {
                 }
                 XCTAssertEqual(entity.relations?.count ?? 0, 0)
             }
-            
+
             var entity2Uid = IdUid()
             var entity2Prop1Uid = IdUid()
             var entity2Prop2Uid = IdUid()
@@ -235,12 +234,12 @@ class IdSyncTests: XCTestCase {
                 }
                 XCTAssertEqual(entity2.relations?.count ?? 0, 0)
             }
-            
+
             // Test synching a second time, are the UIDs still the same?
             let schemaData2 = multiPropertyClassSchema()
             let idSync2 = try IdSync.IdSync(jsonFile: jsonFile)
             try idSync2.sync(schema: schemaData2)
-            
+
             XCTAssertEqual(schemaData2.entities[0].modelUid, entityUid.uid)
             XCTAssertEqual(schemaData2.entities[0].properties[0].modelId?.uid, entityProp1Uid.uid)
             XCTAssertEqual(schemaData2.entities[0].properties[1].modelId?.uid, entityProp2Uid.uid)
@@ -249,13 +248,13 @@ class IdSyncTests: XCTestCase {
             XCTAssertEqual(schemaData2.entities[1].properties[1].modelId?.uid, entity2Prop2Uid.uid)
         }
     }
-    
+
     func testPropertyIdOverrides() throws {
         let schemaData = multiPropertyClassSchema()
-        
+
         let jsonFile = URL(fileURLWithPath: "/tmp").appendingPathComponent("model.json")
         try? FileManager.default.removeItem(at: jsonFile)
-        
+
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
         try idSync.write()
@@ -268,7 +267,7 @@ class IdSyncTests: XCTestCase {
         var thrownProperty: String = ""
         var thrownFound: Int64 = 0
         var thrownUnique: Int64 = 0
-        
+
         schemaData2.entities[0].properties[1].modelId = overrideId
         do {
             let idSync2 = try IdSync.IdSync(jsonFile: jsonFile)

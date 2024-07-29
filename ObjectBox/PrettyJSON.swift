@@ -11,7 +11,7 @@ class PrettyJSON {
         var key: String
         var value: String
         var quoteValue: Bool
-        
+
         func toString(indent: Int) -> String {
             let indent = String(repeating: " ", count: indent)
             if quoteValue {
@@ -21,21 +21,21 @@ class PrettyJSON {
             }
         }
     }
-    
+
     internal func keyValueString(_ keyValues: [KeyValue], indent: Int) -> String {
         return keyValues.map({ return $0.toString(indent: indent) }).joined(separator: ",\n")
     }
-    
+
     internal func arrayString(_ array: [String]?, indent: Int) -> String {
         guard let array = array, !array.isEmpty else { return "[]" }
-        
+
         let outerIndent = String(repeating: " ", count: indent)
         let indent = String(repeating: " ", count: indent + 2)
-        
+
         let list = array.map({ return ",\n\(indent)\($0)" }).joined().dropFirst()
         return "[\(list)\n\(outerIndent)]"
     }
-    
+
     func encode(_ model: IdSync.IdSyncModel) -> Data {
         var output = """
 {
@@ -106,11 +106,11 @@ class PrettyJSON {
                     }
                     output.append("\n      ]")
                 }
-                
+
                 entitiesToGo -= 1
                 output.append("\n    }\(entitiesToGo > 0 ? "," : "")")
             }
-            
+
             output.append("\n  ],")
         }
 
@@ -129,7 +129,7 @@ class PrettyJSON {
         }
         keyValues.append(KeyValue(key: "modelVersion", value: "\(model.modelVersion)", quoteValue: false))
         keyValues.append(KeyValue(key: "modelVersionParserMinimum", value: "\(model.modelVersionParserMinimum)", quoteValue: false))
-        
+
         if let newUidPool = model.newUidPool {
             keyValues.append(KeyValue(key: "newUidPool", value: arrayString(newUidPool.map({ return "\($0)" }), indent: 2), quoteValue: false))
         }
@@ -147,7 +147,7 @@ class PrettyJSON {
         }
         keyValues.append(KeyValue(key: "version", value: "\(model.version)", quoteValue: false))
         output.append("\n\(keyValueString(keyValues, indent: 2))\n}")
-        
+
         return output.data(using: .utf8)!
     }
 }
