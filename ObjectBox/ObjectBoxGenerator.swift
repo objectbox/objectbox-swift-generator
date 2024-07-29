@@ -98,7 +98,7 @@ enum ObjectBoxGenerator {
 
     static func printError(_ error: Swift.Error) {
         if let obxError = error as? IdSync.Error {
-            switch (obxError) {
+            switch obxError {
             case .IncompatibleVersion(let found, let expected):
                 Log.error("Model version \(expected) expected, but \(found) found.")
             case .DuplicateEntityName(let name):
@@ -169,7 +169,7 @@ enum ObjectBoxGenerator {
                 Log.error("Property \(property) of entity \(entity) exists twice.")
             }
         } else if let filterError = error as? ObjectBoxGenerator.Error {
-            switch (filterError) {
+            switch filterError {
             case .DuplicateIdAnnotation(let entity, let found, let existing):
                 Log.error("Entity \(entity) has both \(found) and \(existing) annotated as '// objectbox: id'. "
                         + "There can only be one.")
@@ -286,14 +286,14 @@ enum ObjectBoxGenerator {
             }
             if typeStr != nil {
                 if typeStr == "date-nano" {
-                    if (defaultType == PropertyType.date) {  // TODO double-check
+                    if defaultType == PropertyType.date {  // TODO double-check
                         return PropertyType.dateNano
                     } else {
                         // TODO log location info and abort
                         Log.error("Annotation \"data-nano\" may only be placed only at types compatible with date")
                     }
                 } else if typeStr == "flex" {
-                    if (defaultType == PropertyType.byteVector) {
+                    if defaultType == PropertyType.byteVector {
                         return PropertyType.flex
                     } else {
                         Log.error("Annotation \"flex\" may be placed only at bytes (for now)")
@@ -557,25 +557,25 @@ enum ObjectBoxGenerator {
         }
 
         // Parse any index configuration options...
-        if (hasIndexAnnotation) {
+        if hasIndexAnnotation {
             if let indexType = propertyVar.annotations["index"] as? String {
-                if (indexType == "hash") {
+                if indexType == "hash" {
                     schemaProperty.indexType = .hashIndex
-                } else if (indexType == "hash64") {
+                } else if indexType == "hash64" {
                     schemaProperty.indexType = .hash64Index
-                } else if (indexType == "value") {
+                } else if indexType == "value" {
                     schemaProperty.indexType = .valueIndex
                 }
             }
         }
         // ...or use the default index configuration
-        if (schemaProperty.indexType == .none) {
+        if schemaProperty.indexType == .none {
             schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
         }
 
         // Error if hash index used on unsupported type
         let supportsHashIndex = schemaProperty.propertyType == PropertyType.string
-        if (!supportsHashIndex && (schemaProperty.indexType == .hashIndex || schemaProperty.indexType == .hash64Index)) {
+        if !supportsHashIndex && (schemaProperty.indexType == .hashIndex || schemaProperty.indexType == .hash64Index) {
             throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "A hash index is only supported for string properties.")
         }
 
@@ -586,8 +586,8 @@ enum ObjectBoxGenerator {
             let uniqueConfiguration = propertyVar.annotations["unique"]
             if let uniqueDict = uniqueConfiguration as? NSDictionary {
                 for (key, value) in uniqueDict {
-                    if (key as? String == "onConflict") {
-                        if (value as? String == "replace") {
+                    if key as? String == "onConflict" {
+                        if value as? String == "replace" {
                             schemaProperty.propertyFlags.append(.uniqueOnConflictReplace)
                         } else {
                             throw Error.BadPropertyAnnotation(property: propertyVar.description,

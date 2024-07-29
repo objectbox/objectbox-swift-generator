@@ -180,7 +180,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
 
     public func initPropertyType() {
         isDateNanoType = propertyType == PropertyType.dateNano
-        if(propertyType != PropertyType.unknown) {
+        if propertyType != PropertyType.unknown {
             propertyTypeQualifiedName = propertyTypeQualifiedNameDyn
         } else {
             // this is some odd workaround for Sourcery not being able to resolve type aliases (go via a type extension)
@@ -215,12 +215,12 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     public var debugDescription: String {
         get {
             var moreData = ""
-            if (isUniqueIndex) { moreData += "\n\t\t\tisUniqueIndex = \(isUniqueIndex)" }
-            if (isUnsignedType) { moreData += "\n\t\t\tisUnsignedType = \(isUnsignedType)" }
-            if (indexType != .none) { moreData += "\n\t\t\tindexType = \(indexType)" }
-            if (isByteVectorType) { moreData += "\n\t\t\tisByteVectorType = \(isByteVectorType)" }
-            if (isScalarVectorType) { moreData += "\n\t\t\tisScalarVectorType = \(isScalarVectorType)" }
-            if (hnswParams != nil) { moreData += "\n\t\t\thnswParams = \(hnswParams!)" }
+            if isUniqueIndex { moreData += "\n\t\t\tisUniqueIndex = \(isUniqueIndex)" }
+            if isUnsignedType { moreData += "\n\t\t\tisUnsignedType = \(isUnsignedType)" }
+            if indexType != .none { moreData += "\n\t\t\tindexType = \(indexType)" }
+            if isByteVectorType { moreData += "\n\t\t\tisByteVectorType = \(isByteVectorType)" }
+            if isScalarVectorType { moreData += "\n\t\t\tisScalarVectorType = \(isScalarVectorType)" }
+            if hnswParams != nil { moreData += "\n\t\t\thnswParams = \(hnswParams!)" }
             return "SchemaProperty {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tpropertyFlags = \(propertyFlags)\n\t\t\tpropertySwiftType = \(propertySwiftType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\tmodelIndexId = \(String(describing: modelIndexId))\n\t\t\tbacklinkName = \(String(describing: backlinkName))\n\t\t\tbacklinkType = \(String(describing: backlinkType))\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
         }
     }
