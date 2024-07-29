@@ -15,6 +15,7 @@ opt_in_rules: # some rules are only opt-in
   - conditional_binding_cascade
 
 included:
+  - ObjectBox # For ObjectBox
   - Sourcery
   - SourceryRuntime
   - SourceryTests
