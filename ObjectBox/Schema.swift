@@ -379,7 +379,7 @@ class SchemaHnswParams: CustomDebugStringConvertible {
             + "\(indent)dimensions = \(dimensions)\n"
             + "\(indent)neighborsPerNode = \(String(describing: neighborsPerNode))\n"
             + "\(indent)indexingSearchCount = \(String(describing: indexingSearchCount))\n"
-            + "\(indent)flags = \(flags?.description)\n"
+            + "\(indent)flags = \(String(describing: flags?.description))\n"
             + "\(indent)distanceType = \(String(describing: distanceType))\n"
             + "\(indent)reparationBacklinkProbability = \(String(describing: reparationBacklinkProbability))\n"
             + "\(indent)vectorCacheHintSizeKB = \(String(describing: vectorCacheHintSizeKB))\n"
