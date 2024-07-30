@@ -81,6 +81,7 @@ extension {{ entity.className }} {
     {% endif %}
 }
 
+{# Make it possible to write .property instead of Entity.property in queries #}
 extension ObjectBox.Property where E == {{ entity.className }} {
     {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
     /// Generated entity property information.
