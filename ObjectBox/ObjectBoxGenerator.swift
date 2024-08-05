@@ -395,7 +395,10 @@ enum ObjectBoxGenerator {
         }
         schemaProperty.propertySwiftType = propertyType
 
-        schemaProperty.propertyType = mapPropertyType(propertyVar)
+        // Note: do not try (and fail) to detect type for artificial ToMany property
+        if !isToManyRelation {
+            schemaProperty.propertyType = mapPropertyType(propertyVar)
+        }
         // TODO check if "is...Type" can be unified with converter checks below (add tests)
         schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(propertyVar.typeName)
         schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(propertyVar.typeName)

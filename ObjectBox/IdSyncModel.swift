@@ -779,17 +779,12 @@ enum IdSync {
         func syncProperties(schemaEntity: SchemaEntity, existingEntity: Entity?, lastPropertyId: inout IdUid) throws -> [Property] {
 
             var properties = [Property]()
-            for parsedProperty in schemaEntity.properties {
-                // Don't write a typeless property entry for a to-many backlink into the model.json.
-                //  We need an entry for each ToMany for codegen for a struct's init() call in the schema entity, but
-                //  it shouldn't be forwarded to the IdSyncModel.
-                if !parsedProperty.isToManyRelation {
-                    let property = try syncProperty(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaProperty: parsedProperty, lastPropertyId: &lastPropertyId)
-                    if property.id.id > lastPropertyId.id {
-                        lastPropertyId.id = property.id.id
-                    }
-                    properties.append(property)
+            for parsedProperty in schemaEntity.propertiesForModel {
+                let property = try syncProperty(existingEntity: existingEntity, schemaEntity: schemaEntity, schemaProperty: parsedProperty, lastPropertyId: &lastPropertyId)
+                if property.id.id > lastPropertyId.id {
+                    lastPropertyId.id = property.id.id
                 }
+                properties.append(property)
             }
             properties.sort { $0.id.id < $1.id.id }
 
