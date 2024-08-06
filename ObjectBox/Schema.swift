@@ -65,12 +65,19 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
     var modelUid: Int64?
     var className: String = ""
     var dbName: String?
+    /// Note: these include an artificial property for each ``SchemaToManyRelation``, to simplify code generation,
+    /// that are not actually part of the model! For model purposes use ``propertiesForModel`` instead.
     var properties = [SchemaProperty]()
+    /// Like ``properties``, but excludes artificial properties for ``SchemaToManyRelation`` that are not part of the model.
+    var propertiesForModel: [SchemaProperty] {
+        properties.filter { prop in !prop.isToManyRelation }
+    }
     var indexes = [SchemaIndex]()
     var relations = [SchemaRelation]()
     var toManyRelations = [SchemaToManyRelation]()
     var lastPropertyId: IdUid?
     var isEntitySubclass = false
+    /// If the entity is an (immutable) Swift struct.
     var isValueType = false
     var hasStringProperties = false // transient properties are ignored for this.
     var hasByteVectorProperties = false // transient properties are ignored for this.
