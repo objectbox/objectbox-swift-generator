@@ -537,6 +537,13 @@ enum ObjectBoxGenerator {
         schemaProperties.append(schemaProperty)
     }
 
+    private enum IndexType {
+        case none
+        case valueIndex
+        case hashIndex
+        case hash64Index
+    }
+
     static func processPropertyIndexAndUniqueAnnotations(_ propertyVar: SourceryVariable, _ schemaProperty: SchemaProperty) throws {
         let hasIndexAnnotation = propertyVar.annotations.contains(reference: "index")
         let hasUniqueAnnotation = propertyVar.annotations.contains(reference: "unique")
@@ -561,30 +568,30 @@ enum ObjectBoxGenerator {
         }
 
         // Parse any index configuration options...
+        var indexType = IndexType.none
         if hasIndexAnnotation {
-            if let indexType = propertyVar.annotations["index"] as? String {
-                if indexType == "hash" {
-                    schemaProperty.indexType = .hashIndex
-                } else if indexType == "hash64" {
-                    schemaProperty.indexType = .hash64Index
-                } else if indexType == "value" {
-                    schemaProperty.indexType = .valueIndex
+            if let indexAnnotationType = propertyVar.annotations["index"] as? String {
+                if indexAnnotationType == "hash" {
+                    indexType = .hashIndex
+                } else if indexAnnotationType == "hash64" {
+                    indexType = .hash64Index
+                } else if indexAnnotationType == "value" {
+                    indexType = .valueIndex
                 }
             }
         }
         // ...or use the default index configuration
-        if schemaProperty.indexType == .none {
-            schemaProperty.indexType = schemaProperty.isStringType ? .hashIndex : .valueIndex
+        let supportsHashIndex = schemaProperty.propertyType == PropertyType.string
+        if indexType == .none {
+            indexType = supportsHashIndex ? .hashIndex : .valueIndex
         }
 
         // Error if hash index used on unsupported type
-        let supportsHashIndex = schemaProperty.propertyType == PropertyType.string
-        if !supportsHashIndex && (schemaProperty.indexType == .hashIndex || schemaProperty.indexType == .hash64Index) {
+        if !supportsHashIndex && (indexType == .hashIndex || indexType == .hash64Index) {
             throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "A hash index is only supported for string properties.")
         }
 
         if hasUniqueAnnotation {
-            schemaProperty.isUniqueIndex = true
             schemaProperty.propertyFlags.append(.unique)
 
             let uniqueConfiguration = propertyVar.annotations["unique"]
@@ -611,13 +618,11 @@ enum ObjectBoxGenerator {
         }
 
         // Map to property flags
-        if schemaProperty.indexType != .none {
-            schemaProperty.propertyFlags.append(.indexed)
-            if schemaProperty.indexType == .hashIndex {
-                schemaProperty.propertyFlags.append(.indexHash)
-            } else if schemaProperty.indexType == .hash64Index {
-                schemaProperty.propertyFlags.append(.indexHash64)
-            }
+        schemaProperty.propertyFlags.append(.indexed)
+        if indexType == .hashIndex {
+            schemaProperty.propertyFlags.append(.indexHash)
+        } else if indexType == .hash64Index {
+            schemaProperty.propertyFlags.append(.indexHash64)
         }
     }
 
@@ -633,7 +638,6 @@ enum ObjectBoxGenerator {
         }
 
         // Implicitly create an index
-        schemaProperty.indexType = .valueIndex
         schemaProperty.propertyFlags.append(.indexed)
 
         schemaProperty.hnswParams = try SchemaHnswParams.fromAnnotation(propertyVar: propertyVar, hnswAnnotation: hnswAnnotation)

@@ -814,7 +814,7 @@ enum IdSync {
                 }
             }
 
-            let shouldHaveIndex = schemaProperty.indexType != .none || schemaProperty.isRelation
+            let shouldHaveIndex = schemaProperty.hasIndexFlag || schemaProperty.isRelation
             var sourceIndexId: IdUid? = shouldHaveIndex ? existingProperty?.indexId : nil
             // check entity for index as Property.Index is only auto-set for to-ones
             let foundIndex = schemaEntity.indexes.filter({ $0.properties.count == 1 && $0.properties.first == schemaProperty.name }).first

@@ -118,13 +118,6 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
     }
 }
 
-enum SchemaIndexType {
-    case none
-    case valueIndex
-    case hashIndex
-    case hash64Index
-}
-
 class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var modelId: IdUid?
     var propertyName: String = ""
@@ -135,7 +128,6 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var unwrappedPropertyType: String = ""
     var dbName: String?
     var modelIndexId: IdUid?
-    var indexType: SchemaIndexType = .none
     var backlinkName: String?
     var backlinkType: String?
     var isObjectId: Bool = false
@@ -153,7 +145,6 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     /// See also ``isRelation``.
     var isToManyRelation: Bool = false
     var toManyRelation: SchemaToManyRelation?
-    var isUniqueIndex: Bool = false
     var isUnsignedType: Bool = false
     /// The ObjectBox database ``PropertyType``.
     var propertyType = PropertyType.unknown
@@ -185,6 +176,11 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
         }
     }
 
+    /// Returns if `propertyFlags` contains the ``.indexed`` flag.
+    var hasIndexFlag: Bool {
+        return propertyFlags.contains(.indexed)
+    }
+
     public var propertyTypeQualifiedNameDyn: String {
         "PropertyType.\(propertyType)"
     }
@@ -207,9 +203,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
 
     public var debugDescription: String {
         var moreData = ""
-        if isUniqueIndex { moreData += "\n\t\t\tisUniqueIndex = \(isUniqueIndex)" }
         if isUnsignedType { moreData += "\n\t\t\tisUnsignedType = \(isUnsignedType)" }
-        if indexType != .none { moreData += "\n\t\t\tindexType = \(indexType)" }
         if isByteVectorType { moreData += "\n\t\t\tisByteVectorType = \(isByteVectorType)" }
         if isScalarVectorType { moreData += "\n\t\t\tisScalarVectorType = \(isScalarVectorType)" }
         if hnswParams != nil { moreData += "\n\t\t\thnswParams = \(hnswParams!)" }
