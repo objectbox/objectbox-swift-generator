@@ -13,7 +13,8 @@
 
 ## Build generated
 build/
-bin/Sourcery.app
+bin/*
+!bin/sourcery
 DerivedData/
 ObjectBoxToolTests/generated
 
@@ -88,3 +89,4 @@ docs/undocumented.json
 
 # IDEA based IDEs (AppCode, CLion) configuration
 .idea
+.vscode/
