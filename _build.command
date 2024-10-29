@@ -40,6 +40,25 @@ echo ""
 
 xcodebuild -workspace "${MY_DIR}/Sourcery.xcworkspace" -scheme "Sourcery-Release" -configuration Release -quiet CONFIGURATION_BUILD_DIR="${MY_DIR}/bin/build"
 
+# The Swift Package Manager requires an artifact bundle, not an app.
+# Therefore, create the artifact bundle from the app.
+# The name needs to be changed, since the Sourcery is already taken by Sourcery itself.
+# The internals can stay unchanged because names are adjusted in the reuqired info.json file.
+rm -rf "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle/"
+cp -r "${MY_DIR}/bin/build/Sourcery.app/" "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle"
+# Fix the version, and add the required info.json to the artifact bundle
+OBECTBOX_GENERATOR_VERSION=$(./bin/build/Sourcery.app/Contents/MacOS/Sourcery --version)
+echo "GEN: $OBECTBOX_GENERATOR_VERSION"
+jq --arg new_version "$OBECTBOX_GENERATOR_VERSION" \
+   '.artifacts["objectbox-generator"].version = $new_version' \
+   "${MY_DIR}/Resources/info.json" > \
+   "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle/info.json"
+# Create the zip file we want to deploy
+rm -f "${MY_DIR}/bin/ObjectBox.artifactbundle.zip"
+( cd "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle" && zip -r --symlinks "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle.zip" . )
+# add the sha256 for the zip file
+( cd ${MY_DIR}/bin/ && shasum -a 256 "ObjectBoxGenerator.artifactbundle.zip" > "ObjectBoxGenerator.artifactbundle.zip.sha256" )
+
 if [ "$dirty" = true ] ; then
     echo ""
     echo "$SMSO Copying (without cleaning)... $RMSO"
