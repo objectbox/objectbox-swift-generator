@@ -2,10 +2,10 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:Templates/Templates.xcodeproj">
+      location = "group:Sourcery.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:Sourcery.xcodeproj">
+      location = "group:Templates/Templates.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:Pods/Pods.xcodeproj">
