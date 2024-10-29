@@ -114,7 +114,7 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
     }
 
     public var debugDescription: String {
-        return "SchemaEntity {\n\t\tmodelId = \(String(describing: modelId))\n\t\tmodelUid = \(String(describing: modelUid))\n\t\tclassName = \(className)\n\t\tdbName = \(String(describing: dbName))\n\t\tproperties = \(properties)\n\t\tindexes = \(indexes)\n\t\trelations = \(relations)\n\t\ttoManyRelations = \(toManyRelations)\n\t\tlastPropertyId = \(String(describing: lastPropertyId))\n\t\tisEntitySubclass = \(isEntitySubclass)\n\t\tisValueType = \(isValueType)\n\t\thasStringProperties = \(hasStringProperties)\n\t\tidProperty = \(String(describing: idProperty))\n\t\tidCandidates = \(idCandidates)\n\t}\n"
+        return "SchemaEntity {\n\t\tmodelId = \(modelId as Any)\n\t\tmodelUid = \(modelUid as Any)\n\t\tclassName = \(className)\n\t\tdbName = \(dbName as Any)\n\t\tproperties = \(properties)\n\t\tindexes = \(indexes)\n\t\trelations = \(relations)\n\t\ttoManyRelations = \(toManyRelations)\n\t\tlastPropertyId = \(lastPropertyId as Any)\n\t\tisEntitySubclass = \(isEntitySubclass)\n\t\tisValueType = \(isValueType)\n\t\thasStringProperties = \(hasStringProperties)\n\t\tidProperty = \(idProperty as Any)\n\t\tidCandidates = \(idCandidates)\n\t}\n"
     }
 }
 
@@ -207,7 +207,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
         if isByteVectorType { moreData += "\n\t\t\tisByteVectorType = \(isByteVectorType)" }
         if isScalarVectorType { moreData += "\n\t\t\tisScalarVectorType = \(isScalarVectorType)" }
         if hnswParams != nil { moreData += "\n\t\t\thnswParams = \(hnswParams!)" }
-        return "SchemaProperty {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tpropertyFlags = \(propertyFlags)\n\t\t\tpropertySwiftType = \(propertySwiftType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t\tmodelIndexId = \(String(describing: modelIndexId))\n\t\t\tbacklinkName = \(String(describing: backlinkName))\n\t\t\tbacklinkType = \(String(describing: backlinkType))\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
+        return "SchemaProperty {\n\t\t\tmodelId = \(modelId as Any)\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tpropertyFlags = \(propertyFlags)\n\t\t\tpropertySwiftType = \(propertySwiftType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(dbName as Any)\n\t\t\tmodelIndexId = \(modelIndexId as Any)\n\t\t\tbacklinkName = \(backlinkName as Any)\n\t\t\tbacklinkType = \(backlinkType as Any)\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
     }
 }
 
@@ -355,12 +355,12 @@ class SchemaHnswParams: CustomDebugStringConvertible {
         let indent = "\t\t\t\t"
         return "SchemaHnswParams {\n"
         + "\(indent)dimensions = \(dimensions)\n"
-        + "\(indent)neighborsPerNode = \(String(describing: neighborsPerNode))\n"
-        + "\(indent)indexingSearchCount = \(String(describing: indexingSearchCount))\n"
-        + "\(indent)flags = \(String(describing: flags?.description))\n"
-        + "\(indent)distanceType = \(String(describing: distanceType))\n"
-        + "\(indent)reparationBacklinkProbability = \(String(describing: reparationBacklinkProbability))\n"
-        + "\(indent)vectorCacheHintSizeKB = \(String(describing: vectorCacheHintSizeKB))\n"
+        + "\(indent)neighborsPerNode = \(neighborsPerNode as Any)\n"
+        + "\(indent)indexingSearchCount = \(indexingSearchCount as Any)\n"
+        + "\(indent)flags = \(flags as Any)\n"
+        + "\(indent)distanceType = \(distanceType as Any)\n"
+        + "\(indent)reparationBacklinkProbability = \(reparationBacklinkProbability as Any)\n"
+        + "\(indent)vectorCacheHintSizeKB = \(vectorCacheHintSizeKB as Any)\n"
         + "\t\t\t}"
     }
 }
