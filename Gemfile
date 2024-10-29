@@ -1,10 +1,10 @@
 source 'https://rubygems.org'
 
-gem 'cocoapods', '1.6.1'
+gem 'cocoapods', '1.15.2'
 gem 'cocoapods-update-if-you-dare'
 gem 'danger'
 gem 'danger-jazzy'
 gem 'rake'
 gem 'slather'
 gem 'xcpretty'
-gem 'jazzy', '0.8.2'
+gem 'jazzy', '0.15.2'
