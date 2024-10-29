@@ -1,11 +1,3 @@
-//
-//  SwiftDeclarationAttributeKind.swift
-//  SourceKittenFramework
-//
-//  Created by Daniel.Metzing on 2018-04-04.
-//  Copyright © 2018 SourceKitten. All rights reserved.
-//
-
 /// Swift declaration attribute kinds.
 /// Found in `strings SourceKitService | grep source.decl.attribute.`.
 public enum SwiftDeclarationAttributeKind: String, CaseIterable {
@@ -90,7 +82,7 @@ public enum SwiftDeclarationAttributeKind: String, CaseIterable {
     case weakLinked = "source.decl.attribute._weakLinked"
     case inlinable = "source.decl.attribute.inlinable"
     case dynamicMemberLookup = "source.decl.attribute.dynamicMemberLookup"
-    case frozen = "source.decl.attribute._frozen"
+    case _frozen = "source.decl.attribute._frozen"
 
     // only available in Swift < 4.1
     case autoclosure = "source.decl.attribute.autoclosure"
@@ -108,4 +100,65 @@ public enum SwiftDeclarationAttributeKind: String, CaseIterable {
     case _private = "source.decl.attribute._private"
     case _show_in_interface = "source.decl.attribute._show_in_interface"
     case dynamicCallable = "source.decl.attribute.dynamicCallable"
+
+    // only available in Swift >= 5.1
+    case frozen = "source.decl.attribute.frozen"
+    case _projectedValueProperty = "source.decl.attribute._projectedValueProperty"
+    case _alwaysEmitIntoClient = "source.decl.attribute._alwaysEmitIntoClient"
+    case _implementationOnly = "source.decl.attribute._implementationOnly"
+    case ibsegueaction = "source.decl.attribute.ibsegueaction"
+    case _custom = "source.decl.attribute._custom"
+    case _disfavoredOverload = "source.decl.attribute._disfavoredOverload"
+    case propertyWrapper = "source.decl.attribute.propertyWrapper"
+    case IBSegueAction = "source.decl.attribute.IBSegueAction"
+    case _functionBuilder = "source.decl.attribute._functionBuilder"
+
+    // Only available in Swift >= 5.2
+    case differentiable = "source.decl.attribute.differentiable"
+    case _nonEphemeral = "source.decl.attribute._nonEphemeral"
+    case _originallyDefinedIn = "source.decl.attribute._originallyDefinedIn"
+    case _inheritsConvenienceInitializers = "source.decl.attribute._inheritsConvenienceInitializers"
+    case _hasMissingDesignatedInitializers = "source.decl.attribute._hasMissingDesignatedInitializers"
+
+    // Only available in Swift >= 5.3
+    case _spi = "source.decl.attribute._spi"
+    case _typeEraser = "source.decl.attribute._typeEraser"
+    case derivative = "source.decl.attribute.derivative"
+    case main = "source.decl.attribute.main"
+    case noDerivative = "source.decl.attribute.noDerivative"
+    case transpose = "source.decl.attribute.transpose"
+
+    // Only available in Swift >= 5.4
+    case _specializeExtension = "source.decl.attribute._specializeExtension"
+    case actor = "source.decl.attribute.actor"
+    case actorIndependent = "source.decl.attribute.actorIndependent"
+    case async = "source.decl.attribute.async"
+    case asyncHandler = "source.decl.attribute.asyncHandler"
+    case globalActor = "source.decl.attribute.globalActor"
+    case resultBuilder = "source.decl.attribute.resultBuilder"
+
+    // Only available in Swift >= 5.5
+    case spawn = "source.decl.attribute.spawn"
+    case _unsafeMainActor = "source.decl.attribute._unsafeMainActor"
+    case _unsafeSendable = "source.decl.attribute._unsafeSendable"
+    case isolated = "source.decl.attribute.isolated"
+    case _inheritActorContext = "source.decl.attribute._inheritActorContext"
+    case nonisolated = "source.decl.attribute.nonisolated"
+    case _implicitSelfCapture = "source.decl.attribute._implicitSelfCapture"
+    case completionHandlerAsync = "source.decl.attribute.completionHandlerAsync"
+    case _marker = "source.decl.attribute._marker"
+    case reasync = "source.decl.attribute.reasync"
+    case Sendable = "source.decl.attribute.Sendable"
+
+    // Only available in Swift >= 5.6
+    case distributed = "source.decl.attribute.distributed"
+    case _unavailableFromAsync = "source.decl.attribute._unavailableFromAsync"
+    case preconcurrency = "source.decl.attribute.preconcurrency"
+    case _assemblyVision = "source.decl.attribute._assemblyVision"
+    case _const = "source.decl.attribute._const"
+    case _typeSequence = "source.decl.attribute._typeSequence"
+    case _nonSendable = "source.decl.attribute._nonSendable"
+    case _noAllocation = "source.decl.attribute._noAllocation"
+    case _noImplicitCopy = "source.decl.attribute._noImplicitCopy"
+    case _noLocks = "source.decl.attribute._noLocks"
 }

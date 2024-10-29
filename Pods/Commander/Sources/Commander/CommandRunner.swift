@@ -1,5 +1,7 @@
 #if os(Linux)
   import Glibc
+#elseif os(Windows)
+  import CRT
 #else
   import Darwin
 #endif
@@ -37,11 +39,8 @@ extension CommandType {
     } catch let error as ANSIConvertible {
       error.print()
       exit(1)
-    } catch let error as CustomStringConvertible {
-      fputs("\(ANSI.red)\(error.description)\(ANSI.reset)\n", stderr)
-      exit(1)
     } catch {
-      fputs("\(ANSI.red)Unknown error occurred.\(ANSI.reset)\n", stderr)
+      ANSI.red.print("An error occurred: \(error)", to: stderr)
       exit(1)
     }
 

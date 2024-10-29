@@ -4,11 +4,11 @@ An adorable little framework and command line tool for interacting with [SourceK
 
 SourceKitten links and communicates with `sourcekitd.framework` to parse the Swift AST, extract comment docs for Swift or Objective-C projects, get syntax data for a Swift file and lots more!
 
-[![Azure Pipelines](https://dev.azure.com/jpsim/SourceKitten/_apis/build/status/jpsim.SourceKitten)](https://dev.azure.com/jpsim/SourceKitten/_build/latest?definitionId=3)
+![SwiftPM](https://github.com/jpsim/SourceKitten/workflows/SwiftPM/badge.svg)
 
 ## Installation
 
-Building SourceKitten requires Xcode 10 or later or a Swift 4.2
+Building SourceKitten requires Xcode 12 or later or a Swift 5.3
 toolchain or later with the Swift Package Manager.
 
 SourceKitten typically supports previous versions of SourceKit.
@@ -35,17 +35,26 @@ Once SourceKitten is installed, you may use it from the command line.
 
 ```
 $ sourcekitten help
-Available commands:
+OVERVIEW: An adorable little command line tool for interacting with SourceKit
 
-   complete    Generate code completion options
-   doc         Print Swift or Objective-C docs as JSON
-   format      Format Swift file
-   help        Display general or command-specific help
-   index       Index Swift file and print as JSON
-   request     Run a raw sourcekit request
-   structure   Print Swift structure information as JSON
-   syntax      Print Swift syntax information as JSON
-   version     Display the current version of SourceKitten
+USAGE: sourcekitten <subcommand>
+
+OPTIONS:
+  --version               Show the version.
+  -h, --help              Show help information.
+
+SUBCOMMANDS:
+  complete                Generate code completion options
+  doc                     Print Swift or Objective-C docs as JSON
+  format                  Format Swift file
+  index                   Index Swift file and print as JSON
+  module-info             Obtain information about a Swift module and print as JSON
+  request                 Run a raw SourceKit request
+  structure               Print Swift structure information as JSON
+  syntax                  Print Swift syntax information as JSON
+  version                 Display the current version of SourceKitten
+
+  See 'sourcekitten help <subcommand>' for detailed help.
 ```
 
 ## How is SourceKit resolved?
@@ -64,6 +73,11 @@ On Linux, SourceKit is expected to be located in
 `/usr/lib/libsourcekitdInProc.so` or specified by the `LINUX_SOURCEKIT_LIB_PATH`
 environment variable.
 
+On macOS, `sourcekitd.framework` is used, which uses XPC to communicate with the
+sourcekit daemon. If you want to use the in-process version
+(`sourcekitdInProc.framework`), specify `IN_PROCESS_SOURCEKIT=YES`
+environment variable.
+
 ## Projects Built With SourceKitten
 
 * [SwiftLint](https://github.com/realm/SwiftLint):
@@ -73,7 +87,7 @@ environment variable.
 * [Sourcery](https://github.com/krzysztofzablocki/Sourcery):
   Meta-programming for Swift, stop writing boilerplate code.
 * [SwiftyMocky](https://github.com/MakeAWishFoundation/SwiftyMocky):
-  Framework for mock genertion.
+  Framework for mock generation.
 * [SourceKittenDaemon](https://github.com/terhechte/SourceKittenDaemon):
   Swift Auto Completions for any Text Editor.
 * [SourceDocs](https://github.com/eneko/SourceDocs):

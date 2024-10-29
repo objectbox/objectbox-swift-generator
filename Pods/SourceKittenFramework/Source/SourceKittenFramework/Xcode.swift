@@ -1,43 +1,34 @@
-//
-//  Xcode.swift
-//  SourceKitten
-//
-//  Created by JP Simard on 7/15/15.
-//  Copyright © 2015 SourceKitten. All rights reserved.
-//
-
 import Foundation
 import Yams
 
 internal enum XcodeBuild {
     /**
-    Run `xcodebuild clean build` along with any passed in build arguments.
+    Run `xcodebuild clean build` bypassing signing, along with any passed in build arguments.
 
     - parameter arguments: Arguments to pass to `xcodebuild`.
     - parameter path:      Path to run `xcodebuild` from.
 
-    - returns: `xcodebuild`'s STDERR+STDOUT output combined.
+    - returns: results including `xcodebuild`'s STDERR+STDOUT output combined.
     */
-    internal static func cleanBuild(arguments: [String], inPath path: String) -> String? {
-        let arguments = arguments + ["clean",
-                                     "build",
-                                     "CODE_SIGN_IDENTITY=",
-                                     "CODE_SIGNING_REQUIRED=NO",
-                                     "CODE_SIGNING_ALLOWED=NO"]
-        fputs("Running xcodebuild\n", stderr)
-        return run(arguments: arguments, inPath: path)
+    internal static func cleanBuild(arguments: [String], inPath path: String) -> Exec.Results {
+        let arguments = arguments + ["clean", "build"]
+        return build(arguments: arguments, inPath: path)
     }
 
     /**
-    Run `xcodebuild` along with any passed in build arguments.
+    Run `xcodebuild` bypassing signing, along with any passed in build arguments.
 
     - parameter arguments: Arguments to pass to `xcodebuild`.
     - parameter path:      Path to run `xcodebuild` from.
 
-    - returns: `xcodebuild`'s STDERR+STDOUT output combined.
+    - returns: results including `xcodebuild`'s STDERR+STDOUT output combined.
     */
-    internal static func run(arguments: [String], inPath path: String) -> String? {
-        return String(data: launch(arguments: arguments, inPath: path, pipingStandardError: true), encoding: .utf8)
+    internal static func build(arguments: [String], inPath path: String) -> Exec.Results {
+        let arguments = arguments + ["CODE_SIGN_IDENTITY=",
+                                     "CODE_SIGNING_REQUIRED=NO",
+                                     "CODE_SIGNING_ALLOWED=NO"]
+        fputs("Running xcodebuild\n", stderr)
+        return launch(arguments: arguments, inPath: path, pipingStandardError: true)
     }
 
     /**
@@ -47,48 +38,13 @@ internal enum XcodeBuild {
      - parameter path:                Path to run `xcodebuild` from.
      - parameter pipingStandardError: Whether to pipe the standard error output. The default value is `true`.
 
-     - returns: `xcodebuild`'s STDOUT output and, optionally, both STDERR+STDOUT output combined.
+     - returns: `Exec.Result` containing `xcodebuild`'s exit status, STDOUT output and, optionally, both STDERR+STDOUT output combined.
      */
-    internal static func launch(arguments: [String], inPath path: String, pipingStandardError: Bool = true) -> Data {
-        let task = Process()
-        let pathOfXcodebuild = "/usr/bin/xcodebuild"
-        task.arguments = arguments
-
-        let pipe = Pipe()
-        task.standardOutput = pipe
-
-        if pipingStandardError {
-            task.standardError = pipe
-        }
-
-        do {
-        #if canImport(Darwin)
-            if #available(macOS 10.13, *) {
-                task.executableURL = URL(fileURLWithPath: pathOfXcodebuild)
-                task.currentDirectoryURL = URL(fileURLWithPath: path)
-                try task.run()
-            } else {
-                task.launchPath = pathOfXcodebuild
-                task.currentDirectoryPath = path
-                task.launch()
-            }
-        #elseif compiler(>=5)
-            task.executableURL = URL(fileURLWithPath: pathOfXcodebuild)
-            task.currentDirectoryURL = URL(fileURLWithPath: path)
-            try task.run()
-        #else
-            task.launchPath = pathOfXcodebuild
-            task.currentDirectoryPath = path
-            task.launch()
-        #endif
-        } catch {
-            return Data()
-        }
-
-        let file = pipe.fileHandleForReading
-        defer { file.closeFile() }
-
-        return file.readDataToEndOfFile()
+    private static func launch(arguments: [String], inPath path: String, pipingStandardError: Bool = true) -> Exec.Results {
+        return Exec.run("/usr/bin/xcodebuild",
+                        arguments,
+                        currentDirectory: path,
+                        stderr: pipingStandardError ? .merge : .inherit)
     }
 
     /**
@@ -102,8 +58,8 @@ internal enum XcodeBuild {
     internal static func showBuildSettings(arguments xcodeBuildArguments: [String],
                                            inPath: String) -> [XcodeBuildSetting]? {
         let arguments = xcodeBuildArguments + ["-showBuildSettings", "-json"]
-        let outputData = XcodeBuild.launch(arguments: arguments, inPath: inPath, pipingStandardError: false)
-        return try? JSONDecoder().decode([XcodeBuildSetting].self, from: outputData)
+        let results = XcodeBuild.launch(arguments: arguments, inPath: inPath, pipingStandardError: false)
+        return try? JSONDecoder().decode([XcodeBuildSetting].self, from: results.data)
     }
 }
 
@@ -233,37 +189,7 @@ public func sdkPath() -> String {
     // xcrun does not exist on Linux
     return ""
 #else
-    let task = Process()
-    let pathOfXcrun = "/usr/bin/xcrun"
-    task.arguments = ["--show-sdk-path", "--sdk", "macosx"]
-
-    let pipe = Pipe()
-    task.standardOutput = pipe
-
-    do {
-    #if canImport(Darwin)
-        if #available(macOS 10.13, *) {
-            task.executableURL = URL(fileURLWithPath: pathOfXcrun)
-            try task.run()
-        } else {
-            task.launchPath = pathOfXcrun
-            task.launch()
-        }
-    #elseif compiler(>=5)
-        task.executableURL = URL(fileURLWithPath: pathOfXcrun)
-        try task.run()
-    #else
-        task.launchPath = pathOfXcrun
-        task.launch()
-    #endif
-    } catch {
-        return ""
-    }
-
-    let file = pipe.fileHandleForReading
-    let sdkPath = String(data: file.readDataToEndOfFile(), encoding: .utf8)
-    file.closeFile()
-    return sdkPath?.replacingOccurrences(of: "\n", with: "") ?? ""
+    return Exec.run("/usr/bin/xcrun", "--show-sdk-path", "--sdk", "macosx").string ?? ""
 #endif
 }
 

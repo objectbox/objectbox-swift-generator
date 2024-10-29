@@ -1,4 +1,4 @@
-[![Swift 4.2](https://img.shields.io/badge/Swift-4.2-orange.svg?style=flat)](https://swift.org)
+[![Swift 5.3](https://img.shields.io/badge/Swift-5.3-orange.svg?style=flat)](https://swift.org)
 [![Platforms iOS | watchOS | tvOS | macOS](https://img.shields.io/badge/Platforms-iOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20macOS-lightgray.svg?style=flat)](http://www.apple.com)
 [![CocoaPods](https://img.shields.io/cocoapods/v/AEXML.svg?style=flat)](https://cocoapods.org/pods/AEXML)
 [![Carthage](https://img.shields.io/badge/Carthage-compatible-brightgreen.svg?style=flat)](https://github.com/Carthage/Carthage)
@@ -170,12 +170,41 @@ getStockPrice.addChild(name: "m:StockName", value: "AAPL")
 print(soapRequest.xml)
 ```
 
+Or perhaps like this (see PR #186):
+
+```swift
+@AEXMLDocumentBuilder
+private func buildSoapEnvelope(
+    for action: String,
+    in serviceType: String,
+    with parameters: [String: String] = [:]
+) -> AEXMLDocument {
+    AEXMLElement("s:Envelope", attributes: [
+        "xmlns:s": "http://schemas.xmlsoap.org/soap/envelope/",
+        "s:encodingStyle": "http://schemas.xmlsoap.org/soap/encoding/"
+    ]) {
+        AEXMLElement("s:Body") {
+            AEXMLElement("s:\(action)", attributes: [
+                "xmlns:u": serviceType
+            ]) {
+                for parameter in parameters {
+                    AEXMLElement(
+                        name: parameter.key,
+                        value: parameter.value
+                    )
+                }
+            }
+        }
+    }
+}
+```
+
 ## Installation
 
 - [Swift Package Manager](https://swift.org/package-manager/):
 
-	```
-	.Package(url: "https://github.com/tadija/AEXML.git", majorVersion: 4)
+	```swift
+    .package(url: "https://github.com/tadija/AEXML.git", from: "4.6.1")
 	```
 
 - [Carthage](https://github.com/Carthage/Carthage):

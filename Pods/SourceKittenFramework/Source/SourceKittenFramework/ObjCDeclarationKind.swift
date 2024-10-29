@@ -1,11 +1,3 @@
-//
-//  ObjCDeclarationKind.swift
-//  SourceKitten
-//
-//  Created by JP Simard on 7/15/15.
-//  Copyright © 2015 SourceKitten. All rights reserved.
-//
-
 #if !os(Linux)
 
 #if SWIFT_PACKAGE
@@ -46,6 +38,8 @@ public enum ObjCDeclarationKind: String {
     case mark = "sourcekitten.source.lang.objc.mark"
     /// `struct`
     case `struct` = "sourcekitten.source.lang.objc.decl.struct"
+    /// `union`
+    case `union` = "sourcekitten.source.lang.objc.decl.union"
     /// `field`
     case field = "sourcekitten.source.lang.objc.decl.field"
     /// `ivar`
@@ -70,10 +64,15 @@ public enum ObjCDeclarationKind: String {
         case CXCursor_VarDecl: self = .constant
         case CXCursor_FunctionDecl: self = .function
         case CXCursor_StructDecl: self = .struct
+        case CXCursor_UnionDecl: self = .union
         case CXCursor_FieldDecl: self = .field
         case CXCursor_ObjCIvarDecl: self = .ivar
         case CXCursor_ModuleImportDecl: self = .moduleImport
         case CXCursor_UnexposedDecl: self = .unexposedDecl
+        case CXCursor_ObjCImplementationDecl: self = .class
+        case CXCursor_ObjCCategoryImplDecl: self = .category
+        case CXCursor_ObjCDynamicDecl: self = .unexposedDecl
+        case CXCursor_ObjCSynthesizeDecl: self = .unexposedDecl
         default: fatalError("Unsupported CXCursorKind: \(clang_getCursorKindSpelling(cursorKind))")
         }
     }

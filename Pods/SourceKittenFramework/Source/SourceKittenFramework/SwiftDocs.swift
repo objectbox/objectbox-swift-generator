@@ -1,13 +1,9 @@
-//
-//  SwiftDocs.swift
-//  SourceKitten
-//
-//  Created by JP Simard on 2015-01-03.
-//  Copyright (c) 2015 SourceKitten. All rights reserved.
-//
-
 #if SWIFT_PACKAGE
 import SourceKit
+#endif
+
+#if os(Linux)
+import Glibc
 #endif
 
 /// Represents docs for a Swift file.
@@ -53,7 +49,7 @@ public struct SwiftDocs {
         let syntaxMap = SyntaxMap(data: syntaxMapData)
         dictionary = file.process(dictionary: dictionary, cursorInfoRequest: cursorInfoRequest, syntaxMap: syntaxMap)
         if let cursorInfoRequest = cursorInfoRequest {
-            let documentedTokenOffsets = file.contents.documentedTokenOffsets(syntaxMap: syntaxMap)
+            let documentedTokenOffsets = file.stringView.documentedTokenOffsets(syntaxMap: syntaxMap)
             dictionary = file.furtherProcess(
                 dictionary: dictionary,
                 documentedTokenOffsets: documentedTokenOffsets,

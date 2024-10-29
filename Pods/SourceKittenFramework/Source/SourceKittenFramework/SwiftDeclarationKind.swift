@@ -1,11 +1,3 @@
-//
-//  SwiftDeclarationKind.swift
-//  SourceKitten
-//
-//  Created by JP Simard on 2015-01-05.
-//  Copyright (c) 2015 SourceKitten. All rights reserved.
-//
-
 /// Swift declaration kinds.
 /// Found in `strings SourceKitService | grep source.lang.swift.decl.`.
 public enum SwiftDeclarationKind: String, CaseIterable {
@@ -74,6 +66,8 @@ public enum SwiftDeclarationKind: String, CaseIterable {
     case genericTypeParam = "source.lang.swift.decl.generic_type_param"
     /// `module`.
     case module = "source.lang.swift.decl.module"
+    /// `opaquetype`.
+    case opaqueType = "source.lang.swift.decl.opaquetype"
     /// `precedencegroup`.
     case precedenceGroup = "source.lang.swift.decl.precedencegroup"
     /// `protocol`.
