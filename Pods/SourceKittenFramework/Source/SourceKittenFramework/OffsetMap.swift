@@ -1,13 +1,5 @@
-//
-//  OffsetMap.swift
-//  SourceKitten
-//
-//  Created by JP Simard on 2015-01-05.
-//  Copyright (c) 2015 SourceKitten. All rights reserved.
-//
-
 /// Type that maps potentially documented declaration offsets to its closest parent offset.
-public typealias OffsetMap = [Int: Int]
+public typealias OffsetMap = [ByteCount: ByteCount]
 
 /// File methods to generate and manipulate OffsetMap's.
 extension File {
@@ -23,7 +15,7 @@ extension File {
     - returns: OffsetMap containing offset locations at which there are declarations that likely
                have documentation comments, but haven't been documented by SourceKitten yet.
     */
-    public func makeOffsetMap(documentedTokenOffsets: [Int], dictionary: [String: SourceKitRepresentable]) -> OffsetMap {
+    public func makeOffsetMap(documentedTokenOffsets: [ByteCount], dictionary: [String: SourceKitRepresentable]) -> OffsetMap {
         var offsetMap = OffsetMap()
         for offset in documentedTokenOffsets {
             offsetMap[offset] = 0
@@ -51,8 +43,7 @@ extension File {
         if let rangeStart = SwiftDocKey.getNameOffset(dictionary),
            let rangeLength = SwiftDocKey.getNameLength(dictionary) {
             let bodyLength = SwiftDocKey.getBodyLength(dictionary) ?? 0
-            let rangeMax = Int(rangeStart + rangeLength + bodyLength)
-            let rangeStart = Int(rangeStart)
+            let rangeMax = rangeStart + rangeLength + bodyLength
             let offsetsInRange = offsetMap.keys.filter {
                 $0 >= rangeStart && $0 <= rangeMax
             }

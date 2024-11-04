@@ -5,6 +5,13 @@ workspace 'Sourcery.xcworkspace'
 use_frameworks!
 inhibit_all_warnings!
 
+
+# Define it just once, since it's used in multiple places
+# 0.32.0 is the first version with inproc communication option to SourceKit
+# and therefore the minimum version required to run this Sourcery version in the sandbox of a Swift Package Plugin
+source_kitten_framework_version = '0.32.0'
+
+
 def meta
   pod 'SwiftLint'
 end
@@ -32,11 +39,11 @@ end
 target 'Sourcery' do
   pod 'Stencil', '0.13.1'
   pod 'StencilSwiftKit', '2.7.0'
-  pod 'Commander', '0.7.0'
+  pod 'Commander', '0.9.2' # lower versions show compilor issues with some the command<A:ArgumentConvertible... > functions. Seems related to the new string conversion we see on other places
   pathkit
   pod "xcproj", :git =>'git@github.com:tuist/xcodeproj.git', :tag => '4.3.1'
-  pod 'SourceKittenFramework', '0.23.1'
-  pod 'Yams', '2.0.0'
+  pod 'SourceKittenFramework', source_kitten_framework_version
+  pod 'Yams' , '4.0.6' # Mirror SourceKittens requirement, since this is the driving dependency
 
   target 'SourceryTests' do
     inherit! :search_paths
@@ -58,7 +65,7 @@ end
 
 target 'SourceryFramework' do
   pathkit
-  pod 'SourceKittenFramework', '0.23.1'
+  pod 'SourceKittenFramework', source_kitten_framework_version
 end
 
 # This is a temporary workaround to make all dependencies target macOS 10.13

@@ -26,12 +26,12 @@ public class YAMLDecoder {
     ///
     /// - returns: Returns the decoded type `T`.
     ///
-    /// - throws: `DecodingError` if something went wrong while decoding.
+    /// - throws: `DecodingError` or `YamlError` if something went wrong while decoding.
     public func decode<T>(_ type: T.Type = T.self,
                           from yaml: String,
                           userInfo: [CodingUserInfoKey: Any] = [:]) throws -> T where T: Swift.Decodable {
         do {
-            let node = try Parser(yaml: yaml, resolver: .basic, encoding: encoding).singleRoot() ?? ""
+            let node = try Parser(yaml: yaml, resolver: Resolver([.merge]), encoding: encoding).singleRoot() ?? ""
             let decoder = _Decoder(referencing: node, userInfo: userInfo)
             let container = try decoder.singleValueContainer()
             return try container.decode(type)
@@ -44,13 +44,32 @@ public class YAMLDecoder {
         }
     }
 
+    /// Decode a `Decodable` type from a given `Data` and optional user info mapping.
+    ///
+    /// - parameter type:    `Decodable` type to decode.
+    /// - parameter yaml:     YAML data to decode.
+    /// - parameter userInfo: Additional key/values which can be used when looking up keys to decode.
+    ///
+    /// - returns: Returns the decoded type `T`.
+    ///
+    /// - throws: `DecodingError` or `YamlError` if something went wrong while decoding.
+    public func decode<T>(_ type: T.Type = T.self,
+                          from yamlData: Data,
+                          userInfo: [CodingUserInfoKey: Any] = [:]) throws -> T where T: Swift.Decodable {
+        guard let yamlString = String(data: yamlData, encoding: encoding.swiftStringEncoding) else {
+            throw YamlError.dataCouldNotBeDecoded(encoding: encoding.swiftStringEncoding)
+        }
+
+        return try decode(type, from: yamlString, userInfo: userInfo)
+    }
+
     /// Encoding
     public var encoding: Parser.Encoding
 }
 
 private struct _Decoder: Decoder {
 
-    private let node: Node
+    fileprivate let node: Node
 
     init(referencing node: Node, userInfo: [CodingUserInfoKey: Any], codingPath: [CodingKey] = []) {
         self.node = node
@@ -64,7 +83,7 @@ private struct _Decoder: Decoder {
     let userInfo: [CodingUserInfoKey: Any]
 
     func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> {
-        guard let mapping = node.mapping else {
+        guard let mapping = node.mapping?.flatten() else {
             throw _typeMismatch(at: codingPath, expectation: Node.Mapping.self, reality: node)
         }
         return .init(_KeyedDecodingContainer<Key>(decoder: self, wrapping: mapping))
@@ -99,7 +118,7 @@ private struct _Decoder: Decoder {
     }
 }
 
-private struct _KeyedDecodingContainer<Key: CodingKey> : KeyedDecodingContainerProtocol {
+private struct _KeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
 
     private let decoder: _Decoder
     private let mapping: Node.Mapping
@@ -324,3 +343,26 @@ extension URL: ScalarConstructible {
         return URL(string: scalar.string)
     }
 }
+
+// MARK: Decoder.mark
+
+extension Decoder {
+    /// The `Mark` for the underlying `Node` that has been decoded.
+    public var mark: Mark? {
+        return (self as? _Decoder)?.node.mark
+    }
+}
+
+// MARK: TopLevelDecoder
+
+#if canImport(Combine)
+import protocol Combine.TopLevelDecoder
+
+extension YAMLDecoder: TopLevelDecoder {
+    public typealias Input = Data
+
+    public func decode<T>(_ type: T.Type, from: Data) throws -> T where T: Decodable {
+        try decode(type, from: from, userInfo: [:])
+    }
+}
+#endif

@@ -1,11 +1,3 @@
-//
-//  ClangTranslationUnit.swift
-//  SourceKitten
-//
-//  Created by JP Simard on 2015-01-12.
-//  Copyright (c) 2015 SourceKitten. All rights reserved.
-//
-
 #if !os(Linux)
 
 #if SWIFT_PACKAGE
@@ -78,7 +70,7 @@ public struct ClangTranslationUnit {
     - parameter path:                Path to run `xcodebuild` from. Uses current path by default.
     */
     public init?(headerFiles: [String], xcodeBuildArguments: [String], inPath path: String = FileManager.default.currentDirectoryPath) {
-        let xcodeBuildOutput = XcodeBuild.cleanBuild(arguments: xcodeBuildArguments + ["-dry-run"], inPath: path) ?? ""
+        let xcodeBuildOutput = XcodeBuild.cleanBuild(arguments: xcodeBuildArguments + ["-dry-run"], inPath: path).string ?? ""
         guard let clangArguments = parseCompilerArguments(xcodebuildOutput: xcodeBuildOutput, language: .objc, moduleName: nil) else {
             fputs("could not parse compiler arguments\n\(xcodeBuildOutput)\n", stderr)
             return nil

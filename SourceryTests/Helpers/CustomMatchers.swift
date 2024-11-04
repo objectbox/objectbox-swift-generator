@@ -13,8 +13,8 @@ import Quick
 /// Values can support equal by supporting the Equatable protocol.
 ///
 /// @see beCloseTo if you want to match imprecise types (eg - floats, doubles).
-public func equal<T: Equatable>(_ expectedValue: T?) -> Predicate<T> where T: Diffable {
-    return  Predicate.define("equal <\(stringify(expectedValue))>") { actualExpression, msg -> PredicateResult in
+public func equal<T: Equatable>(_ expectedValue: T?) -> Nimble.Predicate<T> where T: Diffable {
+    return  Nimble.Predicate.define("equal <\(stringify(expectedValue))>") { actualExpression, msg -> PredicateResult in
         let actualValue = try actualExpression.evaluate()
         let matches = actualValue == expectedValue && expectedValue != nil
         if expectedValue == nil || actualValue == nil {
@@ -37,8 +37,8 @@ public func equal<T: Equatable>(_ expectedValue: T?) -> Predicate<T> where T: Di
 
 /// A Nimble matcher that succeeds when the actual collection is equal to the expected collection.
 /// Items must implement the Equatable protocol.
-public func equal<T: Equatable>(_ expectedValue: [T]?) -> Predicate<[T]> where T: Diffable {
-    return  Predicate.define("equal <\(stringify(expectedValue))>") { actualExpression, msg -> PredicateResult in
+public func equal<T: Equatable>(_ expectedValue: [T]?) -> Nimble.Predicate<[T]> where T: Diffable {
+    return  Nimble.Predicate.define("equal <\(stringify(expectedValue))>") { actualExpression, msg -> PredicateResult in
         let actualValue = try actualExpression.evaluate()
         if expectedValue == nil || actualValue == nil {
             if expectedValue == nil {
@@ -65,8 +65,8 @@ public func equal<T: Equatable>(_ expectedValue: [T]?) -> Predicate<[T]> where T
 /// Values can support equal by supporting the Equatable protocol.
 ///
 /// @see beCloseTo if you want to match imprecise types (eg - floats, doubles).
-public func equal<T, C: Equatable>(_ expectedValue: [T: C]?) -> Predicate<[T: C]> where C: Diffable {
-    return Predicate.define("equal <\(stringify(expectedValue))>") { actualExpression, msg -> PredicateResult in
+public func equal<T, C: Equatable>(_ expectedValue: [T: C]?) -> Nimble.Predicate<[T: C]> where C: Diffable {
+    return Nimble.Predicate.define("equal <\(stringify(expectedValue))>") { actualExpression, msg -> PredicateResult in
         let actualValue = try actualExpression.evaluate()
         if expectedValue == nil || actualValue == nil {
             if expectedValue == nil {
