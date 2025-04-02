@@ -338,6 +338,8 @@ class SchemaHnswParams: CustomDebugStringConvertible {
             return "HnswDistanceType.cosine"
         case "dotProduct":
             return "HnswDistanceType.dotProduct"
+        case "geo":
+            return "HnswDistanceType.geo"
         case "dotProductNonNormalized":
             return "HnswDistanceType.dotProductNonNormalized"
         default:
