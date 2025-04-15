@@ -1,38 +1,86 @@
 import Foundation
-import xcproj
+import XcodeProj
 import PathKit
 import Yams
 import SourceryRuntime
+import Basics
+import TSCBasic
+import Workspace
+import PackageModel
+import SourceryFramework
+import SourceryUtils
 
-struct Project {
-    let file: XcodeProj
-    let root: Path
-    let targets: [Target]
-    let exclude: [Path]
+public struct Project {
+    public let file: XcodeProj
+    public let root: Path
+    public let targets: [Target]
+    public let exclude: [Path]
 
-    struct Target {
-        let name: String
-        let module: String
+    public struct Target {
 
-        init(dict: [String: String]) throws {
-            guard let name = dict["name"] else {
+        public struct XCFramework {
+
+            public let path: Path
+            public let swiftInterfacePath: Path
+            public let module: String
+
+            public init(rawPath: String, relativePath: Path) throws {
+                let frameworkRelativePath = Path(rawPath, relativeTo: relativePath)
+                guard let framework = frameworkRelativePath.components.last else {
+                    throw Configuration.Error.invalidXCFramework(message: "Framework path invalid. Expected String.")
+                }
+                let `extension` = Path(framework).`extension`
+                guard `extension` == "xcframework" else {
+                    throw Configuration.Error.invalidXCFramework(message: "Framework path invalid. Expected path to xcframework file.")
+                }
+                let moduleName = Path(framework).lastComponentWithoutExtension
+                guard
+                    let simulatorSlicePath = frameworkRelativePath.glob("*")
+                        .first(where: { $0.lastComponent.contains("simulator") })
+                else {
+                    throw Configuration.Error.invalidXCFramework(path: frameworkRelativePath, message: "Framework path invalid. Expected to find simulator slice.")
+                }
+                let modulePath = simulatorSlicePath + Path("\(moduleName).framework/Modules/\(moduleName).swiftmodule/")
+                guard let interfacePath = modulePath.glob("*.swiftinterface").first(where: { $0.lastComponent.contains("simulator") })
+                else {
+                    throw Configuration.Error.invalidXCFramework(path: frameworkRelativePath, message: "Framework path invalid. Expected to find .swiftinterface.")
+                }
+                self.path = frameworkRelativePath
+                self.swiftInterfacePath = interfacePath
+                self.module = moduleName
+            }
+        }
+
+        public let name: String
+        public let module: String
+        public let xcframeworks: [XCFramework]
+
+        public init(dict: [String: Any], relativePath: Path) throws {
+            guard let name = dict["name"] as? String else {
                 throw Configuration.Error.invalidSources(message: "Target name is not provided. Expected string.")
             }
             self.name = name
-            self.module = dict["module"] ?? name
+            self.module = (dict["module"] as? String) ?? name
+            do {
+                self.xcframeworks = try (dict["xcframeworks"] as? [String])?
+                    .map { try XCFramework(rawPath: $0, relativePath: relativePath) } ?? []
+            } catch let error as Configuration.Error {
+                Log.warning(error.description)
+                self.xcframeworks = []
+            }
         }
     }
 
-    init(dict: [String: Any], relativePath: Path) throws {
+    public init(dict: [String: Any], relativePath: Path) throws {
         guard let file = dict["file"] as? String else {
             throw Configuration.Error.invalidSources(message: "Project file path is not provided. Expected string.")
         }
 
         let targetsArray: [Target]
-        if let targets = dict["target"] as? [[String: String]] {
-            targetsArray = try targets.map({ try Target(dict: $0) })
-        } else if let target = dict["target"] as? [String: String] {
-            targetsArray = try [Target(dict: target)]
+        if let targets = dict["target"] as? [[String: Any]] {
+            targetsArray = try targets.map({ try Target(dict: $0, relativePath: relativePath) })
+        } else if let target = dict["target"] as? [String: Any] {
+            targetsArray = try [Target(dict: target, relativePath: relativePath)]
         } else {
             throw Configuration.Error.invalidSources(message: "'target' key is missing. Expected object or array of objects.")
         }
@@ -51,16 +99,16 @@ struct Project {
 
 }
 
-struct Paths {
-    let include: [Path]
-    let exclude: [Path]
-    let allPaths: [Path]
+public struct Paths {
+    public let include: [Path]
+    public let exclude: [Path]
+    public let allPaths: [Path]
 
-    var isEmpty: Bool {
+    public var isEmpty: Bool {
         return allPaths.isEmpty
     }
 
-    init(dict: Any, relativePath: Path) throws {
+    public init(dict: Any, relativePath: Path) throws {
         if let sources = dict as? [String: [String]],
             let include = sources["include"]?.map({ Path($0, relativeTo: relativePath) }) {
 
@@ -78,23 +126,97 @@ struct Paths {
         }
     }
 
-    init(include: [Path], exclude: [Path] = []) {
+    public init(include: [Path], exclude: [Path] = []) {
         self.include = include
         self.exclude = exclude
 
-        let include = self.include.flatMap { $0.allPaths }
-        let exclude = self.exclude.flatMap { $0.allPaths }
+        let include = self.include.parallelFlatMap { $0.processablePaths }
+        let exclude = self.exclude.parallelFlatMap { $0.processablePaths }
 
         self.allPaths = Array(Set(include).subtracting(Set(exclude))).sorted()
     }
 
 }
 
-enum Source {
+extension Path {
+    public var processablePaths: [Path] {
+        if isDirectory {
+            return (try? recursiveUnhiddenChildren()) ?? []
+        } else {
+            return [self]
+        }
+    }
+
+    public func recursiveUnhiddenChildren() throws -> [Path] {
+        FileManager.default.enumerator(at: url, includingPropertiesForKeys: [.pathKey], options: [.skipsHiddenFiles, .skipsPackageDescendants], errorHandler: nil)?.compactMap { object in
+            if let url = object as? URL {
+                return self + Path(url.path)
+            }
+            return nil
+        } ?? []
+    }
+}
+
+public struct Package {
+    public let root: Path
+    public let targets: [Target]
+
+    public struct Target {
+        let name: String
+        let root: Path
+        let excludes: [Path]
+    }
+
+    public init(dict: [String: Any], relativePath: Path) throws {
+        guard let packageRootPath = dict["path"] as? String else {
+            throw Configuration.Error.invalidSources(message: "Package file directory path is not provided. Expected string.")
+        }
+        let path = Path(packageRootPath, relativeTo: relativePath)
+        
+        let packagePath = try Basics.AbsolutePath(validating: path.string)
+        let observability = ObservabilitySystem { Log.verbose("\($0): \($1)") }
+        let workspace = try Workspace(forRootPackage: packagePath)
+
+        var manifestResult: Result<Manifest, Error>?
+        let semaphore = DispatchSemaphore(value: 0)
+        workspace.loadRootManifest(at: packagePath, observabilityScope: observability.topScope, completion: { result in
+            manifestResult = result
+            semaphore.signal()
+        })
+        semaphore.wait()
+        
+        guard let manifest = try manifestResult?.get() else {
+            throw Configuration.Error.invalidSources(message: "Unable to load manifest")
+        }
+        self.root = path
+        let targetNames: [String]
+        if let targets = dict["target"] as? [String] {
+            targetNames = targets
+        } else if let target = dict["target"] as? String {
+            targetNames = [target]
+        } else {
+            throw Configuration.Error.invalidSources(message: "'target' key is missing. Expected object or array of objects.")
+        }
+        let sourcesPath = Path("Sources", relativeTo: path)
+        self.targets = manifest.targets.compactMap({ target in
+            guard targetNames.contains(target.name) else {
+                return nil
+            }
+            let rootPath = target.path.map { Path($0, relativeTo: path) } ?? Path(target.name, relativeTo: sourcesPath)
+            let excludePaths = target.exclude.map { path in
+                Path(path, relativeTo: rootPath)
+            }
+            return Target(name: target.name, root: rootPath, excludes: excludePaths)
+        })
+    }
+}
+
+public enum Source {
     case projects([Project])
     case sources(Paths)
+    case packages([Package])
 
-    init(dict: [String: Any], relativePath: Path) throws {
+    public init(dict: [String: Any], relativePath: Path) throws {
         if let projects = (dict["project"] as? [[String: Any]]) ?? (dict["project"] as? [String: Any]).map({ [$0] }) {
             guard !projects.isEmpty else { throw Configuration.Error.invalidSources(message: "No projects provided.") }
             self = try .projects(projects.map({ try Project(dict: $0, relativePath: relativePath) }))
@@ -104,54 +226,64 @@ enum Source {
             } catch {
                 throw Configuration.Error.invalidSources(message: "\(error)")
             }
+        } else if let packages = (dict["package"] as? [[String: Any]]) ?? (dict["package"] as? [String: Any]).map({ [$0] }) {
+            guard !packages.isEmpty else { throw Configuration.Error.invalidSources(message: "No packages provided.") }
+            self = try .packages(packages.map({ try Package(dict: $0, relativePath: relativePath) }))
+        } else if dict["child"] != nil {
+            throw Configuration.Error.internalError(message: "'child' should have been parsed already.")
         } else {
-            throw Configuration.Error.invalidSources(message: "'sources' or 'project' key are missing.")
+            throw Configuration.Error.invalidSources(message: "'sources', 'project' or 'package' key are missing.")
         }
     }
 
-    var isEmpty: Bool {
+    public var isEmpty: Bool {
         switch self {
         case let .sources(paths):
             return paths.allPaths.isEmpty
         case let .projects(projects):
             return projects.isEmpty
+        case let .packages(packages):
+            return packages.isEmpty
         }
     }
 }
 
-struct Output {
-    struct LinkTo {
-        let project: XcodeProj
-        let projectPath: Path
-        let target: String
-        let group: String?
+public struct Output {
+    public struct LinkTo {
+        public let project: XcodeProj
+        public let projectPath: Path
+        public let targets: [String]
+        public let group: String?
 
-        init(dict: [String: Any], relativePath: Path) throws {
+        public init(dict: [String: Any], relativePath: Path) throws {
             guard let project = dict["project"] as? String else {
                 throw Configuration.Error.invalidOutput(message: "No project file path provided.")
             }
-            guard let target = dict["target"] as? String else {
-                throw Configuration.Error.invalidOutput(message: "No target name provided.")
+            if let target = dict["target"] as? String {
+                self.targets = [target]
+            } else if let targets = dict["targets"] as? [String] {
+                self.targets = targets
+            } else {
+                throw Configuration.Error.invalidOutput(message: "No target(s) provided.")
             }
             let projectPath = Path(project, relativeTo: relativePath)
             self.projectPath = projectPath
             self.project = try XcodeProj(path: projectPath)
-            self.target = target
             self.group = dict["group"] as? String
         }
     }
 
-    let path: Path
-    let linkTo: LinkTo?
+    public let path: Path
+    public let linkTo: LinkTo?
 
-    var isDirectory: Bool {
+    public var isDirectory: Bool {
         guard path.exists else {
             return path.lastComponentWithoutExtension == path.lastComponent || path.string.hasSuffix("/")
         }
         return path.isDirectory
     }
 
-    init(dict: [String: Any], relativePath: Path) throws {
+    public init(dict: [String: Any], relativePath: Path) throws {
         guard let path = dict["path"] as? String else {
             throw Configuration.Error.invalidOutput(message: "No path provided.")
         }
@@ -159,35 +291,44 @@ struct Output {
         self.path = Path(path, relativeTo: relativePath)
 
         if let linkToDict = dict["link"] as? [String: Any] {
-            self.linkTo = try? LinkTo(dict: linkToDict, relativePath: relativePath)
+            do {
+                self.linkTo = try LinkTo(dict: linkToDict, relativePath: relativePath)
+            } catch {
+                self.linkTo = nil
+                Log.warning(error)
+            }
         } else {
             self.linkTo = nil
         }
     }
 
-    init(_ path: Path, linkTo: LinkTo? = nil) {
+    public init(_ path: Path, linkTo: LinkTo? = nil) {
         self.path = path
         self.linkTo = linkTo
     }
 
 }
 
-struct Configuration {
+public struct Configuration {
 
-    enum Error: Swift.Error, CustomStringConvertible {
+    public enum Error: Swift.Error, CustomStringConvertible {
         case invalidFormat(message: String)
         case invalidSources(message: String)
+        case invalidXCFramework(path: Path? = nil, message: String)
         case invalidTemplates(message: String)
         case invalidOutput(message: String)
         case invalidCacheBasePath(message: String)
         case invalidPaths(message: String)
+        case internalError(message: String)
 
-        var description: String {
+        public var description: String {
             switch self {
             case .invalidFormat(let message):
                 return "Invalid config file format. \(message)"
             case .invalidSources(let message):
                 return "Invalid sources. \(message)"
+            case .invalidXCFramework(let path, let message):
+                return "Invalid xcframework\(path.map { " at path '\($0)'" } ?? "")'. \(message)"
             case .invalidTemplates(let message):
                 return "Invalid templates. \(message)"
             case .invalidOutput(let message):
@@ -196,18 +337,22 @@ struct Configuration {
                 return "Invalid cacheBasePath. \(message)"
             case .invalidPaths(let message):
                 return "\(message)"
+            case .internalError(let message):
+                return "\(message)"
             }
         }
     }
 
-    let source: Source
-    let templates: Paths
-    let output: Output
-    let cacheBasePath: Path
-    let forceParse: [String]
-    let args: [String: NSObject]
+    public let source: Source
+    public let templates: Paths
+    public let output: Output
+    public let cacheBasePath: Path
+    public let forceParse: [String]
+    public let parseDocumentation: Bool
+    public let baseIndentation: Int
+    public let args: [String: NSObject]
 
-    init(
+    public init(
         path: Path,
         relativePath: Path,
         env: [String: String] = [:]
@@ -219,7 +364,7 @@ struct Configuration {
         try self.init(dict: dict, relativePath: relativePath)
     }
 
-    init(dict: [String: Any], relativePath: Path) throws {
+    public init(dict: [String: Any], relativePath: Path) throws {
         let source = try Source(dict: dict, relativePath: relativePath)
         guard !source.isEmpty else {
             throw Configuration.Error.invalidSources(message: "No sources provided.")
@@ -240,7 +385,9 @@ struct Configuration {
         }
         self.templates = templates
 
-        self.forceParse = dict["force-parse"] as? [String] ?? []
+        self.forceParse = dict["forceParse"] as? [String] ?? []
+
+        self.parseDocumentation = dict["parseDocumentation"] as? Bool ?? false
 
         if let output = dict["output"] as? String {
             self.output = Output(Path(output, relativeTo: relativePath))
@@ -258,15 +405,18 @@ struct Configuration {
             self.cacheBasePath = Path.defaultBaseCachePath
         }
 
+        self.baseIndentation = dict["baseIndentation"] as? Int ?? 0
         self.args = dict["args"] as? [String: NSObject] ?? [:]
     }
 
-    init(sources: Paths, templates: Paths, output: Path, cacheBasePath: Path, forceParse: [String], args: [String: NSObject]) {
+    public init(sources: Paths, templates: Paths, output: Path, cacheBasePath: Path, forceParse: [String], parseDocumentation: Bool, baseIndentation: Int, args: [String: NSObject]) {
         self.source = .sources(sources)
         self.templates = templates
         self.output = Output(output, linkTo: nil)
         self.cacheBasePath = cacheBasePath
         self.forceParse = forceParse
+        self.parseDocumentation = parseDocumentation
+        self.baseIndentation = baseIndentation
         self.args = args
     }
 
@@ -277,6 +427,37 @@ struct Configuration {
         self.cacheBasePath = cacheBasePath
         self.forceParse = forceParse
         self.args = args
+    }
+}
+
+public enum Configurations {
+    public static func make(
+        path: Path,
+        relativePath: Path,
+        env: [String: String] = [:]
+    ) throws -> [Configuration] {
+        guard let dict = try Yams.load(yaml: path.read(), .default, Constructor.sourceryContructor(env: env)) as? [String: Any] else {
+            throw Configuration.Error.invalidFormat(message: "Expected dictionary.")
+        }
+
+        let start = currentTimestamp()
+        defer {
+            Log.benchmark("Resolving configurations took \(currentTimestamp() - start)")
+        }
+
+        if let configurations = dict["configurations"] as? [[String: Any]] {
+            return try configurations.flatMap { dict in
+                if let child = dict["child"] as? String {
+                    let childPath = Path(child, relativeTo: relativePath)
+                    let childRelativePath = Path(components: childPath.components.dropLast())
+                    return try Configurations.make(path: childPath, relativePath: childRelativePath, env: env)
+                } else {
+                    return try [Configuration(dict: dict, relativePath: relativePath)]
+                }
+            }
+        } else {
+            return try [Configuration(dict: dict, relativePath: relativePath)]
+        }
     }
 }
 

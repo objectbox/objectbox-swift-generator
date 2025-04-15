@@ -1,6 +1,5 @@
-// Generated using Sourcery 1.0.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 1.3.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
-
 // swiftlint:disable all
 
 
@@ -94,11 +93,11 @@ extension AutoHashableEnum: Hashable {
         switch self {
         case .one:
             1.hash(into: &hasher)
-        case .two(let data):
+        case let .two(first, second):
             2.hash(into: &hasher)
-            data.first.hash(into: &hasher)
-            data.second.hash(into: &hasher)
-        case .three(let data):
+            first.hash(into: &hasher)
+            second.hash(into: &hasher)
+        case let .three(data):
             3.hash(into: &hasher)
             data.hash(into: &hasher)
         }

@@ -8,13 +8,21 @@
     <script src="js/jquery.min.js" defer></script>
     <script src="js/jazzy.js" defer></script>
     
+    <script src="js/lunr.min.js" defer></script>
+    <script src="js/typeahead.jquery.js" defer></script>
+    <script src="js/jazzy.search.js" defer></script>
   </head>
   <body>
     <a title="Decorator  Reference"></a>
     <header>
       <div class="content-wrapper">
-        <p><a href="index.html">Sourcery Docs</a> (100% documented)</p>
+        <p><a href="index.html">Sourcery 2.2.6 Docs</a> (100% documented)</p>
         <p class="header-right"><a href="https://github.com/krzysztofzablocki/Sourcery"><img src="img/gh.png"/>View on GitHub</a></p>
+        <p class="header-right">
+          <form role="search" action="search.json">
+            <input type="text" placeholder="Search documentation" data-typeahead>
+          </form>
+        </p>
       </div>
     </header>
     <div class="content-wrapper">
@@ -63,6 +71,9 @@
                 <a href="codable.html">Codable</a>
               </li>
               <li class="nav-group-task">
+                <a href="Protocols/Diffable.html">Diffable</a>
+              </li>
+              <li class="nav-group-task">
                 <a href="diffable.html">Diffable</a>
               </li>
               <li class="nav-group-task">
@@ -99,6 +110,9 @@
               </li>
               <li class="nav-group-task">
                 <a href="Classes/AssociatedValue.html">AssociatedValue</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Classes/AssociatedType.html">AssociatedType</a>
               </li>
               <li class="nav-group-task">
                 <a href="Classes/Variable.html">Variable</a>
@@ -145,7 +159,70 @@
             </ul>
           </li>
           <li class="nav-group-name">
-            <a href="Other Protocols.html">Other Protocols</a>
+            <a href="Other%20Classes.html">Other Classes</a>
+            <ul class="nav-group-tasks">
+              <li class="nav-group-task">
+                <a href="Classes/Actor.html">Actor</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Classes/ClosureParameter.html">ClosureParameter</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Classes/DiffableResult.html">DiffableResult</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Classes/GenericParameter.html">GenericParameter</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Classes/GenericRequirement.html">GenericRequirement</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Classes/GenericRequirement/Relationship.html">– Relationship</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Classes/Import.html">Import</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Classes/Modifier.html">Modifier</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Classes/SetType.html">SetType</a>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-group-name">
+            <a href="Other%20Enums.html">Other Enumerations</a>
+            <ul class="nav-group-tasks">
+              <li class="nav-group-task">
+                <a href="Enums/Composer.html">Composer</a>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-group-name">
+            <a href="Other%20Extensions.html">Other Extensions</a>
+            <ul class="nav-group-tasks">
+              <li class="nav-group-task">
+                <a href="Extensions/Array.html">Array</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Other%20Extensions.html#/c:@M@SourceryRuntime@objc(cs)BytesRange">BytesRange</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Other%20Extensions.html#/c:@M@SourceryRuntime@objc(cs)FileParserResult">FileParserResult</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Extensions/String.html">String</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Extensions/StringProtocol.html">StringProtocol</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Extensions/Typealias.html">Typealias</a>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-group-name">
+            <a href="Other%20Protocols.html">Other Protocols</a>
             <ul class="nav-group-tasks">
               <li class="nav-group-task">
                 <a href="Protocols/Annotated.html">Annotated</a>
@@ -154,7 +231,24 @@
                 <a href="Protocols/Definition.html">Definition</a>
               </li>
               <li class="nav-group-task">
+                <a href="Protocols/Documented.html">Documented</a>
+              </li>
+              <li class="nav-group-task">
                 <a href="Protocols/Typed.html">Typed</a>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-group-name">
+            <a href="Other%20Typealiases.html">Other Type Aliases</a>
+            <ul class="nav-group-tasks">
+              <li class="nav-group-task">
+                <a href="Other%20Typealiases.html#/s:15SourceryRuntime11Annotationsa">Annotations</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Other%20Typealiases.html#/s:15SourceryRuntime13Documentationa">Documentation</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="Other%20Typealiases.html#/s:15SourceryRuntime0A8Modifiera">SourceryModifier</a>
               </li>
             </ul>
           </li>
@@ -168,7 +262,7 @@
 
 <p>In Swift it can be cumbersome to write a simple decorator that decorates all the calls to decorated type methods, you basically have to do it manually for each single method. With this template you can generate simple decorator that generate all the methods and property calls automatically, skipping methods and properties already implemented manually.</p>
 
-<p>You can use this template as a starting point for mor sophisticated implementations. This template also shows you some powers of swift templates, like using helper methods and whitespace control tags.</p>
+<p>You can use this template as a starting point for more sophisticated implementations. This template also shows you some powers of swift templates, like using helper methods and whitespace control tags.</p>
 <h3 id='a-href-https-github-com-krzysztofzablocki-sourcery-blob-master-templates-templates-decorator-swifttemplate-swift-template-a' class='heading'><a href="https://github.com/krzysztofzablocki/Sourcery/blob/master/Templates/Templates/Decorator.swifttemplate">Swift template</a></h3>
 <h4 id='available-annotations' class='heading'>Available annotations</h4>
 
@@ -222,23 +316,23 @@
     <span class="p">}</span>
 
     <span class="kd">internal</span> <span class="k">var</span> <span class="nv">prop1</span><span class="p">:</span> <span class="kt">Int</span> <span class="p">{</span>
-        <span class="nf">print</span><span class="p">(</span><span class="s">"get: </span><span class="se">\(</span><span class="err">#</span><span class="n">function</span><span class="se">)</span><span class="s">"</span><span class="p">)</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"get: </span><span class="se">\(</span><span class="kd">#function</span><span class="se">)</span><span class="s">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">decorated</span><span class="o">.</span><span class="n">prop1</span>
     <span class="p">}</span>
 
     <span class="kd">internal</span> <span class="k">var</span> <span class="nv">prop2</span><span class="p">:</span> <span class="kt">Int</span> <span class="p">{</span>
         <span class="k">get</span> <span class="p">{</span>
-            <span class="nf">print</span><span class="p">(</span><span class="s">"get: </span><span class="se">\(</span><span class="err">#</span><span class="n">function</span><span class="se">)</span><span class="s">"</span><span class="p">)</span>
+            <span class="nf">print</span><span class="p">(</span><span class="s">"get: </span><span class="se">\(</span><span class="kd">#function</span><span class="se">)</span><span class="s">"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">decorated</span><span class="o">.</span><span class="n">prop2</span>
         <span class="p">}</span>
         <span class="k">set</span> <span class="p">{</span>
-            <span class="nf">print</span><span class="p">(</span><span class="s">"set: </span><span class="se">\(</span><span class="err">#</span><span class="n">function</span><span class="se">)</span><span class="s">"</span><span class="p">)</span>
+            <span class="nf">print</span><span class="p">(</span><span class="s">"set: </span><span class="se">\(</span><span class="kd">#function</span><span class="se">)</span><span class="s">"</span><span class="p">)</span>
             <span class="n">decorated</span><span class="o">.</span><span class="n">prop2</span> <span class="o">=</span> <span class="n">newValue</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
     <span class="kd">internal</span> <span class="kd">func</span> <span class="nf">foo</span><span class="p">(</span><span class="nv">f</span><span class="p">:</span> <span class="kt">Int</span><span class="p">,</span> <span class="n">_</span> <span class="nv">a</span><span class="p">:</span> <span class="kt">Int</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="p">{</span>
-        <span class="nf">print</span><span class="p">(</span><span class="err">#</span><span class="n">function</span><span class="p">)</span>
+        <span class="nf">print</span><span class="p">(</span><span class="kd">#function</span><span class="p">)</span>
         <span class="k">return</span> <span class="k">try</span> <span class="n">decorated</span><span class="o">.</span><span class="nf">foo</span><span class="p">(</span><span class="nv">f</span><span class="p">:</span> <span class="n">f</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
     <span class="p">}</span>
 <span class="c1">// sourcery:end</span>
@@ -249,11 +343,10 @@
           </section>
         </section>
         <section id="footer">
-          <p>Copyright © 2016 Pixle. All rights reserved.</p>
-          <p>Generated by <a class="link" href="https://github.com/realm/jazzy" target="_blank" rel="external">jazzy ♪♫ v0.8.2</a>, a <a class="link" href="http://realm.io" target="_blank" rel="external">Realm</a> project.</p>
+          <p>Copyright © 2016-2021 Pixle. All rights reserved.</p>
+          <p>Generated by <a class="link" href="https://github.com/realm/jazzy" target="_blank" rel="noopener" rel="external">jazzy ♪♫ v0.14.0</a>, a <a class="link" href="https://realm.io" target="_blank" rel="noopener" rel="external">Realm</a> project.</p>
         </section>
       </article>
     </div>
   </body>
-</div>
 </html>

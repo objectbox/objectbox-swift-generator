@@ -8,14 +8,22 @@
     <script src="../js/jquery.min.js" defer></script>
     <script src="../js/jazzy.js" defer></script>
     
+    <script src="../js/lunr.min.js" defer></script>
+    <script src="../js/typeahead.jquery.js" defer></script>
+    <script src="../js/jazzy.search.js" defer></script>
   </head>
   <body>
     <a name="//apple_ref/swift/Protocol/Annotated" class="dashAnchor"></a>
     <a title="Annotated Protocol Reference"></a>
     <header>
       <div class="content-wrapper">
-        <p><a href="../index.html">Sourcery Docs</a> (100% documented)</p>
+        <p><a href="../index.html">Sourcery 2.2.6 Docs</a> (100% documented)</p>
         <p class="header-right"><a href="https://github.com/krzysztofzablocki/Sourcery"><img src="../img/gh.png"/>View on GitHub</a></p>
+        <p class="header-right">
+          <form role="search" action="../search.json">
+            <input type="text" placeholder="Search documentation" data-typeahead>
+          </form>
+        </p>
       </div>
     </header>
     <div class="content-wrapper">
@@ -64,6 +72,9 @@
                 <a href="../codable.html">Codable</a>
               </li>
               <li class="nav-group-task">
+                <a href="../Protocols/Diffable.html">Diffable</a>
+              </li>
+              <li class="nav-group-task">
                 <a href="../diffable.html">Diffable</a>
               </li>
               <li class="nav-group-task">
@@ -100,6 +111,9 @@
               </li>
               <li class="nav-group-task">
                 <a href="../Classes/AssociatedValue.html">AssociatedValue</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Classes/AssociatedType.html">AssociatedType</a>
               </li>
               <li class="nav-group-task">
                 <a href="../Classes/Variable.html">Variable</a>
@@ -146,7 +160,70 @@
             </ul>
           </li>
           <li class="nav-group-name">
-            <a href="../Other Protocols.html">Other Protocols</a>
+            <a href="../Other%20Classes.html">Other Classes</a>
+            <ul class="nav-group-tasks">
+              <li class="nav-group-task">
+                <a href="../Classes/Actor.html">Actor</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Classes/ClosureParameter.html">ClosureParameter</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Classes/DiffableResult.html">DiffableResult</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Classes/GenericParameter.html">GenericParameter</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Classes/GenericRequirement.html">GenericRequirement</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Classes/GenericRequirement/Relationship.html">– Relationship</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Classes/Import.html">Import</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Classes/Modifier.html">Modifier</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Classes/SetType.html">SetType</a>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-group-name">
+            <a href="../Other%20Enums.html">Other Enumerations</a>
+            <ul class="nav-group-tasks">
+              <li class="nav-group-task">
+                <a href="../Enums/Composer.html">Composer</a>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-group-name">
+            <a href="../Other%20Extensions.html">Other Extensions</a>
+            <ul class="nav-group-tasks">
+              <li class="nav-group-task">
+                <a href="../Extensions/Array.html">Array</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Other%20Extensions.html#/c:@M@SourceryRuntime@objc(cs)BytesRange">BytesRange</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Other%20Extensions.html#/c:@M@SourceryRuntime@objc(cs)FileParserResult">FileParserResult</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Extensions/String.html">String</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Extensions/StringProtocol.html">StringProtocol</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Extensions/Typealias.html">Typealias</a>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-group-name">
+            <a href="../Other%20Protocols.html">Other Protocols</a>
             <ul class="nav-group-tasks">
               <li class="nav-group-task">
                 <a href="../Protocols/Annotated.html">Annotated</a>
@@ -155,7 +232,24 @@
                 <a href="../Protocols/Definition.html">Definition</a>
               </li>
               <li class="nav-group-task">
+                <a href="../Protocols/Documented.html">Documented</a>
+              </li>
+              <li class="nav-group-task">
                 <a href="../Protocols/Typed.html">Typed</a>
+              </li>
+            </ul>
+          </li>
+          <li class="nav-group-name">
+            <a href="../Other%20Typealiases.html">Other Type Aliases</a>
+            <ul class="nav-group-tasks">
+              <li class="nav-group-task">
+                <a href="../Other%20Typealiases.html#/s:15SourceryRuntime11Annotationsa">Annotations</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Other%20Typealiases.html#/s:15SourceryRuntime13Documentationa">Documentation</a>
+              </li>
+              <li class="nav-group-task">
+                <a href="../Other%20Typealiases.html#/s:15SourceryRuntime0A8Modifiera">SourceryModifier</a>
               </li>
             </ul>
           </li>
@@ -167,7 +261,8 @@
             <h1>Annotated</h1>
               <div class="declaration">
                 <div class="language">
-                  <pre class="highlight"><code><span class="kd">public</span> <span class="kd">protocol</span> <span class="kt">Annotated</span></code></pre>
+                  
+                  <pre class="highlight swift"><code><span class="kd">public</span> <span class="kd">protocol</span> <span class="kt">Annotated</span></code></pre>
 
                 </div>
               </div>
@@ -194,15 +289,15 @@
 or array of those types if you use several annotations with the same name.</p>
 
 <p><strong>Example:</strong></p>
-<pre class="highlight plaintext"><code>//sourcery: booleanAnnotation
-//sourcery: stringAnnotation = "value"
-//sourcery: numericAnnotation = 0.5
+<pre class="highlight swift"><code><span class="c1">//sourcery: booleanAnnotation</span>
+<span class="c1">//sourcery: stringAnnotation = "value"</span>
+<span class="c1">//sourcery: numericAnnotation = 0.5</span>
 
-[
- "booleanAnnotation": true,
- "stringAnnotation": "value",
- "numericAnnotation": 0.5
-]
+<span class="p">[</span>
+ <span class="s">"booleanAnnotation"</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+ <span class="s">"stringAnnotation"</span><span class="p">:</span> <span class="s">"value"</span><span class="p">,</span>
+ <span class="s">"numericAnnotation"</span><span class="p">:</span> <span class="mf">0.5</span>
+<span class="p">]</span>
 </code></pre>
 
                       </div>
@@ -210,7 +305,7 @@ or array of those types if you use several annotations with the same name.</p>
                         <h4>Declaration</h4>
                         <div class="language">
                           <p class="aside-title">Swift</p>
-                          <pre class="highlight"><code><span class="k">var</span> <span class="nv">annotations</span><span class="p">:</span> <span class="p">[</span><span class="kt">String</span><span class="p">:</span> <span class="kt">NSObject</span><span class="p">]</span></code></pre>
+                          <pre class="highlight swift"><code><span class="k">var</span> <span class="nv">annotations</span><span class="p">:</span> <span class="kt"><a href="../Other%20Typealiases.html#/s:15SourceryRuntime11Annotationsa">Annotations</a></span> <span class="p">{</span> <span class="k">get</span> <span class="p">}</span></code></pre>
 
                         </div>
                       </div>
@@ -222,11 +317,10 @@ or array of those types if you use several annotations with the same name.</p>
           </section>
         </section>
         <section id="footer">
-          <p>Copyright © 2016 Pixle. All rights reserved.</p>
-          <p>Generated by <a class="link" href="https://github.com/realm/jazzy" target="_blank" rel="external">jazzy ♪♫ v0.8.2</a>, a <a class="link" href="http://realm.io" target="_blank" rel="external">Realm</a> project.</p>
+          <p>Copyright © 2016-2021 Pixle. All rights reserved.</p>
+          <p>Generated by <a class="link" href="https://github.com/realm/jazzy" target="_blank" rel="noopener" rel="external">jazzy ♪♫ v0.14.0</a>, a <a class="link" href="https://realm.io" target="_blank" rel="noopener" rel="external">Realm</a> project.</p>
         </section>
       </article>
     </div>
   </body>
-</div>
 </html>

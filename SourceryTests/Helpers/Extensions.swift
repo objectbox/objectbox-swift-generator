@@ -4,11 +4,22 @@
 //
 
 import Foundation
+#if SWIFT_PACKAGE
+@testable import SourceryLib
+#else
 @testable import Sourcery
+#endif
 @testable import SourceryRuntime
 
 extension String {
     var withoutWhitespaces: String {
         return components(separatedBy: .whitespacesAndNewlines).joined(separator: "")
+    }
+}
+
+extension Type {
+    public func asUnknownException() -> Self {
+        isUnknownExtension = true
+        return self
     }
 }

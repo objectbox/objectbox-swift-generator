@@ -6,12 +6,13 @@ require 'yaml'
 require 'json'
 require 'net/http'
 require 'uri'
+require 'rbconfig'
 
 BUILD_DIR = 'build/'
+CLI_DIR = 'cli/'
 VERSION_FILE = 'SourceryUtils/Sources/Version.swift'
 
 ## [ Utils ] ##################################################################
-
 def version_select
   latest_xcode_version = `xcode-select -p`.chomp
   %Q(DEVELOPER_DIR="#{latest_xcode_version}" TOOLCHAINS=com.apple.dt.toolchain.XcodeDefault.xctoolchain)
@@ -25,37 +26,24 @@ def xcpretty(cmd)
   end
 end
 
-def xcrun(cmd)
-  xcpretty "#{version_select} xcrun #{cmd}"
-end
-
 def print_info(str)
   (red,clr) = (`tput colors`.chomp.to_i >= 8) ? %W(\e[33m \e[m) : ["", ""]
   puts red, "== #{str.chomp} ==", clr
 end
 
-## [ Bundler & CocoaPods ] ####################################################
+## [ Bundler ] ####################################################
 
 desc "Install dependencies"
 task :install_dependencies do
   sh %Q(bundle install)
-  sh %Q(bundle exec pod install)
 end
 
 ## [ Tests & Clean ] ##########################################################
 
-desc "Run the Unit Tests on Templates project"
-task :test_templates do
-  print_info "Running Sourcery Templates Tests"
-  xcrun %Q(xcodebuild -workspace Sourcery.xcworkspace -scheme Sourcery -sdk macosx)
-  xcrun %Q(xcodebuild -workspace Sourcery.xcworkspace -scheme TemplatesTests -sdk macosx test)
-end
-
 desc "Run the Unit Tests on all projects"
 task :tests do
   print_info "Running Unit Tests"
-  xcrun %Q(xcodebuild -workspace Sourcery.xcworkspace -scheme Sourcery -sdk macosx)
-  xcrun %Q(xcodebuild -workspace Sourcery.xcworkspace -scheme Sourcery -sdk macosx test)
+  sh %Q(swift test)
 end
 
 desc "Delete the build/ directory"
@@ -64,24 +52,49 @@ task :clean do
   sh %Q(rm -fr build)
 end
 
+def build_framework(fat_library)
+  print_info "Building project (fat: #{fat_library})"
+
+  # Prepare the export directory
+  sh %Q(rm -fr #{CLI_DIR})
+  sh %Q(mkdir -p "#{CLI_DIR}bin")
+  output_path="#{CLI_DIR}bin/sourcery"
+
+  if fat_library
+    sh %Q(swift build --disable-sandbox -c release --arch arm64 --build-path #{BUILD_DIR})
+    sh %Q(swift build --disable-sandbox -c release --arch x86_64 --build-path #{BUILD_DIR})
+    sh %Q(lipo -create -output #{output_path} #{BUILD_DIR}arm64-apple-macosx/release/sourcery #{BUILD_DIR}x86_64-apple-macosx/release/sourcery)
+    sh %Q(strip -rSTX #{output_path})
+  else
+    sh %Q(swift build --disable-sandbox -c release --build-path #{BUILD_DIR})
+    sh %Q(cp #{BUILD_DIR}release/sourcery #{output_path})
+  end
+
+  # Export the build products and clean up
+  sh %Q(cp SourceryJS/Resources/ejs.js #{CLI_DIR}bin)
+  sh %Q(rm -fr #{BUILD_DIR})
+end
+
 task :build do
-  print_info "Building project"
-  xcrun %Q(xcodebuild -workspace Sourcery.xcworkspace -scheme Sourcery-Release -sdk macosx -derivedDataPath #{BUILD_DIR}tmp/)
-  sh %Q(rm -fr bin/Sourcery.app)
-  `mv #{BUILD_DIR}tmp/Build/Products/Release/Sourcery.app bin/`
-  sh %Q(rm -fr #{BUILD_DIR}tmp/)
+  build_framework(false)
+end
+
+task :fat_build do
+  build_framework(true)
 end
 
 ## [ Code Generated ] ################################################
 
 task :run_sourcery do
   print_info "Generating internal boilerplate code"
-  sh "bin/sourcery --sources './Sources/' --templates './Sourcery/Templates/' --output './SourceryRuntime/Sources/'"
+  sh "#{CLI_DIR}bin/sourcery --config .sourcery-macOS.yml"
+  sh "#{CLI_DIR}bin/sourcery --config .sourcery-ubuntu.yml"
 end
 
 desc "Update internal boilerplate code"
-task :generate_internal_boilerplate_code => [:build, :run_sourcery, :clean] do
-  sh "Scripts/package_content \"SourceryRuntime/Sources\"  > \"SourcerySwift/Sources/SourceryRuntime.content.generated.swift\""
+task :generate_internal_boilerplate_code => [:build, :run_sourcery] do
+  sh "Scripts/package_content \"SourceryRuntime/Sources/Common,SourceryRuntime/Sources/macOS,SourceryRuntime/Sources/Generated\" \"true\" > \"SourcerySwift/Sources/SourceryRuntime.content.generated.swift\""
+  sh "Scripts/package_content \"SourceryRuntime/Sources/Common,SourceryRuntime/Sources/Linux,SourceryRuntime/Sources/Generated\" \"false\" > \"SourcerySwift/Sources/SourceryRuntime_Linux.content.generated.swift\""
   generated_files = `git status --porcelain`
                       .split("\n")
                       .select { |item| item.include?('.generated.') }
@@ -90,12 +103,18 @@ task :generate_internal_boilerplate_code => [:build, :run_sourcery, :clean] do
 end
 
 ## [ Docs ] ##########################################################
+def clean_jazzy
+  # jazzy divs are broken, so we need to fix them
+  sh "find docs -type f -name '*.html' -print0 | xargs -0 -I % sh -c \"tac '%' | sed '2d' | tac > tmp && mv tmp '%';\""
+end
 
 desc "Update docs"
 task :docs do
   print_info "Updating docs"
   temp_build_dir = "#{BUILD_DIR}tmp/"
-  sh "sourcekitten doc --module-name SourceryRuntime -- -workspace Sourcery.xcworkspace -scheme Sourcery-Release -derivedDataPath #{temp_build_dir} > docs.json && bundle exec jazzy --clean --skip-undocumented --exclude=/*/*.generated.swift,/*/BytesRange.swift,/*/Typealias.swift,/*/FileParserResult.swift && rm docs.json"
+  # tac Enum.html | sed '2d' | tac > Enum.html
+  sh "bundle exec sourcekitten doc --spm --module-name SourceryRuntime > docs.json && bundle exec jazzy --clean --skip-undocumented && rm docs.json"
+  clean_jazzy
   sh "rm -fr #{temp_build_dir}"
 end
 
@@ -103,7 +122,15 @@ desc "Validate docs"
 task :validate_docs do
   print_info "Checking docs are up to date"
   temp_build_dir = "#{BUILD_DIR}tmp/"
-  sh "sourcekitten doc --module-name SourceryRuntime -- -workspace Sourcery.xcworkspace -scheme Sourcery-Release -derivedDataPath #{temp_build_dir} > docs.json && bundle exec jazzy --skip-undocumented --no-download-badge --exclude=/*/*.generated.swift,/*/BytesRange.swift,/*/Typealias.swift,/*/FileParserResult.swift && rm docs.json"
+  ## TODO: RA this step is disabled due to error comming only on CI and only sometimes locally:
+  ## [1/1] Compiling plugin SourceryCommandPlugin
+  ## Building for debugging...
+  ## error: command /Users/art-divin/Documents/Projects/Sourcery/.build/arm64-apple-macosx/debug/Sourcery_SourceryJS.bundle/ejs.js not registered
+  ## [1/12] Copying ejs.js
+  ## [1/12] Compiling scanner.c
+  ## ...
+  #sh "bundle exec sourcekitten doc --spm --module-name SourceryRuntime -- --very-verbose > docs.json && bundle exec jazzy --skip-undocumented && rm docs.json"
+  ## clean_jazzy
   sh "rm -fr #{temp_build_dir}"
 end
 
@@ -112,12 +139,12 @@ end
 namespace :release do
 
   desc 'Perform pre-release tasks'
-  task :prepare => [:clean, :install_dependencies, :check_environment_variables, :check_docs, :check_ci, :update_metadata, :generate_internal_boilerplate_code, :tests]
+  task :prepare => [:clean, :install_dependencies, :check_environment_variables, :check_docs, :update_metadata, :generate_internal_boilerplate_code, :tests]
 
-  desc 'Build the current version and release it to GitHub, CocoaPods and Homebrew'
-  task :build_and_deploy => [:check_versions, :build, :tag_release, :push_to_origin, :github, :cocoapods, :homebrew]
+  desc 'Build the current version and release it to GitHub, CocoaPods'
+  task :build_and_deploy => [:check_versions, :fat_build, :tag_release, :push_to_origin, :github, :cocoapods]
 
-  desc 'Create a new release on GitHub, CocoaPods and Homebrew'
+  desc 'Create a new release on GitHub, CocoaPods'
   task :new => [:prepare, :build_and_deploy]
 
   def podspec_update_version(version, file = 'Sourcery.podspec')
@@ -132,14 +159,6 @@ namespace :release do
 
   def podspec_version(file = 'Sourcery')
     JSON.parse(`bundle exec pod ipc spec #{file}.podspec`)["version"]
-  end
-
-  def project_update_version(version, project = 'Sourcery')
-    `sed -i '' -e 's/CURRENT_PROJECT_VERSION = #{project_version(project)};/CURRENT_PROJECT_VERSION = #{version};/g' #{project}.xcodeproj/project.pbxproj`
-  end
-
-  def project_version(project = 'Sourcery')
-    `xcodebuild -showBuildSettings -project #{project}.xcodeproj | grep CURRENT_PROJECT_VERSION | sed -E  's/(.*) = (.*)/\\2/'`.strip
   end
 
   VERSION_REGEX = /(?<begin>public static let current\s*=\s*SourceryVersion\(value:\s*.*")(?<value>(?<major>[0-9]+)(\.(?<minor>[0-9]+))?(\.(?<patch>[0-9]+))?)(?<end>"\))/i.freeze
@@ -286,9 +305,6 @@ namespace :release do
     changelog_master = system(%q{grep -qi '^## Master' CHANGELOG.md})
     results << log_result(!changelog_master, "CHANGELOG, No master", 'Please remove entry for master in CHANGELOG')
 
-    # Check if Current Project Version from build settings match podspec version
-    results << log_result(version == project_version, "Project version correct", "Please update Current Project Version in Build Settings to #{version}")
-
     # Check if Command Line Tool version match podspec version
     results << log_result(version == command_line_tool_version, "Command line tool version correct", "Please update current version in #{VERSION_FILE} to #{version}")
 
@@ -313,21 +329,21 @@ namespace :release do
     system(%Q{sed -i '' -e 's/## Master/## #{new_version}/' CHANGELOG.md})
 
     # Update podspec version
-    podspec_update_version(new_version)
-
-    # Update project version
-    project_update_version(new_version)
+    podspec_update_version(new_version, 'Sourcery.podspec')
+    podspec_update_version(new_version, 'SourceryFramework.podspec')
+    podspec_update_version(new_version, 'SourceryRuntime.podspec')
+    podspec_update_version(new_version, 'SourceryUtils.podspec')
 
     # Update command line tool version
     command_line_tool_update_version(new_version)
 
-    manual_commit(["CHANGELOG.md", "Sourcery.podspec", "Sourcery.xcodeproj/project.pbxproj", VERSION_FILE], "docs: update metadata for #{new_version} release")
+    manual_commit(["CHANGELOG.md", "Sourcery.podspec", "SourceryFramework.podspec", "SourceryRuntime.podspec", "SourceryUtils.podspec", VERSION_FILE], "docs: update metadata for #{new_version} release")
   end
 
   desc 'Create a tag for the project version and push to remote'
   task :tag_release do
     print_info "Tagging the release"
-    git_tag(project_version)
+    git_tag(podspec_version)
   end
 
 
@@ -336,30 +352,40 @@ namespace :release do
     print_info "Creating zip"
 
     sh %Q(mkdir -p "build")
-    sh %Q(mkdir -p "build/Resources")
-    sh %Q(cp -r bin build/)
-    sh %Q(cp -r Templates/Templates build/)
-    sh %Q(cp -r docs/docsets/Sourcery.docset build/)
-    `cp LICENSE README.md CHANGELOG.md build`
-    `cp Resources/daemon.gif Resources/icon-128.png build/Resources`
-    `cd build; zip -r -X sourcery-#{podspec_version}.zip .`
+    sh %Q(mkdir -p "build/sourcery")
+    sh %Q(mkdir -p "build/sourcery/Resources")
+    sh %Q(cp -r #{CLI_DIR} build/sourcery/)
+    sh %Q(cp -r Templates/Templates build/sourcery/)
+    sh %Q(cp -r docs/docsets/Sourcery.docset build/sourcery/)
+    `cp LICENSE README.md CHANGELOG.md build/sourcery`
+    `cp Resources/daemon.gif Resources/icon-128.png build/sourcery/Resources`
+    `cd build/sourcery; zip -r -X ../sourcery-#{podspec_version}.zip .`
   end
 
-  desc 'Upload the zipped binaries to a new GitHub release'
-  task :github => :zip do
-    v = podspec_version
+  desc 'Create a zip containing all the prebuilt binaries in the artifact bundle format (for SwiftPM Package Plugins)'
+  task :artifactbundle => :zip do
+    bundle_dir = 'build/sourcery.artifactbundle'
+    bin_dir = "#{bundle_dir}/sourcery/bin"
 
-    changelog = `sed -n /'^## #{v}$'/,/'^## '/p CHANGELOG.md`.gsub(/^## .*$/,'').strip
-    print_info "Releasing version #{v} on GitHub"
-    puts changelog
+    # Copy the built product to an artifact bundle
+    `mkdir -p #{bin_dir}`
+    `cp -Rf build/sourcery #{bin_dir}`
 
-    json = post('https://api.github.com/repos/krzysztofzablocki/Sourcery/releases', 'application/json') do |req|
-      req.body = { :tag_name => v, :name => v, :body => changelog, :draft => false, :prerelease => false }.to_json
-      req.basic_auth ENV['SOURCERY_GITHUB_USERNAME'], ENV['SOURCERY_GITHUB_API_TOKEN'].chomp
+    # Write the `info.json` artifact bundle manifest
+    info_template = File.read("Templates/artifactbundle.info.json.template")
+    info_file_content = info_template.gsub(/(VERSION)/, podspec_version)
+
+    File.open("#{bundle_dir}/info.json", "w") do |f|
+      f.write(info_file_content)
     end
 
-    upload_url = json['upload_url'].gsub(/\{.*\}/,"?name=Sourcery-#{v}.zip")
-    zipfile = "build/Sourcery-#{v}.zip"
+    # Zip the bundle
+    `cd build; zip -r -X sourcery-#{podspec_version}.artifactbundle.zip sourcery.artifactbundle/`
+  end
+
+  def upload_zip(filename)
+    upload_url = json['upload_url'].gsub(/\{.*\}/, "?name=#{filename}")
+    zipfile = "build/#{filename}"
     zipsize = File.size(zipfile)
 
     print_info "Uploading ZIP (#{zipsize} bytes)"
@@ -371,44 +397,27 @@ namespace :release do
     end
   end
 
+  desc 'Upload the zipped binaries to a new GitHub release'
+  task :github => :artifactbundle do
+    v = podspec_version
+
+    changelog = `sed -n /'^## #{v}$'/,/'^## '/p CHANGELOG.md`.gsub(/^## .*$/,'').strip
+    print_info "Releasing version #{v} on GitHub"
+    puts changelog
+
+    json = post('https://api.github.com/repos/krzysztofzablocki/Sourcery/releases', 'application/json') do |req|
+      req.body = { :tag_name => v, :name => v, :body => changelog, :draft => false, :prerelease => false }.to_json
+      req.basic_auth ENV['SOURCERY_GITHUB_USERNAME'], ENV['SOURCERY_GITHUB_API_TOKEN'].chomp
+    end
+
+    upload_zip("Sourcery-#{v}.zip")
+    upload_zip("Sourcery-#{v}.artifactbundle.zip")
+  end
+
   desc 'pod trunk push Sourcery to CocoaPods'
   task :cocoapods do
     print_info "Pushing pod to CocoaPods Trunk"
-    sh 'bundle exec pod trunk push Sourcery.podspec --allow-warnings'
-  end
-
-  desc 'send a PR to homebrew'
-  task :homebrew do
-    print_info "Releasing to homebrew"
-    formulas_dir = `brew --repository homebrew/core`.chomp
-    formula_file = "./Formula/sourcery.rb"
-    version = project_version
-    branch = "sourcery-#{version}"
-
-    Dir.chdir(formulas_dir) do
-      sh "git checkout master"
-      sh "git pull origin master"
-      sh "git checkout -b #{branch} origin/master"
-
-      print_info "Updating Homebrew formula"
-      targz_url = sourcery_targz_url(version)
-      sha256 = extract_sha256(targz_url)
-      formula = File.read(formula_file)
-      new_formula = formula.gsub(/url "https:.*"$/, %Q(url "#{targz_url}")).gsub(/sha256 ".*"$/,%Q(sha256 "#{sha256.to_s}"))
-      File.open(formula_file, "w") { |f| f.puts new_formula }
-
-      print_info "Checking Homebrew formula"
-      sh 'brew uninstall sourcery || true'
-      sh "brew install --build-from-source #{formula_file}"
-      sh "brew audit --strict --online #{formula_file}"
-      sh "brew test #{formula_file}"
-
-      print_info "Pushing to Homebrew"
-      sh "git checkout #{formula_file}"
-      sh "git checkout master"
-      sh "git branch #{branch} -D"
-      sh "brew bump-formula-pr --url='#{targz_url}' --sha256='#{sha256.to_s}' #{formula_file}"
-    end
+    sh 'bundle exec pod trunk push Sourcery.podspec --allow-warnings --verbose --skip-tests'
   end
 
   desc 'Push the pending master changes to origin'

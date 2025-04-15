@@ -1,8 +1,7 @@
-// Generated using Sourcery 1.0.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 1.3.0 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
-
-
+#if canImport(ObjectiveC)
 extension AssociatedValuesEnum {
 
     internal init(from decoder: Decoder) throws {
@@ -109,7 +108,6 @@ extension AssociatedValuesEnumNoCaseKey {
 
 }
 
-
 extension CustomCodingWithNotAllDefinedKeys {
 
     internal init(from decoder: Decoder) throws {
@@ -142,7 +140,6 @@ extension CustomContainerCodable {
     }
 
 }
-
 
 
 extension CustomMethodsCodable {
@@ -240,3 +237,4 @@ extension SkipEncodingKeys {
     }
 
 }
+#endif

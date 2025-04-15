@@ -4,11 +4,10 @@
 //
 
 import Foundation
-import SourceKittenFramework
+import SwiftSyntax
+import SourceryRuntime
 
-public typealias Annotations = [String: NSObject]
-
-/// Parser for annotations
+/// Parser for annotations, and also documentation
 public struct AnnotationsParser {
 
     public static var annotationPrefix: String = "sourcery"
@@ -23,7 +22,10 @@ public struct AnnotationsParser {
 
     private struct Line {
         enum LineType {
+            case propertyWrapper
+            case macros
             case comment
+            case documentationComment
             case blockStart
             case blockEnd
             case other
@@ -37,14 +39,18 @@ public struct AnnotationsParser {
         let blockAnnotations: Annotations
     }
 
-    private let lines: [Line]
+    private let lines: [AnnotationsParser.Line]
     private let contents: String
+    private var parseDocumentation: Bool
+    internal var sourceLocationConverter: SourceLocationConverter
 
     /// Initializes parser
     ///
     /// - Parameter contents: Contents to parse
-    init(contents: String) {
+    init(contents: String, parseDocumentation: Bool = false, sourceLocationConverter: SourceLocationConverter) {
+        self.parseDocumentation = parseDocumentation
         self.lines = AnnotationsParser.parse(contents: contents)
+        self.sourceLocationConverter = sourceLocationConverter
         self.contents = contents
     }
 
@@ -59,49 +65,157 @@ public struct AnnotationsParser {
         return all
     }
 
-    /// Extracts annotations from given source
-    ///
-    /// - Parameter source: Source to extract annotations for.
-    /// - Returns: All annotations associated with given source.
-    func from(_ source: [String: SourceKitRepresentable]) -> Annotations {
-        guard let range = Substring.key.range(for: source) else {
-            return [:]
+    func annotations(from node: IdentifierSyntax) -> Annotations {
+        from(
+            positionAfterLeadingTrivia: findLocationAfterLeadingTrivia(syntax: node.identifier),
+            positionBeforeTrailingTrivia: findLocationBeforeTrailingTrivia(syntax: node.identifier)
+        )
+    }
+
+    func annotations(fromToken token: SyntaxProtocol) -> Annotations {
+        from(
+            positionAfterLeadingTrivia: findLocationAfterLeadingTrivia(syntax: token),
+            positionBeforeTrailingTrivia: findLocationBeforeTrailingTrivia(syntax: token)
+        )
+    }
+
+    func documentation(from node: IdentifierSyntax) -> Documentation {
+        guard parseDocumentation else {
+            return []
         }
+        return documentationFrom(
+          location: findLocationAfterLeadingTrivia(syntax: node.identifier)
+        )
+    }
 
-        let location = StringView(contents).location(fromByteOffset: ByteCount(range.offset))
-
-        guard let lineInfo = StringView(contents).lineAndCharacter(forCharacterOffset: location) else {
-            return [:]
+    func documentation(fromToken token: SyntaxProtocol) -> Documentation {
+        guard parseDocumentation else {
+            return []
         }
+        return documentationFrom(
+          location: findLocationAfterLeadingTrivia(syntax: token)
+        )
+    }
 
+    private func findLocationAfterLeadingTrivia(syntax: SyntaxProtocol) -> SwiftSyntax.SourceLocation {
+        sourceLocationConverter.location(for: syntax.positionAfterSkippingLeadingTrivia)
+    }
+
+    private func findLocationBeforeTrailingTrivia(syntax: SyntaxProtocol) -> SwiftSyntax.SourceLocation {
+        sourceLocationConverter.location(for: syntax.endPositionBeforeTrailingTrivia)
+    }
+
+    private func from(positionAfterLeadingTrivia: SwiftSyntax.SourceLocation, positionBeforeTrailingTrivia: SwiftSyntax.SourceLocation) -> Annotations {
         var stop = false
-        var annotations = inlineFrom(line: lineInfo, stop: &stop)
+        var position = positionAfterLeadingTrivia
+        var (annotations, shouldUsePositionBeforeTrailing) = inlineFrom(
+            positionAfterLeadingTrivia: (positionAfterLeadingTrivia.line, positionAfterLeadingTrivia.column),
+            positionBeforeTrailingTrivia: (positionBeforeTrailingTrivia.line, positionBeforeTrailingTrivia.column),
+            stop: &stop
+        )
+        if shouldUsePositionBeforeTrailing {
+            position = positionBeforeTrailingTrivia
+        }
         guard !stop else { return annotations }
 
-        for line in lines[0..<lineInfo.line-1].reversed() {
+        let reversedArray = lines[0..<position.line-1].reversed()
+        for line in reversedArray {
             line.annotations.forEach { annotation in
                 AnnotationsParser.append(key: annotation.key, value: annotation.value, to: &annotations)
             }
-            if line.type != .comment {
+
+            if line.type != .comment
+                && line.type != .documentationComment
+                && line.type != .macros
+                && line.type != .propertyWrapper
+            {
                 break
             }
+        }
+
+        lines[position.line-1].annotations.forEach { annotation in
+            AnnotationsParser.append(key: annotation.key, value: annotation.value, to: &annotations)
         }
 
         return annotations
     }
 
-    func inlineFrom(line lineInfo: (line: Int, character: Int), stop: inout Bool) -> Annotations {
-        let sourceLine = lines[lineInfo.line - 1]
-        var prefix = sourceLine.content.bridge()
-            .substring(to: max(0, lineInfo.character - 1))
-            .trimmingCharacters(in: .whitespaces)
+    private func documentationFrom(location: SwiftSyntax.SourceLocation) -> Documentation {
+      guard parseDocumentation else {
+            return []
+        }
 
-        guard !prefix.isEmpty else { return [:] }
-        var annotations = sourceLine.blockAnnotations //get block annotations for this line
+        // Inline documentation not currently supported
+        _ = location.column
+
+        // var stop = false
+        // var documentation = inlineDocumentationFrom(line: (lineNumber, column), stop: &stop)
+        // guard !stop else { return annotations }
+
+        var documentation: Documentation = []
+
+        for line in lines[0..<location.line-1].reversed() {
+            if line.type == .documentationComment {
+                var clearedLine = line.content.trimmingCharacters(in: .whitespaces)
+                clearedLine = clearedLine.trimmingPrefix("///")
+                clearedLine = clearedLine.trimmingPrefix("/**")
+                clearedLine = clearedLine.trimmingSuffix("*/")
+                clearedLine = clearedLine.trimmingPrefix(" ")
+                clearedLine = clearedLine.trimmingSuffix(" ")
+                documentation.append(clearedLine)
+            }
+            if line.type != .comment && line.type != .documentationComment && line.type != .macros && line.type != .propertyWrapper {
+                break
+            }
+        }
+
+        return documentation.reversed()
+    }
+
+    func inlineFrom(positionAfterLeadingTrivia: (line: Int, character: Int), positionBeforeTrailingTrivia: (line: Int, character: Int), stop: inout Bool) -> (Annotations, Bool) {
+        var shouldUsePositionBeforeTrailing = false
+        var position: (line: Int, character: Int) = positionAfterLeadingTrivia
+        // first try checking for annotations in the beginning of the line (i.e. `positionAfterLeadingTrivia`)
+        // next, try checking for annotations in the end of the line (i.e. `positionBeforeTrailingTrivia`)
+        let findPrefix: (((line: Int, character: Int), Bool) -> (String, Line)) = { position, shouldStart in
+            let sourceLine = lines[position.line - 1]
+            let utf8View = sourceLine.content.utf8
+            var startIndex: String.UTF8View.Index
+            var endIndex: String.UTF8View.Index
+            guard utf8View.count > position.character else {
+                return ("", sourceLine)
+            }
+            if shouldUsePositionBeforeTrailing {
+                startIndex = utf8View.index(utf8View.startIndex, offsetBy: (position.character - 1))
+                endIndex = utf8View.endIndex
+            } else {
+                startIndex = utf8View.startIndex
+                endIndex = utf8View.index(startIndex, offsetBy: (position.character - 1))
+            }
+            let utf8Slice = utf8View[startIndex ..< endIndex]
+            let relevantContent = String(decoding: utf8Slice, as: UTF8.self)
+            return (relevantContent.trimmingCharacters(in: .whitespaces), sourceLine)
+        }
+
+        var (prefix, sourceLine) = findPrefix(positionAfterLeadingTrivia, shouldUsePositionBeforeTrailing)
+        if prefix.isEmpty {
+            shouldUsePositionBeforeTrailing = true
+            (prefix, sourceLine) = findPrefix(positionBeforeTrailingTrivia, shouldUsePositionBeforeTrailing)
+            if shouldUsePositionBeforeTrailing && !prefix.isEmpty {
+                position = positionBeforeTrailingTrivia
+            } else {
+                shouldUsePositionBeforeTrailing = false
+            }
+        }
+        guard !prefix.isEmpty else { return ([:], shouldUsePositionBeforeTrailing) }
+        var annotations = sourceLine.blockAnnotations // get block annotations for this line
+        sourceLine.annotations.forEach { annotation in  // TODO: verify
+            AnnotationsParser.append(key: annotation.key, value: annotation.value, to: &annotations)
+        }
 
         // `case` is not included in the key of enum case definition, so we strip it manually
-        prefix = prefix.trimmingSuffix("case").trimmingCharacters(in: .whitespaces)
-
+        let isInsideCaseDefinition = prefix.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("case ")
+        prefix = prefix.trimmingPrefix("case ").trimmingCharacters(in: .whitespaces)
         var inlineCommentFound = false
 
         while !prefix.isEmpty {
@@ -118,37 +232,100 @@ public struct AnnotationsParser {
             prefix = prefix[..<commentStart.lowerBound].trimmingCharacters(in: .whitespaces)
         }
 
-        if inlineCommentFound && !prefix.isEmpty {
+        if (inlineCommentFound || isInsideCaseDefinition) && !prefix.isEmpty {
             stop = true
-            return annotations
+            return (annotations, shouldUsePositionBeforeTrailing)
         }
 
         // if previous line is not comment or has some trailing non-comment blocks
-        // we return currently agregated annotations
+        // we return currently aggregated annotations
         // as annotations on previous line belong to previous declaration
-        if lineInfo.line - 2 > 0 {
-            let previousLine = lines[lineInfo.line - 2]
+        if position.line - 2 > 0 {
+            let previousLine = lines[position.line - 2]
             let content = previousLine.content.trimmingCharacters(in: .whitespaces)
+            
+            guard
+                previousLine.type == .comment
+                    || previousLine.type == .documentationComment
+                    || previousLine.type == .propertyWrapper
+                    || previousLine.type == .macros,
 
-            guard previousLine.type == .comment, content.hasPrefix("//") || content.hasSuffix("*/") else {
+                    content.hasPrefix("//")
+                    || content.hasSuffix("*/")
+                    || content.hasPrefix("@")
+                    || content.hasPrefix("#")
+            else {
                 stop = true
-                return annotations
+                return (annotations, shouldUsePositionBeforeTrailing)
             }
         }
 
-        return annotations
+        return (annotations, shouldUsePositionBeforeTrailing)
     }
 
     private static func parse(contents: String) -> [Line] {
         var annotationsBlock: Annotations?
         var fileAnnotationsBlock = Annotations()
+
+        class MultilineCommentStack {
+            private var lines: [String] = []
+            var hasOpenedComment: Bool {
+                !lines.isEmpty && lines.last?.contains("*/") == false
+            }
+            func reset() {
+                lines.removeAll()
+            }
+            func push(_ line: String) {
+                lines.append(line)
+            }
+            func contains(_ line: String) -> Bool {
+                lines.contains(line)
+            }
+        }
+        let multilineCommentStack = MultilineCommentStack()
         return StringView(contents).lines
                 .map { line in
                     let content = line.content.trimmingCharacters(in: .whitespaces)
                     var annotations = Annotations()
-                    let isComment = content.hasPrefix("//") || content.hasPrefix("/*") || content.hasPrefix("*")
-                    var type: Line.LineType = isComment ? .comment : .other
-                    if isComment {
+                    var isComment = content.hasPrefix("//") || content.hasPrefix("/*") && !content.hasPrefix("/**") || content.hasPrefix("*") && !content.hasPrefix("*/")
+                    let isClosingMultilineDocumentationComment = (content.contains("*/") && multilineCommentStack.hasOpenedComment)
+                    let isOpeningMultilineDocumentationComment = content.hasPrefix("/**")
+                    let isDocumentationComment = content.hasPrefix("///") || isOpeningMultilineDocumentationComment || isClosingMultilineDocumentationComment
+                    let isPropertyWrapper = content.isPropertyWrapper
+                    let isMacros = content.hasPrefix("#")
+                    var type = Line.LineType.other
+                    if isOpeningMultilineDocumentationComment {
+                        multilineCommentStack.push(content)
+                        if content == "/**" {
+                            // ignoring the actual token which indicates the start of a multiline comment
+                            // but not stopping traversal of comments by setting the type to `comment`
+                            type = .comment
+                            isComment = true
+                        } else {
+                            type = .documentationComment
+                        }
+                    } else if isClosingMultilineDocumentationComment {
+                        if content == "*/" {
+                            // ignoring the actual token which indicates the start of a multiline comment
+                            // but not stopping traversal of comments by setting the type to `comment`
+                            type = .comment
+                            isComment = true
+                        } else {
+                            type = .documentationComment
+                        }
+                        multilineCommentStack.reset()
+                    } else if multilineCommentStack.hasOpenedComment {
+                        type = .documentationComment
+                    } else if isDocumentationComment {
+                        type = .documentationComment
+                    } else if isComment {
+                        type = .comment
+                    } else if isPropertyWrapper {
+                        type = .propertyWrapper
+                    } else if isMacros {
+                        type = .macros
+                    }
+                    if isComment || (type == .documentationComment) {
                         switch searchForAnnotations(commentLine: content) {
                         case let .begin(items):
                             type = .blockStart
@@ -171,6 +348,9 @@ public struct AnnotationsParser {
                                 fileAnnotationsBlock[$0.key] = $0.value
                             }
                         }
+                    } else {
+                        searchForTrailingAnnotations(codeLine: content)
+                            .forEach { annotations[$0.key] = $0.value }
                     }
 
                     annotationsBlock?.forEach { annotation in
@@ -186,6 +366,30 @@ public struct AnnotationsParser {
                                 annotations: annotations,
                                 blockAnnotations: annotationsBlock ?? [:])
                 }
+    }
+
+    private static func searchForTrailingAnnotations(codeLine: String) -> Annotations {
+        let blockComponents = codeLine.components(separatedBy: "/*", excludingDelimiterBetween: ("", ""))
+        if blockComponents.count > 1,
+           let lastBlockComponent = blockComponents.last,
+           let endBlockRange = lastBlockComponent.range(of: "*/"),
+           let lowerBound = lastBlockComponent.range(of: "sourcery:")?.upperBound {
+            let trailingStart = endBlockRange.upperBound
+            let trailing = String(lastBlockComponent[trailingStart...])
+            if trailing.components(separatedBy: "//", excludingDelimiterBetween: ("", "")).first?.trimmed.count == 0 {
+                let upperBound = endBlockRange.lowerBound
+                return AnnotationsParser.parse(line: String(lastBlockComponent[lowerBound..<upperBound]))
+            }
+        }
+
+        let components = codeLine.components(separatedBy: "//", excludingDelimiterBetween: ("", ""))
+        if components.count > 1,
+           let trailingComment = components.last?.stripped(),
+           let lowerBound = trailingComment.range(of: "sourcery:")?.upperBound {
+            return AnnotationsParser.parse(line: String(trailingComment[lowerBound...]))
+        }
+
+        return [:]
     }
 
     private static func searchForAnnotations(commentLine: String) -> AnnotationType {
@@ -244,7 +448,7 @@ public struct AnnotationsParser {
             .commaSeparated()
             .map { $0.trimmingCharacters(in: .whitespaces) }
 
-        var namespaces = annotationDefinitions[0].components(separatedBy: ":", excludingDelimiterBetween: (open: "\"'{[", close: "\"'}]"))
+        var namespaces = annotationDefinitions[0].components(separatedBy: ":", excludingDelimiterBetween: (open: "\"'", close: "\"'"))
         annotationDefinitions[0] = namespaces.removeLast()
 
         var annotations = Annotations()
@@ -321,13 +525,16 @@ public struct AnnotationsParser {
 
 }
 
-
-extension String {
-
-    //! this was not exposed in SourceKitten so an own version was create by Sourcery
-    //! but new version of SourceKitten has this method so it can pass that through.
-    func location(fromByteOffset byteOffset: Int) -> Int? {
-        return StringView(self).location(fromByteOffset: ByteCount(byteOffset))
+// Parses string to see if it is a macros or not
+private extension String {
+    /// @objc // true
+    /// @objc var paosdjapsodji = 1 // false
+    /// @MyAttribute(some     thing) // true
+    /// @MyAttribute(some     thing) var paosdjapsodji = 1 // false
+    /// @objc let asdasd // false
+    var isPropertyWrapper: Bool {
+        guard hasPrefix("@") else { return false }
+        guard contains(")") || !contains(" ") else { return false }
+        return true
     }
-
 }

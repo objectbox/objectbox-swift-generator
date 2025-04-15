@@ -12,6 +12,10 @@ import PathKit
 public typealias Path = PathKit.Path
 
 extension Path {
+    public var modifiedDate: Date? {
+        (try? FileManager.default.attributesOfItem(atPath: string)[.modificationDate]) as? Date
+    }
+
     public static func cleanTemporaryDir(name: String) -> Path {
         guard let tempDirURL = NSURL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("Sourcery.\(name)") else { fatalError("Unable to get temporary path") }
         _ = try? FileManager.default.removeItem(at: tempDirURL)
@@ -43,11 +47,12 @@ extension Path {
     public var isTemplateFile: Bool {
         return self.extension == "stencil" ||
             self.extension == "swifttemplate" ||
-            self.extension == "ejs"
+            self.extension == "ejs" ||
+            self.extension == "sourcerytemplate"
     }
 
     public var isSwiftSourceFile: Bool {
-        return !self.isDirectory && self.extension == "swift"
+        return !self.isDirectory && (self.extension == "swift" || self.extension == "swiftinterface")
     }
 
     public func hasExtension(as string: String) -> Bool {
