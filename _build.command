@@ -41,10 +41,16 @@ echo ""
 BUILD_DIR="${MY_DIR}/build/"
 
 # Build using swift build in release configuration
-# swift build --disable-sandbox -c release --arch arm64 --build-path $BUILD_DIR
+swift build --disable-sandbox -c release --arch arm64 --build-path $BUILD_DIR
 swift build --disable-sandbox -c release --arch x86_64 --build-path $BUILD_DIR
 # Create directories if they don't exist
 mkdir -p "${MY_DIR}/bin/build"
+
+# Create universal binary using lipo
+lipo -create \
+  "${MY_DIR}/build/arm64-apple-macosx/release/Sourcery" \
+  "${MY_DIR}/build/x86_64-apple-macosx/release/Sourcery" \
+  -output "${MY_DIR}/bin/build/Sourcery"
 
 # Copy the built executable to the build directory
 # Swift build places the binary in .build/release/Sourcery
