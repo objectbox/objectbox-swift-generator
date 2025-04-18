@@ -52,13 +52,9 @@ lipo -create \
   "${MY_DIR}/build/x86_64-apple-macosx/release/Sourcery" \
   -output "${MY_DIR}/bin/build/Sourcery"
 
-# Copy the built executable to the build directory
-# Swift build places the binary in .build/release/Sourcery
-cp -f "${MY_DIR}/build/x86_64-apple-macosx/release/Sourcery" "${MY_DIR}/bin/build/"
-
 # Create a simple app structure to maintain compatibility with the rest of the script
 mkdir -p "${MY_DIR}/bin/build/Sourcery.app/Contents/MacOS"
-cp -f "${MY_DIR}/build/x86_64-apple-macosx/release/Sourcery" "${MY_DIR}/bin/build/Sourcery.app/Contents/MacOS/"
+cp -f "${MY_DIR}/bin/build/Sourcery" "${MY_DIR}/bin/build/Sourcery.app/Contents/MacOS/"
 
 # The Swift Package Manager requires an artifact bundle, not an app.
 # Therefore, create the artifact bundle from the app.
