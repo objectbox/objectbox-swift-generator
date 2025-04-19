@@ -43,29 +43,27 @@ BUILD_DIR="${MY_DIR}/build/"
 # Build using swift build in release configuration
 swift build --disable-sandbox -c release --arch arm64 --build-path $BUILD_DIR
 swift build --disable-sandbox -c release --arch x86_64 --build-path $BUILD_DIR
-# Create directories if they don't exist
-mkdir -p "${MY_DIR}/bin/build"
+
+mkdir -p "${MY_DIR}/bin/Sourcery.app/Contents/MacOS"
+mkdir -p "${MY_DIR}/bin/Sourcery.app/Contents/Resources"
+cp "${MY_DIR}/Sourcery/ObjectBox/EntityInfo.stencil" "${MY_DIR}/bin/Sourcery.app/Contents/Resources/"
+cp "${MY_DIR}/SourceryExecutable/Info.plist" "${MY_DIR}/bin/Sourcery.app/Contents/"
 
 # Create universal binary using lipo
 lipo -create \
   "${MY_DIR}/build/arm64-apple-macosx/release/Sourcery" \
   "${MY_DIR}/build/x86_64-apple-macosx/release/Sourcery" \
-  -output "${MY_DIR}/bin/build/Sourcery"
-
-# Create a simple app structure to maintain compatibility with the rest of the script
-mkdir -p "${MY_DIR}/bin/build/Sourcery.app/Contents/MacOS"
-cp -f "${MY_DIR}/bin/build/Sourcery" "${MY_DIR}/bin/build/Sourcery.app/Contents/MacOS/"
+  -output "${MY_DIR}/bin/Sourcery.app/Contents/MacOS/Sourcery"
 
 # The Swift Package Manager requires an artifact bundle, not an app.
 # Therefore, create the artifact bundle from the app.
 # The name needs to be changed, since the Sourcery is already taken by Sourcery itself.
 # The internals can stay unchanged because names are adjusted in the required info.json file.
 rm -rf "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle/"
-mkdir -p "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle/Contents/MacOS"
-cp -f "${MY_DIR}/bin/build/Sourcery.app/Contents/MacOS/Sourcery" "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle/Contents/MacOS/"
+cp -r "${MY_DIR}/bin/Sourcery.app" "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle"
 
 # Fix the version, and add the required info.json to the artifact bundle
-OBECTBOX_GENERATOR_VERSION=$(${MY_DIR}/bin/build/Sourcery.app/Contents/MacOS/Sourcery --version)
+OBECTBOX_GENERATOR_VERSION=$(${MY_DIR}/bin/Sourcery.app/Contents/MacOS/Sourcery --version)
 echo "GEN: $OBECTBOX_GENERATOR_VERSION"
 jq --arg new_version "$OBECTBOX_GENERATOR_VERSION" \
    '.artifacts["objectbox-generator"].version = $new_version' \
@@ -84,15 +82,15 @@ if [ "$dirty" = true ] ; then
     echo ""
 
     rm -rf "${MY_DIR}/bin/Sourcery"
-    cp -f "${MY_DIR}/bin/build/Sourcery.app/Contents/MacOS/Sourcery" "${MY_DIR}/bin/"
+    cp -f "${MY_DIR}/bin/Sourcery.app/Contents/MacOS/Sourcery" "${MY_DIR}/bin/"
 else
     echo ""
     echo "$SMSO Clean up... $RMSO"
     echo ""
 
     rm -rf "${MY_DIR}/bin/Sourcery"
-    mv -f "${MY_DIR}/bin/build/Sourcery.app/Contents/MacOS/Sourcery" "${MY_DIR}/bin/"
-    rm -rf "${MY_DIR}/bin/build"
+    cp -f "${MY_DIR}/bin/Sourcery.app/Contents/MacOS/Sourcery" "${MY_DIR}/bin/"
+    rm -rf "${MY_DIR}/build"
 fi
 
 echo ""
