@@ -18,6 +18,24 @@ extension XcodeProj {
         return try? fileElement.fullPath(sourceRoot: sourceRoot)
     }
 
+    func sourceFilesPathsForXcodeFolder(target: PBXTarget, sourceRoot: Path) -> [Path] {
+        guard let fileSystemSynchronizedGroups = target.fileSystemSynchronizedGroups else { return [] }
+        var swiftFilePaths: [Path] = []
+        for fileSystemSynchronizedGroup in fileSystemSynchronizedGroups {
+            if let directory: String = fileSystemSynchronizedGroup.path {
+                do {
+                    let sourceFiles = try FileManager.default.contentsOfDirectory(atPath: directory)
+                    for file in sourceFiles where file.hasSuffix(".swift") {
+                        swiftFilePaths.append(Path(directory) + Path(file))
+                    }
+                } catch {
+                    Log.warning("Failed to read contents of directory: \(directory). \(error)")
+                }
+            }
+        }
+        return swiftFilePaths
+    }
+
     func sourceFilesPaths(target: PBXTarget, sourceRoot: Path) -> [Path] {
         let sourceFiles = (try? target.sourceFiles()) ?? []
         return sourceFiles
