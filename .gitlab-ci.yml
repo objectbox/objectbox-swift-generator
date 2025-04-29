@@ -5,6 +5,15 @@ build:
   stage: build
   tags: [mac, x64, xcode]
   script:
+    - swift build
+    - swift test
+
+
+build_artifacts:
+  stage: build
+  needs: [ 'build' ]
+  tags: [mac, x64, xcode]
+  script:
     - ./_build.command
   artifacts:
     when: always
