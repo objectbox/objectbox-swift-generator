@@ -464,6 +464,17 @@ public struct AnnotationsParser {
                     return
                 }
 
+                // Changes for ObjectBox: As Sourcery casts any number present in the annotations
+                // to a Double, attributes like the entity/property UID or HNSW reparationProbability,
+                // which fundamentally are not doubles, also get converted to a `Double`.
+                // This incorrect representation causes errors in other ObjectBox specific functions.
+                // For instance, when ObjectBox specific code tries to cast the UIDs to `Int64` from its `Double`
+                // representation, an incorrect integer (UID) is obtained due to Double -> Int64 rounding errors.
+                // Hence, instead of Sourcery converting all numbers to `Double` as a default, we check if the
+                // annotation is a `Int64` or a `Float` and convert it to a `NSNumber`, avoiding the control flow
+                // to go into the `else` branch (where the annotation is casted to a NSArray, NSDictionary or NSString)
+                // This change was introduced in the following commit:
+                // https://code.greencentral.de/objectbox/objectbox-swift-generator/-/commit/576e252a5b78d0f9c5c19ae34be7101f6fe279a9
                 if let number = Int64(value) {
                     append(key: name, value: NSNumber(value: number), to: &annotations)
                 } else if let number = Float(value) {
