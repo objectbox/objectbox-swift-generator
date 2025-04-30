@@ -6,6 +6,8 @@ build:
   tags: [mac, x64, xcode]
   script:
     - swift build
+    - swift package plugin --list
+    - swiftlint run
     - swift test
 
 
