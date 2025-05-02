@@ -6,6 +6,7 @@ import Nimble
 import PathKit
 
 class IdSyncSpec: QuickSpec {
+    // swiftlint:disable:next function_body_length
     override func spec() {
         describe("IdSync") {
             let tmpPath = URL(fileURLWithPath: "/tmp")

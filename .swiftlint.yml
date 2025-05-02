@@ -19,15 +19,15 @@ included:
   - Sourcery
   - SourceryRuntime
   - SourceryTests
-  - Templates/Tests
 
 excluded: # paths to ignore during linting. Takes precedence over `included`.
   - Carthage
   - Pods
   - Packages
   - SourceryTests/Stub
-  - Templates/Tests/Generated
-  - Templates/Tests/Expected
+  - SourceryTests/Parsing
+  - SourceryTests/Output
+  - Templates/Tests
 
 type_body_length:
   - 700 #warning
