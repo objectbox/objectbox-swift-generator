@@ -11,6 +11,16 @@ class IdSyncSpec: QuickSpec {
             let tmpPath = URL(fileURLWithPath: "/tmp")
             let jsonFilePath = tmpPath.appendingPathComponent("model.json")
             
+            func createTestProperty(_ entity: SchemaEntity, _ name: String, _ type: String) -> SchemaProperty {
+                let prop = SchemaProperty()
+                // Note: for this test just set the database name based on the field name
+                prop.propertyName = name
+                prop.name = prop.propertyName
+                prop.propertySwiftType = type
+                prop.entityName = entity.className
+                return prop
+            }
+
             beforeEach {
                 try? FileManager.default.removeItem(at: jsonFilePath)
             }
@@ -75,11 +85,7 @@ class IdSyncSpec: QuickSpec {
                 let schemaData = Schema()
                 let entity = SchemaEntity()
                 entity.className = "FirstEntity"
-                let prop = SchemaProperty()
-                prop.propertyName = "identifikationsNummer"
-                prop.propertySwiftType = "EntityId<FirstEntity>"
-                prop.entityName = "FirstEntity"
-                entity.properties.append(prop)
+                entity.properties.append(createTestProperty(entity, "identifikationsNummer", "EntityId<FirstEntity>"))
                 schemaData.entities.append(entity)
                 
                 expect {
@@ -117,35 +123,20 @@ class IdSyncSpec: QuickSpec {
             }
             
             context("with multiple classes and properties") {
+
                 func multiPropertyClassSchema() -> Schema {
                     let schemaData = Schema()
                     
                     let entity = SchemaEntity()
                     entity.className = "FirstEntity"
-                    let prop = SchemaProperty()
-                    prop.propertyName = "id"
-                    prop.propertySwiftType = "EntityId<FirstEntity>"
-                    prop.entityName = "FirstEntity"
-                    entity.properties.append(prop)
-                    let prop2 = SchemaProperty()
-                    prop2.propertyName = "name"
-                    prop2.propertySwiftType = "String"
-                    prop2.entityName = "FirstEntity"
-                    entity.properties.append(prop2)
+                    entity.properties.append(createTestProperty(entity, "id", "EntityId<FirstEntity>"))
+                    entity.properties.append(createTestProperty(entity, "name", "String"))
                     schemaData.entities.append(entity)
                     
                     let entity2 = SchemaEntity()
                     entity2.className = "SecondEntity"
-                    let prop3 = SchemaProperty()
-                    prop3.propertyName = "id"
-                    prop3.propertySwiftType = "EntityId<SecondEntity>"
-                    prop3.entityName = "SecondEntity"
-                    entity2.properties.append(prop3)
-                    let prop4 = SchemaProperty()
-                    prop4.propertyName = "name"
-                    prop4.propertySwiftType = "String"
-                    prop4.entityName = "SecondEntity"
-                    entity2.properties.append(prop4)
+                    entity2.properties.append(createTestProperty(entity2, "id", "EntityId<SecondEntity>"))
+                    entity2.properties.append(createTestProperty(entity2, "name", "String"))
                     schemaData.entities.append(entity2)
                     
                     return schemaData
