@@ -154,7 +154,7 @@ class SourcerySpecTests: QuickSpec {
                         }
                         it("removes version information from within generated template") {
                         let expectedResult = """
-                            // Generated using Sourcery — https://github.com/krzysztofzablocki/Sourcery
+                            // Generated using the ObjectBox Swift Generator — https://objectbox.io
                             // DO NOT EDIT
 
                             // Line One
@@ -174,7 +174,7 @@ class SourcerySpecTests: QuickSpec {
                         it("removes version information from within generated template") {
                         let expectedResult = """
                             // swiftlint:disable all
-                            // Generated using Sourcery — https://github.com/krzysztofzablocki/Sourcery
+                            // Generated using the ObjectBox Swift Generator — https://objectbox.io
                             // DO NOT EDIT
 
                             // Line One

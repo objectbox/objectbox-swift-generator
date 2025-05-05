@@ -46,6 +46,7 @@ public class Sourcery {
     // content annotated with file annotations per file path to write it to
     fileprivate var fileAnnotatedContent: [Path: [String]] = [:]
 
+    // Note: for ObjectBox defaulting hideVersionHeader to true to avoid having to update expected source files in tests
     /// Creates Sourcery processor
     public init(
         verbose: Bool = false,
@@ -55,7 +56,7 @@ public class Sourcery {
         buildPath: Path? = nil,
         prune: Bool = false,
         serialParse: Bool = false, 
-        hideVersionHeader: Bool = false,
+        hideVersionHeader: Bool = true,
         arguments: [String: NSObject] = [:],
         logConfiguration: Log.Configuration? = nil,
         headerPrefix: String? = nil

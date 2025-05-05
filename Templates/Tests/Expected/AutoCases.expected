@@ -1,3 +1,6 @@
+// Generated using the ObjectBox Swift Generator — https://objectbox.io
+// DO NOT EDIT
+
 internal extension AutoCasesEnum {
   static let count: Int = 4
   static let allCases: [AutoCasesEnum] = [
@@ -16,4 +19,3 @@ internal extension AutoCasesOneValueEnum {
     .one
   ]
 }
-

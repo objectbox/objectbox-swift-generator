@@ -1,6 +1,5 @@
-// Generated using Sourcery 0.12.0 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using the ObjectBox Swift Generator — https://objectbox.io
 // DO NOT EDIT
-
 
 
 extension AssociatedValuesEnum {

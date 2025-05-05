@@ -1,5 +1,7 @@
-
+// Generated using the ObjectBox Swift Generator — https://objectbox.io
+// DO NOT EDIT
 // swiftlint:disable all
+
 
 // MARK: - AutoHashable for classes, protocols, structs
 // MARK: - AutoHashableClass AutoHashable
