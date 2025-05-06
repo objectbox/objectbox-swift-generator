@@ -420,12 +420,15 @@ public struct Configuration {
         self.args = args
     }
 
-    init(projects: [Project], templates: Paths, output: Path, cacheBasePath: Path, forceParse: [String], args: [String: NSObject]) {
+    // Added for ObjectBox to support passing an Xcode project and target to the generator (see main.swift command options)
+    public init(projects: [Project], templates: Paths, output: Path, cacheBasePath: Path, forceParse: [String], args: [String: NSObject]) {
         self.source = .projects(projects)
         self.templates = templates
         self.output = Output(output, linkTo: nil)
         self.cacheBasePath = cacheBasePath
         self.forceParse = forceParse
+        self.parseDocumentation = false
+        self.baseIndentation = 0
         self.args = args
     }
 }

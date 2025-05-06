@@ -2,7 +2,7 @@
 
 import Foundation
 
-enum IdSync {
+public enum IdSync {
 
     /* Model classes that get populated from our model.json file using Codable protocol. */
 
@@ -278,11 +278,11 @@ enum IdSync {
         }
     }
 
-    class UidHelper {
+    public class UidHelper {
         weak var model: IdSyncModel?
         var existingUids = Set<Int64>()
 
-        static var randomNumberStart: Int64 = 0
+        public static var randomNumberStart: Int64 = 0
 
         func addExistingIds(_ newIds: [Int64]) throws {
             try newIds.forEach { try addExistingId($0) }
@@ -409,7 +409,7 @@ enum IdSync {
                 entitiesReadByUid[entity.id.uid] = entity
                 entitiesByUid[entity.id.uid] = entity
                 let loweredEntityName = entity.name.lowercased()
-                guard !entitiesReadByName.contains(reference: loweredEntityName) else {
+                guard !entitiesReadByName.contains(where: { $0.key == loweredEntityName }) else {
                     throw Error.DuplicateEntityName(entity.name)
                 }
                 entitiesReadByName[loweredEntityName] = entity

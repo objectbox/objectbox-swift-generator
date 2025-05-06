@@ -4,7 +4,6 @@ import Foundation
 import PathKit
 import Stencil
 import StencilSwiftKit
-import StencilSwiftKit.Swift
 import SourceryRuntime
 
 extension SourceryVariable {
@@ -17,7 +16,7 @@ extension SourceryVariable {
 // TODO refactor: not static, e.g. have entities and stats as members
 // TODO refactor: extract methods from large methods
 // TODO stricter checks: e.g. check for unsupported annotations, e.g. typos
-enum ObjectBoxGenerator {
+public enum ObjectBoxGenerator {
 
     enum Error: Swift.Error {
         case DuplicateIdAnnotation(entity: String, found: String, existing: String)
@@ -30,9 +29,9 @@ enum ObjectBoxGenerator {
         case BadPropertyAnnotation(property: String, message: String)
     }
 
-    static var modelJsonFile: URL?
-    static var classVisibility = "internal"
-    static var debugDataURL: URL?
+    public static var modelJsonFile: URL?
+    public static var classVisibility = "internal"
+    public static var debugDataURL: URL?
     static var buildTracker = BuildTracker()
 
     static let builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate",
@@ -96,7 +95,7 @@ enum ObjectBoxGenerator {
     private static var lastIndexId = IdUid()
     private static var lastRelationId = IdUid()
 
-    static func printError(_ error: Swift.Error) {
+    public static func printError(_ error: Swift.Error) {
         if let obxError = error as? IdSync.Error {
             switch obxError {
             case .IncompatibleVersion(let found, let expected):
@@ -268,7 +267,7 @@ enum ObjectBoxGenerator {
         let defaultType = mapDefaultPropertyType(propertyVar.typeName)
         if !propertyVar.annotations.isEmpty {
             var typeStr: String? = propertyVar.annotations["type"] as? String
-            if propertyVar.annotations.contains(reference: "date-nano") {
+            if propertyVar.annotations.contains(where: { $0.key == "date-nano" }) {
                 guard typeStr == nil else {
                     // TODO log location info and abort
                     Log.error("Annotation \"data-nano\" cannot coexist with \"type\" annotation")
@@ -276,7 +275,7 @@ enum ObjectBoxGenerator {
                 }
                 typeStr = "date-nano"
             }
-            if propertyVar.annotations.contains(reference: "flex") {
+            if propertyVar.annotations.contains(where: { $0.key == "flex" }) {
                 guard typeStr == nil else {
                     // TODO log location info and abort
                     Log.error("Annotation \"flex\" cannot coexist with \"type\" annotation")
@@ -383,7 +382,7 @@ enum ObjectBoxGenerator {
         let propertyType: String
         if typeNameNotNull == "[Float]" {
             // Float array: may be a special HNSW index property (annotation is parsed later)
-            let hasHnswIndex = propertyVar.annotations.contains(reference: "hnswIndex")
+            let hasHnswIndex = propertyVar.annotations.contains(where: { $0.key == "hnswIndex" })
             if hasHnswIndex {
                 propertyType = "HnswIndexPropertyType"
             } else {
@@ -500,7 +499,7 @@ enum ObjectBoxGenerator {
         if schemaProperty.isObjectId {
             schemaProperty.propertyFlags.append(.id)
         }
-        if propertyVar.annotations.contains(reference: "id-companion") {
+        if propertyVar.annotations.contains(where: { $0.key == "id-companion" }) {
             if schemaProperty.propertyType != .date && schemaProperty.propertyType != .dateNano {
                 throw Error.BadPropertyAnnotation(property: propertyVar.description,
                         message: "The id-companion annotation is only supported for date and dateNano types but found: \(schemaProperty.propertyType)")
@@ -545,8 +544,8 @@ enum ObjectBoxGenerator {
     }
 
     static func processPropertyIndexAndUniqueAnnotations(_ propertyVar: SourceryVariable, _ schemaProperty: SchemaProperty) throws {
-        let hasIndexAnnotation = propertyVar.annotations.contains(reference: "index")
-        let hasUniqueAnnotation = propertyVar.annotations.contains(reference: "unique")
+        let hasIndexAnnotation = propertyVar.annotations.contains(where: { $0.key == "index" })
+        let hasUniqueAnnotation = propertyVar.annotations.contains(where: { $0.key == "unique" })
         if !hasIndexAnnotation && !hasUniqueAnnotation {
             return // does not have regular index annotations
         }
@@ -688,7 +687,7 @@ enum ObjectBoxGenerator {
         try entityType.variables.forEach { propertyVar in
             warnIfAnnotations(otherThan: ObjectBoxGenerator.validPropertyAnnotationNames,
                     in: Set(propertyVar.annotations.keys), of: propertyVar.name)
-            guard !propertyVar.annotations.contains(reference: "transient") else { return } // Exits only this iteration of the foreach block
+            guard !propertyVar.annotations.contains(where: { $0.key == "transient" }) else { return } // Exits only this iteration of the foreach block
             guard !propertyVar.isStatic else { return } // Exits only this iteration of the foreach block
             guard !propertyVar.isComputed else { return } // Exits only this iteration of the foreach block
 
@@ -752,7 +751,7 @@ enum ObjectBoxGenerator {
         }
     }
 
-    static func startup(statistics: Bool, verbose: Bool) throws {
+    public static func startup(statistics: Bool, verbose: Bool) throws {
         buildTracker.statistics = statistics
         buildTracker.verbose = verbose
         try buildTracker.startup()
