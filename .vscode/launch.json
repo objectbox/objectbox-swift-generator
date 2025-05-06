@@ -1,27 +1,21 @@
 {
     "configurations": [
         {
-            "type": "lldb",
+            "type": "swift",
             "request": "launch",
-            "sourceLanguages": [
-                "swift"
-            ],
-            "name": "Debug sourcery",
-            "program": "${workspaceFolder:Sourcery}/.build/debug/sourcery",
             "args": [],
-            "cwd": "${workspaceFolder:Sourcery}",
+            "cwd": "${workspaceFolder:objectbox-swift-generator}",
+            "name": "Debug sourcery",
+            "program": "${workspaceFolder:objectbox-swift-generator}/.build/debug/sourcery",
             "preLaunchTask": "swift: Build Debug sourcery"
         },
         {
-            "type": "lldb",
+            "type": "swift",
             "request": "launch",
-            "sourceLanguages": [
-                "swift"
-            ],
-            "name": "Release sourcery",
-            "program": "${workspaceFolder:Sourcery}/.build/release/sourcery",
             "args": [],
-            "cwd": "${workspaceFolder:Sourcery}",
+            "cwd": "${workspaceFolder:objectbox-swift-generator}",
+            "name": "Release sourcery",
+            "program": "${workspaceFolder:objectbox-swift-generator}/.build/release/sourcery",
             "preLaunchTask": "swift: Build Release sourcery"
         }
     ]
