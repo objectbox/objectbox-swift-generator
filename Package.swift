@@ -80,6 +80,8 @@ var targets: [Target] = [
         path: "Sourcery",
         exclude: [
             "Templates",
+            "ObjectBox/Tests",
+            "ObjectBox/EntityInfo.stencil"
         ]
     ),
     .target(
