@@ -365,7 +365,7 @@ public enum ObjectBoxGenerator {
 
         let schemaProperty = SchemaProperty()
         schemaProperty.entityName = entityType.localName
-        schemaProperty.propertyName = propertyVar.name
+        schemaProperty.swiftName = propertyVar.name
         schemaProperty.isMutable = propertyVar.isMutable
 
         // Determine value type to use for generated Property field
@@ -392,7 +392,7 @@ public enum ObjectBoxGenerator {
             // Use Swift type
             propertyType = fullTypeName
         }
-        schemaProperty.propertySwiftType = propertyType
+        schemaProperty.swiftType = propertyType
 
         // Note: do not try (and fail) to detect type for artificial ToMany property
         if !isToManyRelation {
@@ -417,7 +417,7 @@ public enum ObjectBoxGenerator {
         schemaProperty.unwrappedPropertyType = propertyVar.unwrappedTypeName
         schemaProperty.dbName = propertyVar.annotations["name"] as? String
         if let dbNameIsEmpty = schemaProperty.dbName?.isEmpty, dbNameIsEmpty { schemaProperty.dbName = nil }
-        schemaProperty.name = schemaProperty.dbName ?? schemaProperty.propertyName
+        schemaProperty.name = schemaProperty.dbName ?? schemaProperty.swiftName
         if let propertyUidObject = propertyVar.annotations["uid"], let propertyUid = (propertyUidObject as? NSNumber)?.int64Value {
             var propId = IdUid()
             propId.uid = propertyUid
@@ -431,7 +431,7 @@ public enum ObjectBoxGenerator {
             } else if let secondDbType = enums[schemaProperty.unwrappedPropertyType]?.name {
                 dbType = secondDbType
             } else {
-                throw Error.convertAnnotationMissingType(name: schemaProperty.propertyName, entity: schemaProperty.entityName)
+                throw Error.convertAnnotationMissingType(name: schemaProperty.swiftName, entity: schemaProperty.entityName)
             }
             if let typeName = convertDict["converter"] {
                 schemaProperty.converterName = typeName
@@ -446,15 +446,15 @@ public enum ObjectBoxGenerator {
                 schemaProperty.unConversionSuffix = ".rawValue"
                 if let defaultValue = convertDict["default"] {
                     schemaProperty.conversionSuffix = ") ?? \(defaultValue)"
-                } else if schemaProperty.propertySwiftType.hasSuffix("?") {
+                } else if schemaProperty.swiftType.hasSuffix("?") {
                     schemaProperty.conversionSuffix = ")"
                 } else {
-                    throw Error.convertAnnotationMissingConverterOrDefault(name: schemaProperty.propertyName, entity: schemaProperty.entityName)
+                    throw Error.convertAnnotationMissingConverterOrDefault(name: schemaProperty.swiftName, entity: schemaProperty.entityName)
                 }
             }
 
-            schemaProperty.typeBeforeConversion = schemaProperty.propertySwiftType
-            schemaProperty.propertySwiftType = dbType
+            schemaProperty.typeBeforeConversion = schemaProperty.swiftType
+            schemaProperty.swiftType = dbType
             schemaProperty.unwrappedPropertyType = dbType.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
 
             if let unwrappedPropertyType = typeMappings[schemaProperty.unwrappedPropertyType] {
@@ -474,7 +474,7 @@ public enum ObjectBoxGenerator {
         if let objectIdAnnotationValue = propertyVar.annotations["id"] {
             if let existingIdProperty = schemaEntity.idProperty {
                 throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: propertyVar.name,
-                        existing: existingIdProperty.propertyName)
+                        existing: existingIdProperty.swiftName)
             }
             schemaProperty.isObjectId = true
             schemaEntity.idProperty = schemaProperty
@@ -517,13 +517,13 @@ public enum ObjectBoxGenerator {
             let templateTypesString = fullTypeName.drop(first: "ToOne<".count, last: 1)
             let templateTypes = templateTypesString.split(separator: ",")
             let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-            let relation = SchemaRelation(name: schemaProperty.propertyName, type: schemaProperty.propertySwiftType,
+            let relation = SchemaRelation(name: schemaProperty.swiftName, type: schemaProperty.swiftType,
                     targetType: destinationType)
             relation.property = schemaProperty
             schemaEntity.relations.append(relation)
             if let backlink = propertyVar.annotations["backlink"] as? String {
                 print("warning: Found an // objectbox: backlink annotation on ToOne relation "
-                        + "\"\(schemaProperty.propertyName)\". Did you mean to put "
+                        + "\"\(schemaProperty.swiftName)\". Did you mean to put "
                         + "// objectbox: backlink = \"\(propertyVar.name)\"  on the ToMany relation \"\(backlink)\" "
                         + "in \"\(destinationType)\"?")
             }
@@ -702,15 +702,15 @@ public enum ObjectBoxGenerator {
             } else if schemaEntity.idCandidates.count == 1 {
                 schemaEntity.idProperty = schemaEntity.idCandidates[0]
             } else {
-                schemaEntity.idProperty = schemaEntity.idCandidates.first { $0.propertyName.lowercased() == "id" }
+                schemaEntity.idProperty = schemaEntity.idCandidates.first { $0.swiftName.lowercased() == "id" }
                 if schemaEntity.idProperty == nil {
-                    schemaEntity.idProperty = schemaEntity.idCandidates.first { $0.propertyName.lowercased() == "objectid" }
+                    schemaEntity.idProperty = schemaEntity.idCandidates.first { $0.swiftName.lowercased() == "objectid" }
                 }
                 if schemaEntity.idProperty == nil {
-                    schemaEntity.idProperty = schemaEntity.idCandidates.first { $0.propertyName.lowercased() == "uniqueid" }
+                    schemaEntity.idProperty = schemaEntity.idCandidates.first { $0.swiftName.lowercased() == "uniqueid" }
                 }
                 guard schemaEntity.idProperty != nil else {
-                    throw Error.AmbiguousIdOnEntity(entity: schemaEntity.className, properties: schemaEntity.idCandidates.map { $0.propertyName })
+                    throw Error.AmbiguousIdOnEntity(entity: schemaEntity.className, properties: schemaEntity.idCandidates.map { $0.swiftName })
                 }
             }
             schemaEntity.idProperty?.isObjectId = true

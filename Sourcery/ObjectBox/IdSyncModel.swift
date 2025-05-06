@@ -797,7 +797,7 @@ public enum IdSync {
             var existingProperty: Property?
             if let existingEntity = existingEntity {
                 if let propertyUid = propertyUid, !printUid, !parsedUids.insert(propertyUid).inserted {
-                    throw Error.NonUniqueModelPropertyUID(uid: propertyUid, entity: schemaEntity.className, property: schemaProperty.propertyName)
+                    throw Error.NonUniqueModelPropertyUID(uid: propertyUid, entity: schemaEntity.className, property: schemaProperty.swiftName)
                 }
                 existingProperty = try findProperty(entity: existingEntity, name: schemaProperty.name, uid: propertyUid)
             }
@@ -808,9 +808,9 @@ public enum IdSync {
                     if modelRead.newUidPool == nil { modelRead.newUidPool = [] }
                     modelRead.newUidPool?.append(uniqueUID)
                     try writeModel(modelRead)
-                    throw Error.PrintPropertyUid(entity: schemaEntity.className, property: schemaProperty.propertyName, found: existingProperty.id.uid, unique: uniqueUID)
+                    throw Error.PrintPropertyUid(entity: schemaEntity.className, property: schemaProperty.swiftName, found: existingProperty.id.uid, unique: uniqueUID)
                 } else {
-                    throw Error.PropertyUIDTagNeedsValue(entity: schemaEntity.className, property: schemaProperty.propertyName)
+                    throw Error.PropertyUIDTagNeedsValue(entity: schemaEntity.className, property: schemaProperty.swiftName)
                 }
             }
 
@@ -845,8 +845,8 @@ public enum IdSync {
                 schemaEntity.indexes.append(newIndex)
             }
             var relationTargetUnresolved: String?
-            if schemaProperty.isRelation && schemaProperty.propertySwiftType.hasPrefix("ToOne<") {
-                let templateTypeString = schemaProperty.propertySwiftType.drop(first: "ToOne<".count, last: 1)
+            if schemaProperty.isRelation && schemaProperty.swiftType.hasPrefix("ToOne<") {
+                let templateTypeString = schemaProperty.swiftType.drop(first: "ToOne<".count, last: 1)
                 relationTargetUnresolved = templateTypeString
             }
 

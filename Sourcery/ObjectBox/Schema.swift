@@ -120,13 +120,19 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
 
 class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var modelId: IdUid?
-    var propertyName: String = ""
+    /// The name of the Swift field of this property.
+    var swiftName: String = ""
+    /// Optional value of the name annotation of a property. If set, this is used instead of ``propertyName`` for the ``name`` in the database.
+    var dbName: String?
+    /// The name of the property in the database.
+    var name: String = ""
     /// Typically the name of the Swift type of the property (like `String`), but for some
     /// properties the name of a special ObjectBox property type (like `FloatArrayPropertyType`).
-    var propertySwiftType: String = ""
+    var swiftType: String = ""
+    /// The ObjectBox database ``PropertyType``.
+    var propertyType = PropertyType.unknown
     var entityName: String = ""
     var unwrappedPropertyType: String = ""
-    var dbName: String?
     var modelIndexId: IdUid?
     var backlinkName: String?
     var backlinkType: String?
@@ -146,13 +152,10 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var isToManyRelation: Bool = false
     var toManyRelation: SchemaToManyRelation?
     var isUnsignedType: Bool = false
-    /// The ObjectBox database ``PropertyType``.
-    var propertyType = PropertyType.unknown
     /// One or more ``PropertyFlags``.
     var propertyFlags: [PropertyFlags] = []
     /// Optional parameters to configure an HNSW index for this property.
     var hnswParams: SchemaHnswParams?
-    var name: String = ""
     var isMutable = true
     var flagsList: String = ""
     var converterName: String = ""
@@ -186,7 +189,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     }
 
     public static func == (lhs: SchemaProperty, rhs: SchemaProperty) -> Bool {
-        return lhs.entityName == rhs.entityName && lhs.name == rhs.name && lhs.propertySwiftType == rhs.propertySwiftType
+        return lhs.entityName == rhs.entityName && lhs.name == rhs.name && lhs.swiftType == rhs.swiftType
     }
 
     public var hashValue: Int {
@@ -197,7 +200,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
 
     public func hash(into hasher: inout Hasher) {
         name.hash(into: &hasher)
-        propertySwiftType.hash(into: &hasher)
+        swiftType.hash(into: &hasher)
         entityName.hash(into: &hasher)
     }
 
@@ -207,7 +210,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
         if isByteVectorType { moreData += "\n\t\t\tisByteVectorType = \(isByteVectorType)" }
         if isScalarVectorType { moreData += "\n\t\t\tisScalarVectorType = \(isScalarVectorType)" }
         if hnswParams != nil { moreData += "\n\t\t\thnswParams = \(hnswParams!)" }
-        return "SchemaProperty {\n\t\t\tmodelId = \(modelId as Any)\n\t\t\tpropertyName = \(propertyName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tpropertyFlags = \(propertyFlags)\n\t\t\tpropertySwiftType = \(propertySwiftType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(dbName as Any)\n\t\t\tmodelIndexId = \(modelIndexId as Any)\n\t\t\tbacklinkName = \(backlinkName as Any)\n\t\t\tbacklinkType = \(backlinkType as Any)\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
+        return "SchemaProperty {\n\t\t\tmodelId = \(modelId as Any)\n\t\t\tpropertyName = \(swiftName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tpropertyFlags = \(propertyFlags)\n\t\t\tpropertySwiftType = \(swiftType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(dbName as Any)\n\t\t\tmodelIndexId = \(modelIndexId as Any)\n\t\t\tbacklinkName = \(backlinkName as Any)\n\t\t\tbacklinkType = \(backlinkType as Any)\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
     }
 }
 

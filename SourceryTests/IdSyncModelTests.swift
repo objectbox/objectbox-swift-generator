@@ -15,9 +15,9 @@ class IdSyncSpec: QuickSpec {
             func createTestProperty(_ entity: SchemaEntity, _ name: String, _ type: String) -> SchemaProperty {
                 let prop = SchemaProperty()
                 // Note: for this test just set the database name based on the field name
-                prop.propertyName = name
-                prop.name = prop.propertyName
-                prop.propertySwiftType = type
+                prop.swiftName = name
+                prop.name = prop.swiftName
+                prop.swiftType = type
                 prop.entityName = entity.className
                 return prop
             }
