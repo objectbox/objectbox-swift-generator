@@ -12,12 +12,10 @@
 .apitoken
 
 ## Build generated
+bin/
 build/
-bin/*
-!bin/sourcery
 cli/
 DerivedData/
-ObjectBoxToolTests/generated
 
 ## Various settings
 *.pbxuser
