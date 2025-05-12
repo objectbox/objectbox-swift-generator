@@ -1,9 +1,17 @@
 import Quick
 import Nimble
 import PathKit
+#if SWIFT_PACKAGE
+import Foundation
+@testable import SourceryLib
+#else
 @testable import Sourcery
+#endif
+#if !canImport(ObjectiveC)
+import CDispatch
+#endif
 @testable import SourceryRuntime
-import xcproj
+import XcodeProj
 
 private let version = "Major.Minor.Patch"
 
@@ -13,7 +21,7 @@ class SourcerySpecTests: QuickSpec {
     override func spec() {
         func update(code: String, in path: Path) { guard (try? path.write(code)) != nil else { fatalError() } }
 
-        describe ("Sourcery") {
+        describe("Sourcery") {
             var outputDir = Path("/tmp")
             var output: Output { return Output(outputDir) }
 
@@ -40,15 +48,20 @@ class SourcerySpecTests: QuickSpec {
                         }
                         """, in: sourcePath)
 
-                    _ = ((try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output)) as [FolderWatcher.Local]??)
+                    _ = try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(
+                        .sources(Paths(include: [sourcePath])),
+                        usingTemplates: Paths(include: [templatePath]),
+                        output: output,
+                        baseIndentation: 0
+                    )
                 }
 
                 context("without changes") {
                     it("doesn't update existing files") {
                         let generatedFilePath = outputDir + Sourcery().generatedPath(for: templatePath)
                         generatedFileModificationDate = fileModificationDate(url: generatedFilePath.url)
-                        DispatchQueue.main.asyncAfter ( deadline: DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)) {
-                            _ = ((try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output)) as [FolderWatcher.Local]??)
+                        DispatchQueue.main.asyncAfter( deadline: DispatchTime.now() + Double(Int64(0.5 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)) {
+                            _ = try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0)
                             newGeneratedFileModificationDate = fileModificationDate(url: generatedFilePath.url)
                         }
                         expect(newGeneratedFileModificationDate).toEventually(equal(generatedFileModificationDate))
@@ -68,8 +81,8 @@ class SourcerySpecTests: QuickSpec {
                     it("updates existing files") {
                         let generatedFilePath = outputDir + Sourcery().generatedPath(for: templatePath)
                         generatedFileModificationDate = fileModificationDate(url: generatedFilePath.url)
-                        DispatchQueue.main.asyncAfter ( deadline: DispatchTime.now() + Double(Int64(1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)) {
-                            _ = ((try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath, anotherSourcePath])), usingTemplates: Paths(include: [templatePath]), output: output)) as [FolderWatcher.Local]??)
+                        DispatchQueue.main.asyncAfter( deadline: DispatchTime.now() + Double(Int64(1 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)) {
+                            _ = try? Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath, anotherSourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0)
                             newGeneratedFileModificationDate = fileModificationDate(url: generatedFilePath.url)
                         }
                         expect(newGeneratedFileModificationDate).toNotEventually(equal(generatedFileModificationDate))
@@ -104,7 +117,7 @@ class SourcerySpecTests: QuickSpec {
                             // sourcery:end
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
                     }
 
                     it("replaces placeholder with generated code") {
@@ -135,6 +148,45 @@ class SourcerySpecTests: QuickSpec {
                         expect(result?.withoutWhitespaces).to(equal(expectedResult.withoutWhitespaces))
                     }
 
+                    context("with hide version from header enabled") {
+                        beforeEach {
+                            expect { try Sourcery(watcherEnabled: false, cacheDisabled: true, hideVersionHeader: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
+                        }
+                        it("removes version information from within generated template") {
+                        let expectedResult = """
+                            // Generated using the ObjectBox Swift Generator — https://objectbox.io
+                            // DO NOT EDIT
+
+                            // Line One
+                            """
+
+                        let generatedPath = outputDir + Sourcery().generatedPath(for: templatePath)
+
+                        let result = try? generatedPath.read(.utf8)
+                        expect(result?.withoutWhitespaces).to(equal(expectedResult.withoutWhitespaces))
+                        }
+                    }
+
+                    context("with custom header prefix") {
+                        beforeEach {
+                            expect { try Sourcery(watcherEnabled: false, cacheDisabled: true, hideVersionHeader: true, headerPrefix: "// swiftlint:disable all").processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
+                        }
+                        it("removes version information from within generated template") {
+                        let expectedResult = """
+                            // swiftlint:disable all
+                            // Generated using the ObjectBox Swift Generator — https://objectbox.io
+                            // DO NOT EDIT
+
+                            // Line One
+                            """
+
+                        let generatedPath = outputDir + Sourcery().generatedPath(for: templatePath)
+
+                        let result = try? generatedPath.read(.utf8)
+                        expect(result?.withoutWhitespaces).to(equal(expectedResult.withoutWhitespaces))
+                        }
+                    }
+
                     it("does not remove code from within generated template when missing origin") {
                         update(code: """
                             class Foo {
@@ -146,7 +198,7 @@ class SourcerySpecTests: QuickSpec {
                             }
                             """, in: sourcePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let expectedResult = """
                             // Generated using the ObjectBox Swift Generator — https://objectbox.io
@@ -173,7 +225,7 @@ class SourcerySpecTests: QuickSpec {
                             // sourcery:end
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true, prune: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true, prune: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let generatedPath = outputDir + Sourcery().generatedPath(for: templatePath)
 
@@ -213,7 +265,7 @@ class SourcerySpecTests: QuickSpec {
                             // sourcery:end
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let expectedResult = """
                             class Foo {
@@ -268,7 +320,7 @@ class SourcerySpecTests: QuickSpec {
                             // sourcery:end
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let expectedResult = """
                             class Foo {
@@ -307,7 +359,7 @@ class SourcerySpecTests: QuickSpec {
                             // sourcery:end
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let expectedResult = """
                             class Foo {
@@ -322,46 +374,275 @@ class SourcerySpecTests: QuickSpec {
                         expect(result).to(equal(expectedResult))
                     }
 
+                    it("insert generated code in the end of type body maintaining identation, accomodates for baseIdent") {
+                        update(code:
+                        """
+                        class Foo {
+                            struct Inner {
+                            }
+                        }
+                        """,
+                        in: sourcePath)
+
+                        update(code: """
+                            // Line One
+                            // sourcery:inline:auto:Foo.Inner.Inlined
+                                var property = 3
+                            // Line Three
+                            // sourcery:end
+                            """, in: templatePath)
+
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 4) }.toNot(throwError())
+
+                        let expectedResult = """
+                            class Foo {
+                                struct Inner {
+
+                                    // sourcery:inline:auto:Foo.Inner.Inlined
+                                        var property = 3
+                                    // Line Three
+                                    // sourcery:end
+                                }
+                            }
+                            """
+
+                        let result = try? sourcePath.read(.utf8)
+                        expect(result).to(equal(expectedResult))
+                    }
+
+                    it("insert generated code after the end of type body when using after-auto") {
+                        update(code: "class Foo {}\nstruct Boo {}", in: sourcePath)
+
+                        update(code: """
+                            // sourcery:inline:after-auto:Foo.Inlined
+                            var property = 2
+                            // sourcery:end
+                            """, in: templatePath)
+
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
+
+                        let expectedResult = """
+                            class Foo {}
+                            // sourcery:inline:after-auto:Foo.Inlined
+                            var property = 2
+                            // sourcery:end
+                            struct Boo {}
+                            """
+
+                        let result = try? sourcePath.read(.utf8)
+                        expect(result).to(equal(expectedResult))
+                    }
+
                     it("insert generated code line before the end of type body") {
                         update(code: """
                         class Foo {
                             var property = 1 }
-
-                        class Bar {
-                            var property = 1
-                        }
                         """, in: sourcePath)
 
                         update(code: """
                             // Line One
                             // sourcery:inline:auto:Foo.Inlined
-                                var property = 2
-                            // Line Three
-                            // sourcery:end
-                            // Line One
-                            // sourcery:inline:auto:Bar.Inlined
-                                var property = 2
+                            var property = 2
                             // Line Three
                             // sourcery:end
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let expectedResult = """
                             class Foo {
 
-                            // sourcery:inline:auto:Foo.Inlined
+                                // sourcery:inline:auto:Foo.Inlined
                                 var property = 2
-                            // Line Three
-                            // sourcery:end
+                                // Line Three
+                                // sourcery:end
                                 var property = 1 }
+                            """
 
-                            class Bar {
-                                var property = 1
+                        let result = try? sourcePath.read(.utf8)
+                        expect(result).to(equal(expectedResult))
+                    }
 
-                            // sourcery:inline:auto:Bar.Inlined
-                                var property = 2
-                            // Line Three
+                    it("handles UTF16 characters") {
+                        update(code: """
+                            class A {
+                                let 👩‍🚀: String
+                            }
+                            """, in: sourcePath)
+                        update(code: """
+                            {% for type in types.all %}
+                            // sourcery:inline:auto:{{ type.name }}.init
+                            init({% for variable in type.storedVariables %}{{variable.name}}: {{variable.typeName}}{% ifnot forloop.last %}, {% endif %}{% endfor %}) {
+                            {% for variable in type.storedVariables %}
+                                self.{{variable.name}} = {{variable.name}}
+                            {% endfor %}
+                            }
+                            // sourcery:end
+                            {% endfor %}
+                            """, in: templatePath)
+
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
+
+                        let expectedResult = """
+                            class A {
+                                let 👩‍🚀: String
+
+                            // sourcery:inline:auto:A.init
+                            init(👩‍🚀: String) {
+                                self.👩‍🚀 = 👩‍🚀
+                            }
+                            // sourcery:end
+                            }
+                            """
+
+                        let result = try? sourcePath.read(.utf8)
+                        expect(result).to(equal(expectedResult))
+                    }
+
+                    it("extracts annotations when prefix contains case noun") {
+                        update(code: """
+                            struct MyStruct {
+                                // sourcery:inline:MyStruct.Inlined
+                                // This will be replaced
+                                // sourcery:end
+                                // sourcery: stub = "A"
+                                let basic: String;
+                                // sourcery: stub = "B"
+                                let caseProperty: String;
+                                // sourcery: stub = "C"
+                                let casesProperty: String;
+                                // sourcery: stub = "D"
+                                let CaseProperty: String;
+                            }
+                            """, in: sourcePath)
+                        update(code: """
+                            // sourcery:inline:MyStruct.Inlined
+                            {% for type in types.all %}
+                            {% for variable in type.storedVariables %}
+                            let {{ variable.name }}XXX = "{{ variable.annotations["stub"] }}";
+                            {% endfor %}
+                            {% endfor %}
+                            // sourcery:end
+                            """, in: templatePath)
+
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
+
+                        let expectedResult = """
+                            struct MyStruct {
+                                // sourcery:inline:MyStruct.Inlined
+                                let basicXXX = "A";
+                                let casePropertyXXX = "B";
+                                let casesPropertyXXX = "C";
+                                let CasePropertyXXX = "D";
+                                // sourcery:end
+                                // sourcery: stub = "A"
+                                let basic: String;
+                                // sourcery: stub = "B"
+                                let caseProperty: String;
+                                // sourcery: stub = "C"
+                                let casesProperty: String;
+                                // sourcery: stub = "D"
+                                let CaseProperty: String;
+                            }
+                            """
+
+                        let result = try? sourcePath.read(.utf8)
+                        expect(result).to(equal(expectedResult))
+                    }
+
+                    it("replaces inline contents without crashing") {
+                        update(code: """
+                            struct MyStruct {
+                                // sourcery:inline:MyStruct.Inlined
+                                // This will be replaced
+                                // sourcery:end
+                                // sourcery:inline:MyStruct.Inlined.Foo
+                                // sourcery: stub = "A"
+                                let basic: String;
+                                // sourcery: stub = "B"
+                                let caseProperty: String;
+                                // sourcery: stub = "C"
+                                let casesProperty: String;
+                                // sourcery: stub = "D"
+                                let CaseProperty: String;
+                                // sourcery:end
+                            }
+                            """, in: sourcePath)
+                        update(code: """
+                            // sourcery:inline:MyStruct.Inlined
+                            {% for type in types.all %}
+                            {% for variable in type.storedVariables %}
+                            let {{ variable.name }}XXX = "{{ variable.annotations["stub"] }}";
+                            {% endfor %}
+                            {% endfor %}
+                            // sourcery:end
+                            // sourcery:inline:MyStruct.Inlined.Foo
+                            // sourcery:end
+                            """, in: templatePath)
+
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
+
+                        let expectedResult = """
+                            struct MyStruct {
+                                // sourcery:inline:MyStruct.Inlined
+                                // sourcery:end
+                                // sourcery:inline:MyStruct.Inlined.Foo
+                                // sourcery:end
+                            }
+                            """
+
+                        let result = try? sourcePath.read(.utf8)
+                        expect(result).to(equal(expectedResult))
+                    }
+
+                    it("handles previously generated code with UTF16 characters") {
+                        update(code: """
+                            class A {
+                                let 👩‍🚀: String
+
+                                // sourcery:inline:auto:A.init
+                                init(👩‍🚀: String) {
+                                    self.👩‍🚀 = 👩‍🚀
+                                }
+                                // sourcery:end
+                            }
+
+                            class B {
+                                let 👩‍🚀: String
+                            }
+                            """, in: sourcePath)
+                        update(code: """
+                            {% for type in types.all %}
+                            // sourcery:inline:auto:{{ type.name }}.init
+                            init({% for variable in type.storedVariables %}{{variable.name}}: {{variable.typeName}}{% ifnot forloop.last %}, {% endif %}{% endfor %}) {
+                            {% for variable in type.storedVariables %}
+                                self.{{variable.name}} = {{variable.name}}
+                            {% endfor %}
+                            }
+                            // sourcery:end
+                            {% endfor %}
+                            """, in: templatePath)
+
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
+
+                        let expectedResult = """
+                            class A {
+                                let 👩‍🚀: String
+
+                                // sourcery:inline:auto:A.init
+                                init(👩‍🚀: String) {
+                                    self.👩‍🚀 = 👩‍🚀
+                                }
+                                // sourcery:end
+                            }
+
+                            class B {
+                                let 👩‍🚀: String
+
+                            // sourcery:inline:auto:B.init
+                            init(👩‍🚀: String) {
+                                self.👩‍🚀 = 👩‍🚀
+                            }
                             // sourcery:end
                             }
                             """
@@ -391,7 +672,7 @@ class SourcerySpecTests: QuickSpec {
                             // sourcery:end
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let expectedResult = """
                             class Foo {
@@ -433,7 +714,7 @@ class SourcerySpecTests: QuickSpec {
                             {% endfor %}
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let expectedResult = """
                             class Foo {
@@ -470,7 +751,7 @@ class SourcerySpecTests: QuickSpec {
                             // sourcery:end
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let expectedResult = """
                             class Foo {
@@ -504,7 +785,7 @@ class SourcerySpecTests: QuickSpec {
                             // sourcery:end
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let expectedResult = """
                             class Foo {}
@@ -544,7 +825,7 @@ class SourcerySpecTests: QuickSpec {
                             // sourcery:end
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let expectedResult = """
                             class Foo {
@@ -568,7 +849,7 @@ class SourcerySpecTests: QuickSpec {
                         expect(result).to(equal(expectedResult))
                     }
 
-                    it("inserts generated code from different templates") {
+                    it("inserts generated code from different templates (both inline:auto)") {
                         update(code: "class Foo {}", in: sourcePath)
 
                         update(code: """
@@ -591,18 +872,18 @@ class SourcerySpecTests: QuickSpec {
                             try Sourcery(watcherEnabled: false, cacheDisabled: true)
                                 .processFiles(.sources(Paths(include: [sourcePath])),
                                               usingTemplates: Paths(include: [secondTemplatePath, templatePath]),
-                                              output: output)
+                                              output: output, baseIndentation: 0)
                             }.toNot(throwError())
 
                         let expectedResult = """
                             class Foo {
-                            // sourcery:inline:auto:Foo.otherFake
-                            // Line Four
-                            // sourcery:end
-
                             // sourcery:inline:auto:Foo.fake
                             var property = 2
                             // Line Three
+                            // sourcery:end
+
+                            // sourcery:inline:auto:Foo.otherFake
+                            // Line Four
                             // sourcery:end
                             }
                             """
@@ -615,11 +896,144 @@ class SourcerySpecTests: QuickSpec {
                             try Sourcery(watcherEnabled: false, cacheDisabled: true)
                                 .processFiles(.sources(Paths(include: [sourcePath])),
                                               usingTemplates: Paths(include: [secondTemplatePath, templatePath]),
-                                              output: output)
+                                              output: output, baseIndentation: 0)
                             }.toNot(throwError())
 
                         let newResult = try? sourcePath.read(.utf8)
                         expect(newResult).to(equal(expectedResult))
+                    }
+
+                    it("inserts generated code from different templates (both inline)") {
+                        let templatePathA = outputDir + Path("InlineTemplateA.stencil")
+                        let templatePathB = outputDir + Path("InlineTemplateB.stencil")
+                        let sourcePath = outputDir + Path("ClassWithMultipleInlineAnnotations.swift")
+
+                        update(code: """
+                                     class ClassWithMultipleInlineAnnotations {
+                                     // sourcery:inline:ClassWithMultipleInlineAnnotations.A
+                                     var a0: Int
+                                     // sourcery:end
+
+                                     // sourcery:inline:ClassWithMultipleInlineAnnotations.B
+                                     var b0: String
+                                     // sourcery:end
+                                     }
+                                     """, in: sourcePath)
+
+                        update(code: """
+                                     {% for type in types.all %}
+                                     // sourcery:inline:{{ type.name }}.A
+                                     var a0: Int
+                                     var a1: Int
+                                     var a2: Int
+                                     // sourcery:end
+                                     {% endfor %}
+                                     """, in: templatePathA)
+
+                        update(code: """
+                                     {% for type in types.all %}
+                                     // sourcery:inline:{{ type.name }}.B
+                                     var b0: Int
+                                     var b1: Int
+                                     var b2: Int
+                                     // sourcery:end
+                                     {% endfor %}
+                                     """, in: templatePathB)
+
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true)
+                            .processFiles(.sources(Paths(include: [sourcePath])),
+                                usingTemplates: Paths(include: [templatePathA, templatePathB]),
+                                output: output, baseIndentation: 0)
+                        }.toNot(throwError())
+
+                        let expectedResult = """
+                                             class ClassWithMultipleInlineAnnotations {
+                                             // sourcery:inline:ClassWithMultipleInlineAnnotations.A
+                                             var a0: Int
+                                             var a1: Int
+                                             var a2: Int
+                                             // sourcery:end
+
+                                             // sourcery:inline:ClassWithMultipleInlineAnnotations.B
+                                             var b0: Int
+                                             var b1: Int
+                                             var b2: Int
+                                             // sourcery:end
+                                             }
+                                             """
+
+                        let result = try? sourcePath.read(.utf8)
+                        expect(result).to(equal(expectedResult))
+                    }
+
+                    it("inserts generated code from different templates (inline and inline:auto)") {
+                        let templatePathA = outputDir + Path("InlineTemplateA.stencil")
+                        let templatePathB = outputDir + Path("InlineTemplateB.stencil")
+                        let sourcePath = outputDir + Path("ClassWithMultipleInlineAnnotations.swift")
+
+                        /*
+                         inline:auto annotations are inserted at the beginning of the last line of a declaration,
+                         OR at the beginning of the last line of the containing file,
+                         if proposed location out of bounds, which should not be.
+
+                         To differentiate such cases the last line of a declaration
+                         shall not be the last line of the file.
+                         */
+
+                        update(code: """
+                                     class ClassWithMultipleInlineAnnotations {
+                                     // sourcery:inline:ClassWithMultipleInlineAnnotations.A
+                                     var a0: Int
+                                     // sourcery:end
+                                     }
+                                     // the last line of the file
+                                     """, in: sourcePath)
+
+                        update(code: """
+                                     {% for type in types.all %}
+                                     // sourcery:inline:{{ type.name }}.A
+                                     var a0: Int
+                                     var a1: Int
+                                     var a2: Int
+                                     // sourcery:end
+                                     {% endfor %}
+                                     """, in: templatePathA)
+
+                        update(code: """
+                                     {% for type in types.all %}
+                                     // sourcery:inline:auto:{{ type.name }}.B
+                                     var b0: Int
+                                     var b1: Int
+                                     var b2: Int
+                                     // sourcery:end
+                                     {% endfor %}
+                                     """, in: templatePathB)
+
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true)
+                            .processFiles(.sources(Paths(include: [sourcePath])),
+                                usingTemplates: Paths(include: [templatePathA, templatePathB]),
+                                output: output, baseIndentation: 0)
+                        }.toNot(throwError())
+
+                        let expectedResult = """
+                                             class ClassWithMultipleInlineAnnotations {
+                                             // sourcery:inline:ClassWithMultipleInlineAnnotations.A
+                                             var a0: Int
+                                             var a1: Int
+                                             var a2: Int
+                                             // sourcery:end
+
+                                             // sourcery:inline:auto:ClassWithMultipleInlineAnnotations.B
+                                             var b0: Int
+                                             var b1: Int
+                                             var b2: Int
+                                             // sourcery:end
+                                             }
+                                             // the last line of the file
+                                             """
+
+                        let result = try? sourcePath.read(.utf8)
+                        expect(result).to(equal(expectedResult))
                     }
 
                     context("with cache of already inserted code") {
@@ -636,13 +1050,13 @@ class SourcerySpecTests: QuickSpec {
                                 // sourcery:end
                                 """, in: templatePath)
 
-                            _ = ((try? Sourcery(watcherEnabled: false, cacheDisabled: false).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: Output(outputDir, linkTo: nil))) as [FolderWatcher.Local]??)
+                            _ = try? Sourcery(watcherEnabled: false, cacheDisabled: false).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: Output(outputDir, linkTo: nil), baseIndentation: 0)
                         }
 
                         it("inserts the generated code if it was deleted") {
                             update(code: "class Foo {}", in: sourcePath)
 
-                            expect { try Sourcery(watcherEnabled: false, cacheDisabled: false).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: Output(outputDir, linkTo: nil)) }.toNot(throwError())
+                            expect { try Sourcery(watcherEnabled: false, cacheDisabled: false).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: Output(outputDir, linkTo: nil), baseIndentation: 0) }.toNot(throwError())
 
                             let expectedResult = """
                                 class Foo {
@@ -682,14 +1096,13 @@ class SourcerySpecTests: QuickSpec {
                             {% endfor %}
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
                     }
 
                     it("replaces placeholder with generated code") {
                         let expectedResult = """
                             // Generated using the ObjectBox Swift Generator — https://objectbox.io
                             // DO NOT EDIT
-
                             extension Foo {
                             var property = 2
                             // Line Three
@@ -726,7 +1139,7 @@ class SourcerySpecTests: QuickSpec {
                             {% endfor %}
                             """, in: templatePath)
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true, prune: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true, prune: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let generatedPath = outputDir + Path("Generated/Foo.generated.swift")
 
@@ -752,7 +1165,6 @@ class SourcerySpecTests: QuickSpec {
                         let expectedResult = """
                             // Generated using the ObjectBox Swift Generator — https://objectbox.io
                             // DO NOT EDIT
-
                             extension Foo {
                             var property1 = 1
                             }
@@ -763,7 +1175,7 @@ class SourcerySpecTests: QuickSpec {
 
                             """
 
-                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true, prune: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output) }.toNot(throwError())
+                        expect { try Sourcery(watcherEnabled: false, cacheDisabled: true, prune: true).processFiles(.sources(Paths(include: [sourcePath])), usingTemplates: Paths(include: [templatePath]), output: output, baseIndentation: 0) }.toNot(throwError())
 
                         let generatedPath = outputDir + Path("Generated/Foo.generated.swift")
 
@@ -777,15 +1189,13 @@ class SourcerySpecTests: QuickSpec {
                     let targetPath = outputDir + Sourcery().generatedPath(for: templatePath)
 
                     it("ignores files that are marked with generated by Sourcery") {
-                        var updatedTypes: [Type]?
-
                         _ = try? targetPath.delete()
 
                         expect {
                             try Sourcery(cacheDisabled: true)
                                 .processFiles(.sources(Paths(include: [Stubs.resultDirectory] + Path("Basic.swift"))),
                                               usingTemplates: Paths(include: [templatePath]),
-                                              output: output)
+                                              output: output, baseIndentation: 0)
                             }.toNot(throwError())
 
                         expect(targetPath.exists).to(beFalse())
@@ -805,7 +1215,7 @@ class SourcerySpecTests: QuickSpec {
                             try Sourcery(cacheDisabled: true)
                                 .processFiles(.sources(Paths(include: [sourcePath])),
                                               usingTemplates: Paths(include: [templatePath]),
-                                              output: output)
+                                              output: output, baseIndentation: 0)
                             }.to(throwError())
                     }
 
@@ -815,7 +1225,7 @@ class SourcerySpecTests: QuickSpec {
                             try Sourcery(cacheDisabled: true)
                                 .processFiles(.sources(Paths(include: [sourcePath])),
                                               usingTemplates: Paths(include: [templatePath]),
-                                              output: Output(outputDir, linkTo: nil))
+                                              output: Output(outputDir, linkTo: nil), baseIndentation: 0)
                             }.toNot(throwError())
                     }
                 }
@@ -826,7 +1236,7 @@ class SourcerySpecTests: QuickSpec {
                             try Sourcery(cacheDisabled: true)
                                 .processFiles(.sources(Paths(include: [Stubs.sourceDirectory], exclude: [Stubs.sourceDirectory + "Foo.swift"])),
                                               usingTemplates: Paths(include: [templatePath]),
-                                              output: output)
+                                              output: output, baseIndentation: 0)
                             }.toNot(throwError())
 
                         let result = (try? (outputDir + Sourcery().generatedPath(for: templatePath)).read(.utf8))
@@ -841,7 +1251,7 @@ class SourcerySpecTests: QuickSpec {
                             try Sourcery(cacheDisabled: true)
                                 .processFiles(.sources(Paths(include: [Stubs.sourceDirectory])),
                                               usingTemplates: Paths(include: [templatePath]),
-                                              output: output)
+                                              output: output, baseIndentation: 0)
                             }.toNot(throwError())
 
                         let result = (try? (outputDir + Sourcery().generatedPath(for: templatePath)).read(.utf8))
@@ -849,6 +1259,7 @@ class SourcerySpecTests: QuickSpec {
                     }
                 }
 
+#if canImport(ObjectiveC)
                 context("with watcher") {
                     var watcher: Any?
                     let tmpTemplate = outputDir + Path("FakeTemplate.stencil")
@@ -856,35 +1267,61 @@ class SourcerySpecTests: QuickSpec {
 
                     it("re-generates on template change") {
                         updateTemplate(code: "Found {{ types.enums.count }} Enums")
+                        let sourcery = Sourcery(watcherEnabled: true, cacheDisabled: true)
+                        expect { watcher = try sourcery.processFiles(.sources(Paths(include: [Stubs.sourceDirectory])), usingTemplates: Paths(include: [tmpTemplate]), output: output, baseIndentation: 0) }.toNot(throwError())
 
-                        expect { watcher = try Sourcery(watcherEnabled: true, cacheDisabled: true).processFiles(.sources(Paths(include: [Stubs.sourceDirectory])), usingTemplates: Paths(include: [tmpTemplate]), output: output) }.toNot(throwError())
-
-                        //! Change the template
+                        // ! Change the template
                         updateTemplate(code: "Found {{ types.all.count }} Types")
 
                         let result: () -> String? = { (try? (outputDir + Sourcery().generatedPath(for: tmpTemplate)).read(.utf8)) }
-                        expect(result()).toEventually(contain("\(Sourcery.generationHeader)Found 3 Types"))
+                        expect(result()).toEventually(contain("\(sourcery.generationHeader)Found 3 Types"))
+
+                        _ = watcher
                     }
                 }
+#endif
             }
 
             context("given a template folder") {
 
                 context("given a single file output") {
                     let outputFile = outputDir + "Composed.swift"
-                    let expectedResult = try? (Stubs.resultDirectory + Path("Basic+Other.swift")).read(.utf8).withoutWhitespaces
-
+#if canImport(JavaScriptCore)
+                    let expectedResult = try? (Stubs.resultDirectory + Path("Basic+Other+SourceryTemplates.swift")).read(.utf8).withoutWhitespaces
                     it("joins generated code into single file") {
                         expect {
                             try Sourcery(cacheDisabled: true)
                                 .processFiles(.sources(Paths(include: [Stubs.sourceDirectory])),
-                                              usingTemplates: Paths(include: [Stubs.templateDirectory + "Basic.stencil", Stubs.templateDirectory + "Other.stencil"]),
-                                              output: Output(outputFile))
+                                              usingTemplates: Paths(include: [
+                                                Stubs.templateDirectory + "Basic.stencil",
+                                                Stubs.templateDirectory + "Other.stencil",
+                                                Stubs.templateDirectory + "SourceryTemplateStencil.sourcerytemplate",
+                                                Stubs.templateDirectory + "SourceryTemplateEJS.sourcerytemplate"
+                                              ]),
+                                              output: Output(outputFile), baseIndentation: 0)
                             }.toNot(throwError())
 
                         let result = try? outputFile.read(.utf8)
                         expect(result?.withoutWhitespaces).to(equal(expectedResult?.withoutWhitespaces))
                     }
+#else
+                    let expectedResult = try? (Stubs.resultDirectory + Path("Basic+Other+SourceryTemplates_Linux.swift")).read(.utf8).withoutWhitespaces
+                    it("joins generated code into single file") {
+                        expect {
+                            try Sourcery(cacheDisabled: true)
+                                .processFiles(.sources(Paths(include: [Stubs.sourceDirectory])),
+                                              usingTemplates: Paths(include: [
+                                                Stubs.templateDirectory + "Basic.stencil",
+                                                Stubs.templateDirectory + "Other.stencil",
+                                                Stubs.templateDirectory + "SourceryTemplateStencil.sourcerytemplate"
+                                              ]),
+                                              output: Output(outputFile), baseIndentation: 0)
+                            }.toNot(throwError())
+
+                        let result = try? outputFile.read(.utf8)
+                        expect(result?.withoutWhitespaces).to(equal(expectedResult?.withoutWhitespaces))
+                    }
+#endif
 
                     it("does not create generated file with empty content") {
                         let templatePath = Stubs.templateDirectory + Path("Empty.stencil")
@@ -893,7 +1330,7 @@ class SourcerySpecTests: QuickSpec {
                         expect {
                             try Sourcery(cacheDisabled: true, prune: true).processFiles(.sources(Paths(include: [Stubs.sourceDirectory])),
                                                                                         usingTemplates: Paths(include: [templatePath]),
-                                                                                        output: Output(outputFile))
+                                                                                        output: Output(outputFile), baseIndentation: 0)
                         }.toNot(throwError())
 
                         let result = try? outputFile.read(.utf8)
@@ -911,7 +1348,7 @@ class SourcerySpecTests: QuickSpec {
                             try Sourcery(cacheDisabled: true)
                                 .processFiles(.sources(Paths(include: [Stubs.sourceDirectory])),
                                               usingTemplates: Paths(include: [Stubs.templateDirectory]),
-                                              output: output)
+                                              output: output, baseIndentation: 0)
                             }.toNot(throwError())
 
                         for (idx, outputPath) in generated.enumerated() {
@@ -932,8 +1369,14 @@ class SourcerySpecTests: QuickSpec {
                             try Sourcery(cacheDisabled: true)
                                 .processFiles(.sources(Paths(include: [Stubs.sourceDirectory])),
                                               usingTemplates: Paths(include: [Stubs.templateDirectory],
-                                                                    exclude: [Stubs.templateDirectory + "Include.stencil", Stubs.templateDirectory + "Partial.stencil"]),
-                                              output: Output(outputFile))
+                                                                    exclude: [
+                                                                        Stubs.templateDirectory + "GenerationWays.stencil",
+                                                                        Stubs.templateDirectory + "Include.stencil",
+                                                                        Stubs.templateDirectory + "Partial.stencil",
+                                                                        Stubs.templateDirectory + "SourceryTemplateStencil.sourcerytemplate",
+                                                                        Stubs.templateDirectory + "SourceryTemplateEJS.sourcerytemplate"
+                                                                    ]),
+                                              output: Output(outputFile), baseIndentation: 0)
                             }.toNot(throwError())
 
                         let result = try? outputFile.read(.utf8)
@@ -943,6 +1386,7 @@ class SourcerySpecTests: QuickSpec {
 
             }
 
+#if canImport(ObjectiveC)
             context("given project") {
                 var originalProject: XcodeProj?
 
@@ -982,14 +1426,14 @@ class SourcerySpecTests: QuickSpec {
 
                 afterEach {
                     expect {
-                        try originalProject?.writePBXProj(path: projectFilePath)
+                        try originalProject?.writePBXProj(path: projectFilePath, outputSettings: .init())
                         }.toNot(throwError())
                 }
 
                 it("links generated files") {
                     expect {
-                        try Sourcery(cacheDisabled: true, prune: true).processFiles(sources, usingTemplates: templates, output: output)
-                        }.toNot(throwError())
+                        try Sourcery(cacheDisabled: true, prune: true).processFiles(sources, usingTemplates: templates, output: output, baseIndentation: 0)
+                    }.toNot(throwError())
 
                     expect(sourceFilesPaths.contains(outputDir + "Other.generated.swift")).to(beTrue())
                 }
@@ -1009,17 +1453,17 @@ class SourcerySpecTests: QuickSpec {
                             """, in: templatePath)
 
                     expect {
-                        try Sourcery(cacheDisabled: true, prune: true).processFiles(sources, usingTemplates: templates, output: output)
-                        }.toNot(throwError())
+                        try Sourcery(cacheDisabled: true, prune: true).processFiles(sources, usingTemplates: templates, output: output, baseIndentation: 0)
+                    }.toNot(throwError())
 
                     expect {
                         let paths = sourceFilesPaths
                         expect(paths.contains(outputDir + "PerFileGeneration.generated.swift")).to(beTrue())
-                        expect(paths.contains(outputDir + "Generated/Foo.generated.swift")).to(beTrue())
-                        return 
-                        }.toNot(throwError())
+                        expect(paths.contains(outputDir + "Generated/FooBarBaz.generated.swift")).to(beTrue())
+                    }.toNot(throwError())
                 }
             }
+#endif
         }
     }
 }

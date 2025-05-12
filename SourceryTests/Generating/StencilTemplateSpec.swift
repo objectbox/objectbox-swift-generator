@@ -1,8 +1,13 @@
 import Quick
 import Nimble
 import PathKit
-import Stencil
+import SourceryStencil
+#if SWIFT_PACKAGE
+import Foundation
+@testable import SourceryLib
+#else
 @testable import Sourcery
+#endif
 @testable import SourceryFramework
 @testable import SourceryRuntime
 
@@ -13,14 +18,14 @@ class StencilTemplateSpec: QuickSpec {
         describe("StencilTemplate") {
 
             func generate(_ template: String) -> String {
-                let arrayAnnotations = Variable(name: "annotated", typeName: TypeName("MyClass"))
+                let arrayAnnotations = Variable(name: "annotated1", typeName: TypeName(name: "MyClass"))
                 arrayAnnotations.annotations = ["Foo": ["Hello", "beautiful", "World"] as NSArray]
-                let singleAnnotation = Variable(name: "annotated", typeName: TypeName("MyClass"))
+                let singleAnnotation = Variable(name: "annotated2", typeName: TypeName(name: "MyClass"))
                 singleAnnotation.annotations = ["Foo": "HelloWorld" as NSString]
-                return (try? Generator.generate(Types(types: [
+                return (try? Generator.generate(nil, types: Types(types: [
                     Class(name: "MyClass", variables: [
-                        Variable(name: "lowerFirstLetter", typeName: TypeName("myClass")),
-                        Variable(name: "upperFirstLetter", typeName: TypeName("MyClass")),
+                        Variable(name: "lowerFirstLetter", typeName: TypeName(name: "myClass")),
+                        Variable(name: "upperFirstLetter", typeName: TypeName(name: "MyClass")),
                         arrayAnnotations,
                         singleAnnotation
                         ])
@@ -30,6 +35,7 @@ class StencilTemplateSpec: QuickSpec {
             describe("json") {
                 context("given dictionary") {
                     let context = TemplateContext(
+                        parserResult: nil,
                         types: Types(types: []),
                         functions: [],
                         arguments: ["json": ["Version": 1] as NSDictionary]
@@ -46,6 +52,7 @@ class StencilTemplateSpec: QuickSpec {
                 }
                 context("given array") {
                     let context = TemplateContext(
+                        parserResult: nil,
                         types: Types(types: []),
                         functions: [],
                         arguments: ["json": ["a", "b"] as NSArray]
@@ -63,12 +70,21 @@ class StencilTemplateSpec: QuickSpec {
             }
 
             describe("toArray") {
+                #if canImport(ObjectiveC)
                 context("given array") {
                     it("doesnt modify the value") {
                         let result = generate("{% for key,value in type.MyClass.variables.2.annotations %}{{ value | toArray }}{% endfor %}")
                         expect(result).to(equal("[Hello, beautiful, World]"))
                     }
                 }
+                #else
+                context("given array") {
+                    it("doesnt modify the value") {
+                        let result = generate("{% for key,value in type.MyClass.variables.2.annotations %}{{ value | toArray }}{% endfor %}")
+                        expect(result).to(equal("[\"Hello\", \"beautiful\", \"World\"]"))
+                    }
+                }
+                #endif
 
                 context("given something") {
                     it("transforms it into array") {
@@ -104,29 +120,52 @@ class StencilTemplateSpec: QuickSpec {
             }
 
             describe("sorted") {
+              #if canImport(ObjectiveC)
               context("given array") {
                 it("sorts it") {
                   let result = generate("{% for key,value in type.MyClass.variables.2.annotations %}{{ value | sorted:\"description\" }}{% endfor %}")
                   expect(result).to(equal("[beautiful, Hello, World]"))
                 }
               }
+              #else
+              context("given array") {
+                it("sorts it") {
+                  let result = generate("{% for key,value in type.MyClass.variables.2.annotations %}{{ value | sorted:\"description\" }}{% endfor %}")
+                  expect(result).to(equal("[\"beautiful\", \"Hello\", \"World\"]"))
+                }
+              }
+              #endif
             }
 
             describe("sortedDescending") {
                 context("given array") {
+                    #if canImport(ObjectiveC)
                     it("sorts it descending") {
                         let result = generate("{% for key,value in type.MyClass.variables.2.annotations %}{{ value | sortedDescending:\"description\" }}{% endfor %}")
                         expect(result).to(equal("[World, Hello, beautiful]"))
                     }
+                    #else
+                    it("sorts it descending") {
+                        let result = generate("{% for key,value in type.MyClass.variables.2.annotations %}{{ value | sortedDescending:\"description\" }}{% endfor %}")
+                        expect(result).to(equal("[\"World\", \"Hello\", \"beautiful\"]"))
+                    }
+                    #endif
                 }
             }
 
             describe("reversed") {
                 context("given array") {
+                    #if canImport(ObjectiveC)
                     it("reverses it") {
                         let result = generate("{% for key,value in type.MyClass.variables.2.annotations %}{{ value | reversed }}{% endfor %}")
                         expect(result).to(equal("[World, beautiful, Hello]"))
                     }
+                    #else
+                    it("reverses it") {
+                        let result = generate("{% for key,value in type.MyClass.variables.2.annotations %}{{ value | reversed }}{% endfor %}")
+                        expect(result).to(equal("[\"World\", \"beautiful\", \"Hello\"]"))
+                    }
+                    #endif
                 }
             }
 
@@ -149,6 +188,10 @@ class StencilTemplateSpec: QuickSpec {
 
                 it("generates capitalise") {
                     expect(generate("{{ \"helloWorld\" | capitalise }}")).to(equal("Helloworld"))
+                }
+
+                it("generates deletingLastComponent") {
+                    expect(generate("{{ \"/Path/Class.swift\" | deletingLastComponent }}")).to(equal("/Path"))
                 }
 
                 it("checks for string in name") {
@@ -181,6 +224,10 @@ class StencilTemplateSpec: QuickSpec {
             }
 
             context("given TypeName") {
+                it("generates upperFirstLetter") {
+                    expect(generate("{{ type.MyClass.variables.0.typeName }}")).to(equal("myClass"))
+                }
+
                 it("generates upperFirstLetter") {
                     expect(generate("{{ type.MyClass.variables.0.typeName | upperFirstLetter }}")).to(equal("MyClass"))
                 }
@@ -233,7 +280,7 @@ class StencilTemplateSpec: QuickSpec {
 
             it("rethrows template parsing errors") {
                 expect {
-                    try Generator.generate(Types(types: []), functions: [], template: StencilTemplate(templateString: "{% tag %}"))
+                    try Generator.generate(nil, types: Types(types: []), functions: [], template: StencilTemplate(templateString: "{% tag %}"))
                     }
                     .to(throwError(closure: { (error) in
                         expect("\(error)").to(equal(": Unknown template tag 'tag'"))
@@ -246,10 +293,10 @@ class StencilTemplateSpec: QuickSpec {
 
                 let templatePath = Stubs.templateDirectory + Path("Include.stencil")
                 let expectedResult = "// Generated using the ObjectBox Swift Generator — https://objectbox.io\n" +
-                    "// DO NOT EDIT\n\n" +
+                    "// DO NOT EDIT\n" +
                 "partial template content\n"
 
-                expect { try Sourcery(cacheDisabled: true).processFiles(.sources(Paths(include: [Stubs.sourceDirectory])), usingTemplates: Paths(include: [templatePath]), output: Output(outputDir)) }.toNot(throwError())
+                expect { try Sourcery(cacheDisabled: true).processFiles(.sources(Paths(include: [Stubs.sourceDirectory])), usingTemplates: Paths(include: [templatePath]), output: Output(outputDir), baseIndentation: 0) }.toNot(throwError())
 
                 let result = (try? (outputDir + Sourcery().generatedPath(for: templatePath)).read(.utf8))
                 expect(result).to(equal(expectedResult))

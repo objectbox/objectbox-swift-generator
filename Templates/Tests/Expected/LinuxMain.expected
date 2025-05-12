@@ -1,3 +1,5 @@
+// Generated using the ObjectBox Swift Generator — https://objectbox.io
+// DO NOT EDIT
 import XCTest
 
 extension AutoInjectionTests {
@@ -12,10 +14,17 @@ extension AutoWiringTests {
     ("testThatItCanNotResolveWithAutoWiring", testThatItCanNotResolveWithAutoWiring)
   ]
 }
+extension DisabledTests {
+  static var allTests: [(String, (DisabledTests) -> () throws -> Void)] = [
+    ("testThatItResolvesDisabledTestsAnnotation", testThatItResolvesDisabledTestsAnnotation)
+  ]
+}
 
 // swiftlint:disable trailing_comma
 XCTMain([
   testCase(AutoInjectionTests.allTests),
   testCase(AutoWiringTests.allTests),
+  testCase(DisabledTests.allTests),
 ])
 // swiftlint:enable trailing_comma
+

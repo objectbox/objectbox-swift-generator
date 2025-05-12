@@ -1,27 +1,32 @@
 import Quick
 import Nimble
 import PathKit
+#if SWIFT_PACKAGE
+@testable import SourceryLib
+#else
 @testable import Sourcery
+#endif
 
 class ConfigurationSpec: QuickSpec {
-
+    // swiftlint:disable:next function_body_length
     override func spec() {
         let relativePath = Path("/some/path")
 
         describe("Configuration") {
+            let serverUrlArg = "serverUrl"
+            let serverUrl: String = "www.example.com"
+            let sourcePath = "Sources"
+            let env = ["SOURCE_PATH": sourcePath,
+                       serverUrlArg: serverUrl]
 
             context("given valid config file with env placeholders") {
 
                 it("replaces the env placeholder") {
                     do {
-                        let serverUrlArg = "serverUrl"
-                        let serverUrl: String = "www.example.com"
-
                         let config = try Configuration(
-                            path: Stubs.configs + ".valid.yml",
+                            path: Stubs.configs + "valid.yml",
                             relativePath: relativePath,
-                            env: ["SOURCE_PATH": "Sources",
-                                  serverUrlArg: serverUrl]
+                            env: env
                         )
                         guard case let Source.sources(paths) = config.source,
                             let path = paths.include.first else {
@@ -40,14 +45,69 @@ class ConfigurationSpec: QuickSpec {
 
                 it("removes args entries with missing env variables") {
                     do {
-                        let config = try Configuration(path: Stubs.configs + ".valid.yml",
+                        let config = try Configuration(path: Stubs.configs + "valid.yml",
                                                        relativePath: relativePath,
-                                                       env: ["SOURCE_PATH": "Sources",
-                                                             "serverUrl": "www.example.com"])
+                                                       env: env)
 
                         let serverPort = config.args["serverPort"] as? String
 
                         expect(serverPort).to(equal(""))
+                    } catch {
+                        expect("\(error)").to(equal("Invalid config file format. Expected dictionary."))
+                    }
+                }
+            }
+
+            context("given config file with multiple configurations") {
+                it("resolves each configuration") {
+                    do {
+                        let configs = try Configurations.make(
+                            path: Stubs.configs + "multi.yml",
+                            relativePath: relativePath,
+                            env: env
+                        )
+
+                        expect(configs.count).to(equal(2))
+
+                        configs.enumerated().forEach { offset, config in
+                            guard case let Source.sources(paths) = config.source,
+                                  let path = paths.include.first else {
+                                fail("Config has no Source Paths")
+                                return
+                            }
+
+                            let configServerUrl = config.args[serverUrlArg] as? String
+
+                            expect(configServerUrl).to(equal("\(serverUrl)/\(offset)"))
+                            expect(path).to(equal(Path("/some/path/Sources/\(offset)")))
+                        }
+                    } catch {
+                        expect("\(error)").to(equal("Invalid config file format. Expected dictionary."))
+                    }
+                }
+            }
+
+            context("given config file with child configurations") {
+                it("resolves each child configuration") {
+                    do {
+                        let configs = try Configurations.make(
+                            path: Stubs.configs + "parent.yml",
+                            relativePath: Stubs.configs,
+                            env: env
+                        )
+
+                        expect(configs.count).to(equal(1))
+
+                        guard case let Source.sources(paths) = configs[0].source,
+                              let path = paths.include.first else {
+                            fail("Config has no Source Paths")
+                            return
+                        }
+
+                        let configServerUrl = configs[0].args[serverUrlArg] as? String
+
+                        expect(configServerUrl).to(equal(serverUrl))
+                        expect(path).to(equal(Stubs.configs + sourcePath))
                     } catch {
                         expect("\(error)").to(equal("Invalid config file format. Expected dictionary."))
                     }
@@ -68,7 +128,7 @@ class ConfigurationSpec: QuickSpec {
                 it("throws error on invalid file format") {
                     do {
                         _ = try Configuration(
-                            path: Stubs.configs + ".invalid.yml",
+                            path: Stubs.configs + "invalid.yml",
                             relativePath: relativePath,
                             env: [:]
                         )
@@ -85,7 +145,7 @@ class ConfigurationSpec: QuickSpec {
 
                 it("throws error on missing sources") {
                     let config: [String: Any] = ["templates": ["."], "output": "."]
-                    expect(configError(config)).to(equal("Invalid sources. 'sources' or 'project' key are missing."))
+                    expect(configError(config)).to(equal("Invalid sources. 'sources', 'project' or 'package' key are missing."))
                 }
 
                 it("throws error on invalid sources format") {
@@ -224,6 +284,26 @@ class ConfigurationSpec: QuickSpec {
                     let cacheBasePath = try? Configuration(dict: config, relativePath: relativePath).cacheBasePath
                     let expected = Path("test-base-path", relativeTo: relativePath)
                     expect(cacheBasePath).to(equal(expected))
+                }
+            }
+        }
+
+        describe("Parse Documentation") {
+            context("when parseDocumentation is true") {
+                it("has the correct parseDocumentation") {
+                    let config: [String: Any] = ["sources": ["."], "templates": ["."], "output": ".", "parseDocumentation": true]
+                    let parseDocumentation = try? Configuration(dict: config, relativePath: relativePath).parseDocumentation
+                    let expected = true
+                    expect(parseDocumentation).to(equal(expected))
+                }
+            }
+
+            context("when parseDocumentation is unset") {
+                it("defaults to false") {
+                    let config: [String: Any] = ["sources": ["."], "templates": ["."], "output": "."]
+                    let parseDocumentation = try? Configuration(dict: config, relativePath: relativePath).parseDocumentation
+                    let expected = false
+                    expect(parseDocumentation).to(equal(expected))
                 }
             }
         }

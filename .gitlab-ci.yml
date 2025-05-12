@@ -1,3 +1,9 @@
+variables:
+  BUILD_ARTIFACTS:
+    value: "false"
+    options: [ "false", "true" ]
+    description: "Runs _build.command and archives the created ObjectBoxGenerator.artifactbundle.zip"
+
 stages:
   - build
 
@@ -5,4 +11,26 @@ build:
   stage: build
   tags: [mac, x64, xcode]
   script:
+    - swift build
+    - swift package plugin --list
+    - swiftlint run
+    - swift test
+
+# There is currently no need to always run this as the build job ensures the project can be built and has no errors.
+# Also, the Swift library repo currently runs _build.command itself.
+build_artifacts:
+  stage: build
+  needs: [ 'build' ]
+  tags: [mac, x64, xcode]
+  rules:
+    # Only if explicitly enabled and previous stage did not fail
+    - if: $BUILD_ARTIFACTS == "true"
+      when: on_success
+    - when: never # Otherwise, never
+  script:
     - ./_build.command
+  artifacts:
+    when: always
+    expire_in: 3 days
+    paths:
+      - ./bin/ObjectBoxGenerator.artifactbundle.zip

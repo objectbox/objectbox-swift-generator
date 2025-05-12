@@ -17,12 +17,13 @@ $ ./sourcery --sources <sources path> --templates <templates path> --output <out
 - `--args` - Additional arguments to pass to templates. Each argument can have explicit value or will have implicit `true` value. Arguments should be separated with `,` without spaces (i.e. `--args arg1=value,arg2`) or should be passed one by one (i.e `--args arg1=value --args arg2`). Arguments are accessible in templates via `argument.name`. To pass in string you should use escaped quotes (`\"`) .
 - `--watch` [default: false] - Watch both code and template folders for changes and regenerate automatically.
 - `--verbose` [default: false] - Turn on verbose logging
-- `--quiet` [default: false] - Turn off any logging, only emmit errors
+- `--quiet` [default: false] - Turn off any logging, only emit errors
 - `--disableCache` [default: false] - Turn off caching of parsed data
 - `--prune` [default: false] - Prune empty generated files
 - `--version` - Display the current version of Sourcery
 - `--help` - Display help information.
 - `--cacheBasePath` - Path to Sourcery internal cache (available only in configuration file)
+- `--parseDocumentation`  [default: false] - Include documentation comments for all declarations.
 
 Use `--help` to see the list of all available options.
 
@@ -30,8 +31,8 @@ Use `--help` to see the list of all available options.
 
 You can also provide arguments using configuration file. Some of the configuration features (like excluding files) are only 
 available when using configuration file. You provide path to this file using `--config` command line option.
-If you provide path to directory Sourcery will search for file `.sourcery.yml` in this directory. You can also provide
-path to config file itself. By default Sourcery will search for `.sourcery.yml` in your current path.
+If you provide a path to a directory Sourcery will search for a file `.sourcery.yml` in this directory. You can also provide
+a path to config file itself. By default Sourcery will search for `.sourcery.yml` in your current path.
 
 Configuration file should be a valid Yaml file, like this:
 
@@ -48,6 +49,45 @@ args:
   <name>: <value>
 ```
 
+#### Multiple configurations
+
+You can pass multiple paths to configuration files using multiple `--config` command line options.
+Single configuration file can contain multiple configurations under root `configurations` key:
+
+```yaml
+configurations:
+    - sources:
+        - <sources path>
+        - <sources path>
+      templates:
+        - <templates path>
+      output: <output path>
+      args:
+        <name>: <value>
+        <name>: <value>
+    - sources:
+        - <sources path>
+        - <sources path>
+      templates:
+        - <templates path>
+      output: <output path>
+      args:
+        <name>: <value>
+        <name>: <value>
+```
+
+This will be equivalent to running Sourcery separately for each of the configurations. In watch mode Sourcery will observe changes in the paths from all the configurations.
+
+#### Child configurations
+
+You can specify a child configurations by using the `child` key:
+```yaml
+configurations:
+    - child: ./.child_config.yml
+    - child: Subdirectory/.another_child_config.yml
+```
+Sources will be resolved relative to the child config paths.
+
 #### Sources
 
 You can provide sources using paths to directories or specific files.
@@ -58,7 +98,7 @@ sources:
   - <source file path>
 ```
 
-Or you can provide project which will be scanned and which source files will be processed. You can use several `project` or `target` objects to scan multiple targets from one project or to scan multiple projects.
+Or you can provide project which will be scanned and which source files will be processed. You can use several `project` or `target` objects to scan multiple targets from one project or to scan multiple projects. You can provide paths to XCFramework files if your target has any and you want to process their `swiftinterface` files.
 
 ```yaml
 project:
@@ -66,11 +106,30 @@ project:
   target:
     name: <target name>
     module: <module name> //required if different from target name
+    xcframeworks:
+        - <path to xcframework file>
+        - <path to xcframework file>
+```
+
+You can also provide a Swift Package which will be scanned. Source files will be scanned based on the package's `path` and `exclude` options.
+
+```yaml
+package:
+  path: <path to to the Package.swift root directory>
+  target: <target name>
+```
+Multiple targets:
+```yaml
+package:
+  path: <path to to the Package.swift root directory>
+  target:
+    - <target name>
+    - <target name>
 ```
 
 #### Excluding sources or templates
 
-You can specifiy paths to sources files that should be scanned using `include` key and paths that should be excluded using `exclude` key. These can be directory or file paths.
+You can specify paths to sources files that should be scanned using `include` key and paths that should be excluded using `exclude` key. These can be directory or file paths.
 
 ```yaml
 sources:
@@ -117,7 +176,7 @@ output:
   path: <output path>
   link:
     project: <path to the xcodeproj to link to>
-    target: <name of the target to link to>
+    target: <name of the target to link to> // or targets: [target1, target2, ...]
     group: <group in the project to add files to> // by default files are added to project's root group
 ```
 

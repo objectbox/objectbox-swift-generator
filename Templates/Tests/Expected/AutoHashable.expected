@@ -1,5 +1,7 @@
-
+// Generated using the ObjectBox Swift Generator — https://objectbox.io
+// DO NOT EDIT
 // swiftlint:disable all
+
 
 // MARK: - AutoHashable for classes, protocols, structs
 // MARK: - AutoHashableClass AutoHashable
@@ -91,11 +93,11 @@ extension AutoHashableEnum: Hashable {
         switch self {
         case .one:
             1.hash(into: &hasher)
-        case .two(let data):
+        case let .two(first, second):
             2.hash(into: &hasher)
-            data.first.hash(into: &hasher)
-            data.second.hash(into: &hasher)
-        case .three(let data):
+            first.hash(into: &hasher)
+            second.hash(into: &hasher)
+        case let .three(data):
             3.hash(into: &hasher)
             data.hash(into: &hasher)
         }

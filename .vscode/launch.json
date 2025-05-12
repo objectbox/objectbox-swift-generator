@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:objectbox-swift-generator}",
+            "name": "Debug sourcery",
+            "program": "${workspaceFolder:objectbox-swift-generator}/.build/debug/sourcery",
+            "preLaunchTask": "swift: Build Debug sourcery"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:objectbox-swift-generator}",
+            "name": "Release sourcery",
+            "program": "${workspaceFolder:objectbox-swift-generator}/.build/release/sourcery",
+            "preLaunchTask": "swift: Build Release sourcery"
+        }
+    ]
+}

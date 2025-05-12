@@ -12,11 +12,10 @@
 .apitoken
 
 ## Build generated
+bin/
 build/
-bin/*
-!bin/sourcery
+cli/
 DerivedData/
-ObjectBoxToolTests/generated
 
 ## Various settings
 *.pbxuser
@@ -51,6 +50,7 @@ playground.xcworkspace
 Packages/
 Package.pins
 .build/
+.swiftpm/
 
 # CocoaPods
 #
@@ -89,4 +89,8 @@ docs/undocumented.json
 
 # IDEA based IDEs (AppCode, CLion) configuration
 .idea
-.vscode/
+
+# Local binary distributions downloads
+distributions/
+
+Sourcery.xcodeproj

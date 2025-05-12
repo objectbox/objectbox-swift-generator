@@ -4,7 +4,7 @@ Sourcery supports templates written in Stencil, Swift and even JavaScript.
 
 Discovered types can be accessed in templates via global context with following properties:
 
- - `types: Types` - access collections of types, i.e. `types.implementing.AutoCoding` (`types.implementing["AutoCoding"]` in swift templates). See [Types](https://cdn.rawgit.com/krzysztofzablocki/Sourcery/master/docs/Classes/Types.html).
+ - `types: Types` - access collections of types, i.e. `types.implementing.AutoCoding` (`types.implementing["AutoCoding"]` in swift templates). See [Types](https://krzysztofzablocki.github.io/Sourcery/Classes/Types.html).
  - `type: [String: Type]` - access types by their names, i.e. `type.MyType` (`type["MyType"]` in swift templates)
  - `arguments: [String: NSObject]` - access additional parameters passed with `--args` command line flag or set in `.sourcery.yml` file
 
@@ -61,6 +61,7 @@ Swift templates syntax is very similar to EJS:
 - Trim _all_ whitespaces before/after control flow tag with `<%_` and `_%>`
 - Use `<%# %>` for comments
 - Use `<%- include("relative_path_to_template.swifttemplate") %>` to include another template. The `swifttemplate` extension can be omitted. The path is relative to the including template.
+- Use `<%- includeFile("relative_path_to_file.swift") %>` to include another Swift file.  The path is relative to the including template.  Included Swift files _may_ depend upon `SourceryRuntime` module, as this will be injected during processing.
 
 **Example**: [Equality.swifttemplate](https://github.com/krzysztofzablocki/Sourcery/blob/master/SourceryTests/Stub/SwiftTemplates/Equality.swifttemplate)
 
@@ -100,6 +101,13 @@ Sourcery supports annotating your classes and variables with special annotations
 var precomputedHash: Int
 ```
 
+You can also add attributes to the end of a line of code:
+
+```swift
+var firstVariable: Int // default = 1
+var secondVariable: Int // default = 2
+```
+
 If you want to attribute multiple items with same attributes, you can use section annotations `sourcery:begin` and `sourcery:end`:
 
 ```swift
@@ -131,7 +139,8 @@ This will effectively annotate with `decoding.key` and `decoding.default` annota
 - Multiple annotations values with the same key are merged into array
 - You can interleave annotations with documentation
 - Sourcery scans all `sourcery:` annotations in the given comment block above the source until first non-comment/doc line
-- Using `/*` and `*/` for annotation comment you can put it on the same line with your code. This is useful for annotating methods parameters and enum case associated values. All such annotations should be placed in one comment block. Do not mix inline and regular annotations for the same declaration (using inline and block annotations is fine)!
+- Annotations at the end of a line will be applied to all declarations on the same line
+- Using `/*` and `*/` for annotation comment you can put annotations on the same line preceding your declaration. This is useful for annotating methods parameters and enum case associated values. All such annotations should be placed in one comment block. Do not mix inline and regular annotations for the same declaration (using inline and block annotations is fine)!
 
 #### Format:
 
@@ -183,7 +192,8 @@ Sourcery will generate the template code and then perform replacement in your so
 
 #### Automatic inline code generation
 
-To avoid having to place the markup in your source files, you can use `inline:auto:{{ type.name }}.TemplateName`:
+To avoid having to place the markup in your source files, you can use automatic generation e.g. 
+`inline:auto:{{ type.name }}.TemplateName`:
 
 ```swift
 // in template:
@@ -206,6 +216,8 @@ class MyType {
 ```
 
 The needed markup will be automatically added at the end of the type declaration body. After first parse Sourcery will work with generated code annotated with `inline:auto` the same way as annotated with `inline`, so you can even move these blocks of code anywhere in the same file.
+
+If you want to insert code after the type declaration, use `after-auto:` instead of `auto:`
 
 ## Per file code generation
 

@@ -1,6 +1,5 @@
-// Generated using Sourcery Major.Minor.Patch — https://github.com/krzysztofzablocki/Sourcery
+// Generated using the ObjectBox Swift Generator — https://objectbox.io
 // DO NOT EDIT
-
-func wrappedPerformFoo(value: Foo) {
+func wrappedPerformFoo(value: FooBarBaz) {
     performFoo(value: value)
 }

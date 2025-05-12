@@ -1,5 +1,33 @@
+#if canImport(ObjectiveC) && !DEBUG
 import JavaScriptCore
 import PathKit
+
+private extension Foundation.Bundle {
+    /// Returns the resource bundle associated with the current Swift module.
+    static var jsModule: Bundle = {
+        let bundleName = "Sourcery_SourceryJS"
+
+        let candidates = [
+            // Bundle should be present here when the package is linked into an App.
+            Bundle.main.resourceURL,
+
+            // Bundle should be present here when the package is linked into a framework.
+            Bundle(for: EJSTemplate.self).resourceURL,
+
+            // For command-line tools.
+            Bundle.main.bundleURL,
+        ]
+
+        for candidate in candidates {
+            let bundlePath = candidate?.appendingPathComponent(bundleName + ".bundle")
+            if let bundle = bundlePath.flatMap(Bundle.init(url:)) {
+                return bundle
+            }
+        }
+
+        return Bundle(for: EJSTemplate.self)
+    }()
+}
 
 open class EJSTemplate {
 
@@ -11,9 +39,13 @@ open class EJSTemplate {
     }
 
     /// Should be set to the path of EJS before rendering any template.
-    /// By default reads ejsbundle.js from framework bundle.
-    /// If framework is built with SPM this property should be set manually.
-    public static var ejsPath: Path! = Bundle(for: EJSTemplate.self).path(forResource: "ejs", ofType: "js").map({ Path($0) })
+    /// By default reads ejs.js from framework bundle.
+    #if SWIFT_PACKAGE
+    static let bundle = Bundle.jsModule
+    #else
+    static let bundle = Bundle(for: EJSTemplate.self)
+    #endif
+    public static var ejsPath: Path! = bundle.path(forResource: "ejs", ofType: "js").map({ Path($0) })
 
     public let sourcePath: Path
     public let templateString: String
@@ -35,12 +67,16 @@ open class EJSTemplate {
         }
     }
 
-    public init(path: Path, ejsPath: Path = EJSTemplate.ejsPath) throws {
-        templateString = try path.read()
+    public convenience init(path: Path, ejsPath: Path = EJSTemplate.ejsPath) throws {
+        try self.init(path: path, templateString: try path.read(), ejsPath: ejsPath)
+    }
+
+    public init(path: Path, templateString: String, ejsPath: Path = EJSTemplate.ejsPath) throws {
+        self.templateString = templateString
         sourcePath = path
         self.ejs = try ejsPath.read(.utf8)
     }
-
+    
     public init(templateString: String, ejsPath: Path = EJSTemplate.ejsPath) throws {
         self.templateString = templateString
         sourcePath = ""
@@ -85,3 +121,4 @@ open class EJSTemplate {
     }
 
 }
+#endif

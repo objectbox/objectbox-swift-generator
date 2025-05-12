@@ -8,7 +8,8 @@
 
 import Foundation
 
-enum FolderWatcher {
+#if canImport(ObjectiveC)
+public enum FolderWatcher {
 
     struct Event {
         let path: String
@@ -63,7 +64,7 @@ enum FolderWatcher {
         }
     }
 
-    class Local {
+    public class Local {
         private let path: String
         private var stream: FSEventStreamRef!
         private let closure: (_ events: [Event]) -> Void
@@ -106,3 +107,34 @@ enum FolderWatcher {
         }
     }
 }
+#else
+public enum FolderWatcher {
+
+    struct Event {
+        let path: String
+        let flags: Flag
+
+        struct Flag: OptionSet {
+            let rawValue: UInt
+
+            static let isFile = Flag(rawValue: 1)
+        }
+    }
+    public class Local {
+        private let path: String
+        
+        private let closure: (_ events: [Event]) -> Void
+
+        /// Creates folder watcher.
+        ///
+        /// - Parameters:
+        ///   - path: Path to observe
+        ///   - latency: Latency to use
+        ///   - closure: Callback closure
+        init(path: String, latency: TimeInterval = 1/60, closure: @escaping (_ events: [Event]) -> Void) {
+            self.path = path
+            self.closure = closure
+        }
+    }
+}
+#endif

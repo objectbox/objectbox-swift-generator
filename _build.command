@@ -38,47 +38,60 @@ echo ""
 echo "$SMSO Build $RMSO"
 echo ""
 
-xcodebuild -workspace "${MY_DIR}/Sourcery.xcworkspace" -scheme "Sourcery-Release" -configuration Release -quiet CONFIGURATION_BUILD_DIR="${MY_DIR}/bin/build"
+# Matches the default SwiftPM build directory
+BUILD_DIR="${MY_DIR}/.build"
 
+# Directory where Sourcery binary (for testing in Swift repo) and MacOS application archive (for releases) are stored
+OUTPUT_DIR="${MY_DIR}/bin"
+
+if [ "$dirty" != true ] ; then
+  echo "Cleaning build artifacts"
+  swift package clean
+fi
+
+# Build using swift build in release configuration
+swift build --disable-sandbox -c release --arch arm64 --build-path $BUILD_DIR
+swift build --disable-sandbox -c release --arch x86_64 --build-path $BUILD_DIR
+
+echo "Create a bare-minimum macOS app for the Swift library"
+# This is included directly in a Carthage and CocoaPods release, and packaged up below in an extra artifact for a
+# SwiftPM binary release.
+mkdir -p "${OUTPUT_DIR}/Sourcery.app/Contents/MacOS"
+mkdir -p "${OUTPUT_DIR}/Sourcery.app/Contents/Resources"
+cp "${MY_DIR}/Sourcery/ObjectBox/EntityInfo.stencil" "${OUTPUT_DIR}/Sourcery.app/Contents/Resources/"
+cp "${MY_DIR}/SourceryExecutable/Info.plist" "${OUTPUT_DIR}/Sourcery.app/Contents/"
+
+# Create universal binary using lipo
+lipo -create \
+  "${BUILD_DIR}/arm64-apple-macosx/release/Sourcery" \
+  "${BUILD_DIR}/x86_64-apple-macosx/release/Sourcery" \
+  -output "${OUTPUT_DIR}/Sourcery.app/Contents/MacOS/Sourcery"
+
+echo "Create an artifact bundle for the Swift library Swift package"
 # The Swift Package Manager requires an artifact bundle, not an app.
 # Therefore, create the artifact bundle from the app.
 # The name needs to be changed, since the Sourcery is already taken by Sourcery itself.
-# The internals can stay unchanged because names are adjusted in the reuqired info.json file.
-rm -rf "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle/"
-cp -r "${MY_DIR}/bin/build/Sourcery.app/" "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle"
+# The internals can stay unchanged because names are adjusted in the required info.json file.
+rm -rf "${OUTPUT_DIR}/ObjectBoxGenerator.artifactbundle/"
+cp -r "${OUTPUT_DIR}/Sourcery.app" "${OUTPUT_DIR}/ObjectBoxGenerator.artifactbundle"
+
 # Fix the version, and add the required info.json to the artifact bundle
-OBECTBOX_GENERATOR_VERSION=$(./bin/build/Sourcery.app/Contents/MacOS/Sourcery --version)
+OBECTBOX_GENERATOR_VERSION=$(${OUTPUT_DIR}/Sourcery.app/Contents/MacOS/Sourcery --version)
 echo "GEN: $OBECTBOX_GENERATOR_VERSION"
 jq --arg new_version "$OBECTBOX_GENERATOR_VERSION" \
    '.artifacts["objectbox-generator"].version = $new_version' \
    "${MY_DIR}/Resources/info.json" > \
-   "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle/info.json"
+   "${OUTPUT_DIR}/ObjectBoxGenerator.artifactbundle/info.json"
+   
 # Create the zip file we want to deploy
-rm -f "${MY_DIR}/bin/ObjectBox.artifactbundle.zip"
-( cd "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle" && zip -r --symlinks "${MY_DIR}/bin/ObjectBoxGenerator.artifactbundle.zip" . )
+rm -f "${OUTPUT_DIR}/ObjectBoxGenerator.artifactbundle.zip"
+( cd "${OUTPUT_DIR}/ObjectBoxGenerator.artifactbundle" && zip -r --symlinks "${OUTPUT_DIR}/ObjectBoxGenerator.artifactbundle.zip" . )
 # add the sha256 for the zip file
-( cd ${MY_DIR}/bin/ && shasum -a 256 "ObjectBoxGenerator.artifactbundle.zip" > "ObjectBoxGenerator.artifactbundle.zip.sha256" )
+( cd ${OUTPUT_DIR} && shasum -a 256 "ObjectBoxGenerator.artifactbundle.zip" > "ObjectBoxGenerator.artifactbundle.zip.sha256" )
 
-if [ "$dirty" = true ] ; then
-    echo ""
-    echo "$SMSO Copying (without cleaning)... $RMSO"
-    echo ""
-
-    rm -rf "${MY_DIR}/bin/Sourcery.app"
-    rm -rf "${MY_DIR}/bin/"*.dSYM
-    cp -Rf "${MY_DIR}/bin/build/Sourcery.app" "${MY_DIR}/bin/"
-    cp -Rf "${MY_DIR}/bin/build/"*.dSYM "${MY_DIR}/bin/"
-else
-    echo ""
-    echo "$SMSO Clean up... $RMSO"
-    echo ""
-
-    rm -rf "${MY_DIR}/bin/Sourcery.app"
-    rm -rf "${MY_DIR}/bin/"*.dSYM
-    mv -f "${MY_DIR}/bin/build/Sourcery.app" "${MY_DIR}/bin/"
-    mv -f "${MY_DIR}/bin/build/"*.dSYM "${MY_DIR}/bin/"
-    rm -rf "${MY_DIR}/bin/build"
-fi
+echo "Copy the Sourcery binary to ${OUTPUT_DIR} for tests in Swift library"
+rm -rf "${OUTPUT_DIR}/Sourcery"
+cp -f "${OUTPUT_DIR}/Sourcery.app/Contents/MacOS/Sourcery" "${OUTPUT_DIR}"
 
 echo ""
 echo "$GREEN Done. $RMGREEN$BEL"

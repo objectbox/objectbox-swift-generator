@@ -23,24 +23,36 @@ private struct ProcessResult {
 }
 
 open class SwiftTemplate {
-
     public let sourcePath: Path
+    let buildPath: Path?
     let cachePath: Path?
-    let code: String
+    let mainFileCodeRaw: String
     let version: String?
     let includedFiles: [Path]
 
+    private enum RenderError: Error {
+        case binaryMissing
+    }
+
     private lazy var buildDir: Path = {
-        let pathComponent = "SwiftTemplate" + (version.map { "/\($0)" } ?? "")
+        var pathComponent = "SwiftTemplate"
+        pathComponent.append("/\(UUID().uuidString)")
+        pathComponent.append((version.map { "/\($0)" } ?? ""))
+
+        if let buildPath {
+            return (buildPath + pathComponent).absolute()
+        }
+
         guard let tempDirURL = NSURL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(pathComponent) else { fatalError("Unable to get temporary path") }
         return Path(tempDirURL.path)
     }()
 
-    public init(path: Path, cachePath: Path? = nil, version: String? = nil) throws {
+    public init(path: Path, cachePath: Path? = nil, version: String? = nil, buildPath: Path? = nil) throws {
         self.sourcePath = path
+        self.buildPath = buildPath
         self.cachePath = cachePath
         self.version = version
-        (self.code, self.includedFiles) = try SwiftTemplate.parse(sourcePath: path)
+        (self.mainFileCodeRaw, self.includedFiles) = try SwiftTemplate.parse(sourcePath: path)
     }
 
     private enum Command {
@@ -51,32 +63,39 @@ open class SwiftTemplate {
     }
 
     static func parse(sourcePath: Path) throws -> (String, [Path]) {
-
         let commands = try SwiftTemplate.parseCommands(in: sourcePath)
-
+        let startParsing = currentTimestamp()
         var includedFiles: [Path] = []
         var outputFile = [String]()
+        var hasContents = false
         for command in commands {
             switch command {
             case let .includeFile(path):
                 includedFiles.append(path)
             case let .output(code):
-                outputFile.append("print(\"\\(" + code + ")\", terminator: \"\");")
+                outputFile.append("sourceryBuffer.append(\"\\(" + code + ")\");")
+                hasContents = true
             case let .controlFlow(code):
                 outputFile.append("\(code)")
+                hasContents = true
             case let .outputEncoded(code):
                 if !code.isEmpty {
-                    outputFile.append(("print(\"") + code.stringEncoded + "\", terminator: \"\");")
+                    outputFile.append(("sourceryBuffer.append(\"") + code.stringEncoded + "\");")
+                    hasContents = true
                 }
             }
         }
+        if hasContents {
+            outputFile.insert("var sourceryBuffer = \"\";", at: 0)
+        }
+        outputFile.append("print(\"\\(sourceryBuffer)\", terminator: \"\");")
 
         let contents = outputFile.joined(separator: "\n")
         let code = """
         import Foundation
         import SourceryRuntime
 
-        let context = ProcessInfo().context!
+        let context = ProcessInfo.processInfo.context!
         let types = context.types
         let functions = context.functions
         let type = context.types.typesByName
@@ -84,11 +103,12 @@ open class SwiftTemplate {
 
         \(contents)
         """
-
+        Log.benchmark("\tRaw processing time for \(sourcePath.lastComponent) took: \(currentTimestamp() - startParsing)")
         return (code, includedFiles)
     }
 
     private static func parseCommands(in sourcePath: Path, includeStack: [Path] = []) throws -> [Command] {
+        let startProcessing = currentTimestamp()
         let templateContent = try "<%%>" + sourcePath.read()
 
         let components = templateContent.components(separatedBy: Delimiters.open)
@@ -171,43 +191,67 @@ open class SwiftTemplate {
             }
             processedComponents.append(component)
         }
-
+        Log.benchmark("\tRaw command processing for \(sourcePath.lastComponent) took: \(currentTimestamp() - startProcessing)")
         return commands
     }
 
     public func render(_ context: Any) throws -> String {
-        let binaryPath: Path
+        do {
+            return try render(context: context)
+        } catch is RenderError {
+            return try render(context: context)
+        }
+    }
 
+    private func render(context: Any) throws -> String {
+        var destinationBinaryPath: Path
+        var originalBinaryPath = buildDir + Path(".build/release/SwiftTemplate")
         if let cachePath = cachePath,
-            let hash = code.sha256(),
-            let hashPath = hash.addingPercentEncoding(withAllowedCharacters: CharacterSet.alphanumerics) {
-
-            binaryPath = cachePath + hashPath
-            if !binaryPath.exists {
-                try? cachePath.delete() // clear old cache
-                try cachePath.mkdir()
-                try build().move(binaryPath)
+           let hash = executableCacheKey,
+           let hashPath = hash.addingPercentEncoding(withAllowedCharacters: CharacterSet.alphanumerics) {
+            destinationBinaryPath = cachePath + hashPath
+            if destinationBinaryPath.exists {
+                Log.benchmark("Reusing built SwiftTemplate binary for SwiftTemplate with cache key: \(hash)...")
+            } else {
+                Log.benchmark("Building new SwiftTemplate binary for SwiftTemplate...")
+                try build()
+                // attempt to create cache dir
+                try? cachePath.mkdir()
+                // attempt to move to the created `cacheDir`
+                try? originalBinaryPath.copy(destinationBinaryPath)
             }
+            // create a link to the compiled binary in a unique stable location
+            if !buildDir.exists {
+                try buildDir.mkpath()
+            }
+            originalBinaryPath = buildDir + hashPath
+            destinationBinaryPath = destinationBinaryPath.isRelative ? destinationBinaryPath.absolute() : destinationBinaryPath
+            try FileManager.default.createSymbolicLink(atPath: originalBinaryPath.string, withDestinationPath: destinationBinaryPath.string)
         } else {
-            try binaryPath = build()
+            try build()
         }
 
         let serializedContextPath = buildDir + "context.bin"
-        let data = NSKeyedArchiver.archivedData(withRootObject: context)
+        let data = try NSKeyedArchiver.archivedData(withRootObject: context, requiringSecureCoding: false)
         if !buildDir.exists {
             try buildDir.mkpath()
         }
         try serializedContextPath.write(data)
 
-        let result = try Process.runCommand(path: binaryPath.description,
-                                            arguments: [serializedContextPath.description])
-        if !result.error.isEmpty {
-            throw "\(sourcePath): \(result.error)"
+        Log.benchmark("Binary file location: \(originalBinaryPath.string)")
+        if FileManager.default.fileExists(atPath: originalBinaryPath.string) {
+            let result = try Process.runCommand(path: originalBinaryPath.string,
+                                                arguments: [serializedContextPath.description])
+            if !result.error.isEmpty {
+                throw "\(sourcePath): \(result.error)"
+            }
+            return result.output
         }
-        return result.output
+        throw RenderError.binaryMissing
     }
 
-    func build() throws -> Path {
+    private func build() throws {
+        let startCompiling = currentTimestamp()
         let sourcesDir = buildDir + Path("Sources")
         let templateFilesDir = sourcesDir + Path("SwiftTemplate")
         let mainFile = templateFilesDir + Path("main.swift")
@@ -218,40 +262,73 @@ open class SwiftTemplate {
         try templateFilesDir.mkpath()
 
         try copyRuntimePackage(to: sourcesDir)
-        try manifestFile.write(manifestCode)
-        try mainFile.write(code)
-
-        let binaryFile = buildDir + Path(".build/debug/SwiftTemplate")
+        if !manifestFile.exists {
+            try manifestFile.write(manifestCode)
+        }
+        try mainFile.write(mainFileCodeRaw)
 
         try includedFiles.forEach { includedFile in
             try includedFile.copy(templateFilesDir + Path(includedFile.lastComponent))
         }
-
+#if os(macOS)
         let arguments = [
             "xcrun",
             "--sdk", "macosx",
             "swift",
             "build",
+            "-c", "release",
             "-Xswiftc", "-Onone",
             "-Xswiftc", "-suppress-warnings",
             "--disable-sandbox"
         ]
+#else
+        let arguments = [
+            "swift",
+            "build",
+            "-c", "release",
+            "-Xswiftc", "-Onone",
+            "-Xswiftc", "-suppress-warnings",
+            "--disable-sandbox"
+        ]
+#endif
         let compilationResult = try Process.runCommand(path: "/usr/bin/env",
                                                        arguments: arguments,
                                                        currentDirectoryPath: buildDir)
-
-        if compilationResult.exitCode != 0 || !compilationResult.error.isEmpty {
+        if compilationResult.exitCode != EXIT_SUCCESS {
             throw [compilationResult.output, compilationResult.error]
                 .filter { !$0.isEmpty }
                 .joined(separator: "\n")
         }
-
-        return binaryFile
+        Log.benchmark("\tRaw compilation of SwiftTemplate took: \(currentTimestamp() - startCompiling)")
     }
 
+#if os(macOS)
     private var manifestCode: String {
         return """
-        // swift-tools-version:4.0
+        // swift-tools-version:5.7
+        // The swift-tools-version declares the minimum version of Swift required to build this package.
+
+        import PackageDescription
+
+        let package = Package(
+            name: "SwiftTemplate",
+            platforms: [
+                .macOS(.v10_15)
+            ],
+            products: [
+                .executable(name: "SwiftTemplate", targets: ["SwiftTemplate"])
+            ],
+            targets: [
+                .target(name: "SourceryRuntime"),
+                .executableTarget(name: "SwiftTemplate", dependencies: ["SourceryRuntime"])
+            ]
+        )
+        """
+    }
+#else
+    private var manifestCode: String {
+        return """
+        // swift-tools-version:5.7
         // The swift-tools-version declares the minimum version of Swift required to build this package.
 
         import PackageDescription
@@ -263,12 +340,33 @@ open class SwiftTemplate {
             ],
             targets: [
                 .target(name: "SourceryRuntime"),
-                .target(
-                    name: "SwiftTemplate",
-                    dependencies: ["SourceryRuntime"]),
+                .executableTarget(name: "SwiftTemplate", dependencies: ["SourceryRuntime"])
             ]
         )
         """
+    }
+#endif
+
+    /// Brief:
+    ///   - Executable cache key is calculated solely on the contents of the SwiftTemplate ephemeral package.
+    /// Rationale:
+    ///   1. cache key is used to find SwiftTemplate `executable` file from a previous compilation
+    ///   2. `SwiftTemplate` contains types from `SourceryRuntime` and `main.swift`
+    ///   3. `main.swift` in `SwiftTemplate` contains `only .swifttemplate file processing result`
+    ///   4. Copied `includeFile` directives from the given `.swifttemplate` are also included into `SwiftTemplate` ephemeral package
+    ///
+    /// Due to this reason, the correct logic for calculating `executableCacheKey` is to only consider contents of `SwiftTemplate` ephemeral package,
+    /// because `main.swift` is **the only file** which changes in `SwiftTemplate` ephemeral binary, and `includeFiles` are the only files that may
+    /// be changed between executions of Sourcery.
+    var executableCacheKey: String? {
+        var contents = mainFileCodeRaw
+        let files = includedFiles.map({ $0.absolute() }).sorted(by: { $0.string < $1.string })
+        for file in files {
+            let hash = (try? file.read().sha256().base64EncodedString()) ?? ""
+            contents += "\n// \(file.string)-\(hash)"
+        }
+
+        return contents.sha256()
     }
 
     private func copyRuntimePackage(to path: Path) throws {
@@ -296,16 +394,24 @@ private extension String {
     var stringEncoded: String {
         return self.unicodeScalars.map { x -> String in
             return x.escaped(asASCII: true)
-            }.joined(separator: "")
+        }.joined(separator: "")
     }
 }
 
 private extension Process {
-    static func runCommand(path: String, arguments: [String], environment: [String: String] = [:], currentDirectoryPath: Path? = nil) throws -> ProcessResult {
+    static func runCommand(path: String, arguments: [String], currentDirectoryPath: Path? = nil) throws -> ProcessResult {
         let task = Process()
+        var environment = ProcessInfo.processInfo.environment
+
+        // https://stackoverflow.com/questions/67595371/swift-package-calling-usr-bin-swift-errors-with-failed-to-open-macho-file-to
+        if ProcessInfo.processInfo.environment.keys.contains("OS_ACTIVITY_DT_MODE") {
+            environment = ProcessInfo.processInfo.environment
+            environment["OS_ACTIVITY_DT_MODE"] = nil
+        }
+
         task.launchPath = path
-        task.arguments = arguments
         task.environment = environment
+        task.arguments = arguments
         if let currentDirectoryPath = currentDirectoryPath {
             if #available(OSX 10.13, *) {
                 task.currentDirectoryURL = currentDirectoryPath.url
@@ -313,7 +419,6 @@ private extension Process {
                 task.currentDirectoryPath = currentDirectoryPath.description
             }
         }
-        task.environment = ProcessInfo.processInfo.environment
 
         let outputPipe = Pipe()
         let errorPipe = Pipe()
@@ -341,11 +446,11 @@ private extension Process {
 
 extension String {
     func bridge() -> NSString {
-        #if os(Linux)
-            return NSString(string: self)
-        #else
-            return self as NSString
-        #endif
+#if os(Linux)
+        return NSString(string: self)
+#else
+        return self as NSString
+#endif
     }
 }
 
@@ -353,6 +458,12 @@ struct FolderSynchronizer {
     struct File {
         let name: String
         let content: String
+
+        init(name: String, content: String) {
+            assert(name.isEmpty == false)
+            self.name = name
+            self.content = content
+        }
     }
 
     func sync(files: [File], to dir: Path) throws {

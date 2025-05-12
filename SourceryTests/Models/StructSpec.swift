@@ -1,11 +1,15 @@
 import Quick
 import Nimble
+#if SWIFT_PACKAGE
+@testable import SourceryLib
+#else
 @testable import Sourcery
+#endif
 @testable import SourceryRuntime
 
 class StructSpec: QuickSpec {
     override func spec() {
-        describe ("Struct") {
+        describe("Struct") {
             var sut: Struct?
 
             beforeEach {
