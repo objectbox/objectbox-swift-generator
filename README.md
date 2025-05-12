@@ -17,6 +17,9 @@ Recent changes are documented in the [changelog](/CHANGELOG.md).
 # Build
 swift build
 
+# Run swiftlint from the command line
+swift package plugin --allow-writing-to-package-directory swiftlint
+
 # Run unit tests
 swift test
 ```

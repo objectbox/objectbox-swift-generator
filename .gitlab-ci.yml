@@ -12,8 +12,7 @@ build:
   tags: [mac, x64, xcode]
   script:
     - swift build
-    - swift package plugin --list
-    - swiftlint run
+    - swift package plugin --allow-writing-to-package-directory swiftlint
     - swift test
 
 # There is currently no need to always run this as the build job ensures the project can be built and has no errors.
