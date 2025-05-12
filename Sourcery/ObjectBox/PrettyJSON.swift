@@ -59,7 +59,11 @@ class PrettyJSON {
                 if entity.flags ?? 0 != 0 {
                     output.append("\n      \"flags\": \(entity.flags!),")
                 }
+                if let externalName = entity.externalName {
+                    output.append("\n      \"externalName\": \"\(externalName)\",")
+                }
                 output.append("\n      \"properties\": [")
+
                 let entityProperties = entity.properties ?? []
                 if entityProperties.isEmpty {
                     output.append("],")
@@ -82,6 +86,12 @@ class PrettyJSON {
                         if let type = property.type {
                             keyValues.append(KeyValue(key: "type", value: "\(type)", quoteValue: false))
                         }
+                        if let externalType = property.externalType {
+                            keyValues.append(KeyValue(key: "externalType", value: "\(externalType)", quoteValue: false))
+                        }
+                        if let externalName = property.externalName {
+                            keyValues.append(KeyValue(key: "externalName", value: externalName, quoteValue: true))
+                        }
                         propertiesToGo -= 1
                         output.append("\(keyValueString(keyValues, indent: 10))\n        }\(propertiesToGo > 0 ? "," : "")")
                     }
@@ -100,6 +110,12 @@ class PrettyJSON {
                         keyValues.append(KeyValue(key: "name", value: relation.name, quoteValue: true))
                         if let targetId = relation.targetId {
                             keyValues.append(KeyValue(key: "targetId", value: targetId.toString(), quoteValue: true))
+                        }
+                        if let externalType = relation.externalType {
+                            keyValues.append(KeyValue(key: "externalType", value: "\(externalType)", quoteValue: false))
+                        }
+                        if let externalName = relation.externalName {
+                            keyValues.append(KeyValue(key: "externalName", value: externalName, quoteValue: true))
                         }
                         relationsToGo -= 1
                         output.append("\n\(keyValueString(keyValues, indent: 10))\n        }\(relationsToGo > 0 ? "," : "")")
