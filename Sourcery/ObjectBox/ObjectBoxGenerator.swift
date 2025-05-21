@@ -79,14 +79,17 @@ public enum ObjectBoxGenerator {
         "transient",
         "type",
         "uid",
-        "unique"
+        "unique",
+        "externalName",
+        "externalType"
     ])
     private static let validTypeAnnotationNames = Set([
         "entity",
         "Entity",
         "name",
         "sync",
-        "uid"
+        "uid",
+        "externalName"
     ])
 
     // TODO why static?
@@ -326,6 +329,29 @@ public enum ObjectBoxGenerator {
         return .unknown
     }
 
+    /// If it exists, returns the value of the externalType annotation mapped to the type constant. Otherwise nil.
+    ///
+    /// If the type is not supported, throws and suggests supported values.
+    private static func parseExternalType(_ propertyVar: SourceryVariable) throws -> ExternalPropertyType? {
+        if let externalTypeStr = propertyVar.annotations["externalType"] as? String {
+            let externalTypeOrNil = ExternalPropertyType.allCases.first { "\($0)" == externalTypeStr }
+            if externalTypeOrNil != nil {
+                return externalTypeOrNil
+            } else {
+                let supportedTypes = ExternalPropertyType.allCases
+                    .map({ "\($0)" })
+                    .joined(separator: ", ")
+                throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "externalType '\(externalTypeStr)' not supported, should be one of \(supportedTypes)")
+            }
+        }
+        return nil
+    }
+    
+    /// If it exists, returns the value of the externalName annotation. Otherwise nil.
+    private static func parseExternalName(_ propertyVar: SourceryVariable) -> String? {
+        return propertyVar.annotations["externalName"] as? String
+    }
+
     static func extractConvertAnnotation(_ annotation: Any?) -> [String: String]? {
         if let dict = annotation as? [String: String] {
             return dict
@@ -358,6 +384,11 @@ public enum ObjectBoxGenerator {
             }
             if let backlinkProperty = propertyVar.annotations["backlink"] as? String {
                 relation.backlinkProperty = backlinkProperty
+            } else {
+                // backlinkProperty is null, meaning, this
+                // ToMany relation is standalone
+                relation.externalType = try parseExternalType(propertyVar)?.rawValue
+                relation.externalName = parseExternalName(propertyVar)
             }
             tmRelation = relation
             schemaEntity.toManyRelations.append(relation)
@@ -470,6 +501,10 @@ public enum ObjectBoxGenerator {
         try processPropertyIndexAndUniqueAnnotations(propertyVar, schemaProperty)
 
         try processPropertyHnswIndexAnnotation(propertyVar, schemaProperty)
+
+        // External type and name
+        schemaProperty.externalType = try parseExternalType(propertyVar)?.rawValue
+        schemaProperty.externalName = parseExternalName(propertyVar)
 
         if let objectIdAnnotationValue = propertyVar.annotations["id"] {
             if let existingIdProperty = schemaEntity.idProperty {
@@ -648,6 +683,7 @@ public enum ObjectBoxGenerator {
         schemaEntity.isValueType = entityType.kind == "struct"
         schemaEntity.modelUid = entityType.annotations["uid"] as? Int64
         schemaEntity.dbName = entityType.annotations["name"] as? String
+        schemaEntity.externalName = entityType.annotations["externalName"] as? String
         let syncAnnotation = entityType.annotations["sync"]
         if syncAnnotation != nil {
             schemaEntity.flags.append(.syncEnabled)

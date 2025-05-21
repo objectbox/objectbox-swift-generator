@@ -87,6 +87,8 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
     var flags: [EntityFlags] = []
     var flagsStringList: String = ""
 
+    var externalName: String?
+
     public static func == (lhs: SchemaEntity, rhs: SchemaEntity) -> Bool { lhs.name == rhs.name }
 
     public var hashValue: Int {
@@ -114,7 +116,9 @@ class SchemaEntity: Hashable, Equatable, CustomDebugStringConvertible {
     }
 
     public var debugDescription: String {
-        return "SchemaEntity {\n\t\tmodelId = \(modelId as Any)\n\t\tmodelUid = \(modelUid as Any)\n\t\tclassName = \(className)\n\t\tdbName = \(dbName as Any)\n\t\tproperties = \(properties)\n\t\tindexes = \(indexes)\n\t\trelations = \(relations)\n\t\ttoManyRelations = \(toManyRelations)\n\t\tlastPropertyId = \(lastPropertyId as Any)\n\t\tisEntitySubclass = \(isEntitySubclass)\n\t\tisValueType = \(isValueType)\n\t\thasStringProperties = \(hasStringProperties)\n\t\tidProperty = \(idProperty as Any)\n\t\tidCandidates = \(idCandidates)\n\t}\n"
+        var moreData = ""
+        if externalName != nil { moreData += "\n\t\texternalName = \(externalName!)" }
+        return "SchemaEntity {\n\t\tmodelId = \(modelId as Any)\n\t\tmodelUid = \(modelUid as Any)\n\t\tclassName = \(className)\n\t\tdbName = \(dbName as Any)\(moreData)\n\t\tproperties = \(properties)\n\t\tindexes = \(indexes)\n\t\trelations = \(relations)\n\t\ttoManyRelations = \(toManyRelations)\n\t\tlastPropertyId = \(lastPropertyId as Any)\n\t\tisEntitySubclass = \(isEntitySubclass)\n\t\tisValueType = \(isValueType)\n\t\thasStringProperties = \(hasStringProperties)\n\t\tidProperty = \(idProperty as Any)\n\t\tidCandidates = \(idCandidates)\n\t}\n"
     }
 }
 
@@ -169,6 +173,9 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
 
     var propertyTypeQualifiedName: String = "n/a"  // Sourcery cannot access dynamic properties!?
 
+    var externalType: UInt16?
+    var externalName: String?
+
     public func initPropertyType() {
         isDateNanoType = propertyType == PropertyType.dateNano
         if propertyType != PropertyType.unknown {
@@ -210,6 +217,8 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
         if isByteVectorType { moreData += "\n\t\t\tisByteVectorType = \(isByteVectorType)" }
         if isScalarVectorType { moreData += "\n\t\t\tisScalarVectorType = \(isScalarVectorType)" }
         if hnswParams != nil { moreData += "\n\t\t\thnswParams = \(hnswParams!)" }
+        if externalType != nil { moreData += "\n\t\t\texternalType = \(externalType!)"}
+        if externalName != nil { moreData += "\n\t\t\texternalName = \(externalName!)"}
         return "SchemaProperty {\n\t\t\tmodelId = \(modelId as Any)\n\t\t\tpropertyName = \(swiftName)\n\t\t\tpropertyType = \(propertyType)\n\t\t\tpropertyFlags = \(propertyFlags)\n\t\t\tpropertySwiftType = \(swiftType)\n\t\t\tentityName = \(entityName)\n\t\t\tunwrappedPropertyType = \(unwrappedPropertyType)\n\t\t\tdbName = \(dbName as Any)\n\t\t\tmodelIndexId = \(modelIndexId as Any)\n\t\t\tbacklinkName = \(backlinkName as Any)\n\t\t\tbacklinkType = \(backlinkType as Any)\n\t\t\tisObjectId = \(isObjectId)\n\t\t\tisBuiltInType = \(isBuiltInType)\n\t\t\tisStringType = \(isStringType)\n\t\t\tisRelation = \(isRelation)\(moreData)\n\t\t}\n"
     }
 }
@@ -223,6 +232,8 @@ class SchemaRelation: CustomDebugStringConvertible {
     var dbName: String?
     var property: SchemaProperty?
     var isToManyBacklink: Bool = false
+    var externalType: UInt16?
+    var externalName: String?
 
     init(name: String, type: String, targetType: String) {
         self.relationName = name
@@ -231,7 +242,10 @@ class SchemaRelation: CustomDebugStringConvertible {
     }
 
     public var debugDescription: String {
-        return "SchemaRelation {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\trelationName = \(relationName)\n\t\t\trelationType = \(relationType)\n\t\t\trelationTargetType = \(relationTargetType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t}\n"
+        var moreData = ""
+        if externalType != nil { moreData += "\n\t\t\texternalType = \(externalType!)" }
+        if externalName != nil { moreData += "\n\t\t\texternalName = \(externalName!)" }
+        return "SchemaRelation {\n\t\t\tmodelId = \(String(describing: modelId))\n\t\t\trelationName = \(relationName)\n\t\t\trelationType = \(relationType)\(moreData)\n\t\t\trelationTargetType = \(relationTargetType)\n\t\t\tdbName = \(String(describing: dbName))\n\t\t}\n"
     }
 }
 

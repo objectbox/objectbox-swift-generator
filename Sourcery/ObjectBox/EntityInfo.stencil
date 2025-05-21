@@ -27,11 +27,16 @@ extension {{ entity.className }}: ObjectBox.EntityInspectable {
     fileprivate static func buildEntity(modelBuilder: ObjectBox.ModelBuilder) throws {
         let entityBuilder = try modelBuilder.entityBuilder(for: {{ entity.className }}.self, id: {{ entity.modelId }}, uid: {{ entity.modelUid }})
         {% if entity.flags.count != 0 %}try entityBuilder.flags({{ entity.flagsStringList }}){% endif %}
+        {% if entity.externalName %}try entityBuilder.externalName("{{ entity.externalName }}"){% endif %}
         {% for prop in entity.properties where not prop.isRelation and not prop.isToManyRelation %}
         {% set indexParam %}{% if prop.modelIndexId %}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }}{% endif %}{% endset %}
         {% set hnswParams %}{% if prop.hnswParams %}.hnswParams(dimensions: {{ prop.hnswParams.dimensions }}, neighborsPerNode: {{ prop.hnswParams.neighborsPerNode|default:"nil" }}, indexingSearchCount: {{ prop.hnswParams.indexingSearchCount|default:"nil" }}, flags: {{ prop.hnswParams.flags|default:"nil" }}, distanceType: {{ prop.hnswParams.distanceType|default:"nil" }}, reparationBacklinkProbability: {{ prop.hnswParams.reparationBacklinkProbability|default:"nil" }}, vectorCacheHintSizeKB: {{ prop.hnswParams.vectorCacheHintSizeKB|default:"nil" }}){% endif %}{% endset %}
+        {% set externalType %}{% if prop.externalType %}.externalType({{ prop.externalType }}){% endif %}{% endset %}
+        {% set externalName %}{% if prop.externalName %}.externalName("{{ prop.externalName }}"){% endif %}{% endset %}
         try entityBuilder.addProperty(name: "{{ prop.name }}", type: {{ prop.propertyTypeQualifiedName }}{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}{{ indexParam }})
             {{ hnswParams }}
+            {{ externalType }}
+            {{ externalName }}
         {% endfor %}
         {% for prop in entity.properties where prop.isRelation %}
         try entityBuilder.addToOneRelation(name: "{{ prop.name }}", targetEntityInfo: {{ prop.swiftType }}.Target.entityInfo{{ prop.flagsList }}, id: {{ prop.modelId.id }}, uid: {{ prop.modelId.uid }}, indexId: {{ prop.modelIndexId.id }}, indexUid: {{ prop.modelIndexId.uid }})
@@ -39,6 +44,8 @@ extension {{ entity.className }}: ObjectBox.EntityInspectable {
         {% for tmRelation in entity.toManyRelations where not tmRelation.backlinkProperty %}
         try entityBuilder.addToManyRelation(id: {{ tmRelation.modelId.id }}, uid: {{ tmRelation.modelId.uid }},
                                             targetId: {{ tmRelation.targetId.id }}, targetUid: {{ tmRelation.targetId.uid }})
+        {% if tmRelation.externalType %}try entityBuilder.relationExternalType({{ tmRelation.externalType }}){% endif %}
+        {% if tmRelation.externalName %}try entityBuilder.relationExternalName("{{ tmRelation.externalName }}"){% endif %}
         {% endfor %}
 
         try entityBuilder.lastProperty(id: {{ entity.lastPropertyId.id }}, uid: {{ entity.lastPropertyId.uid }})

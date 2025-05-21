@@ -7,6 +7,7 @@ disabled_rules: # rule identifiers to exclude from running
   - conditional_binding_cascade
   - large_tuple
   - todo
+  - trailing_whitespace # For ObjectBox: Xcode adds them by default on empty lines, removes them on others
 
 opt_in_rules: # some rules are only opt-in
   # - force_unwrapping # For ObjectBox

@@ -1,7 +1,11 @@
 # ObjectBox Swift Generator changelog
 
+## 2.1.0
+
+- Support `externalType` and `externalName` annotations.
+
 ## 2.0.0
-                         
+
 - Integrate changes up to Sourcery 2.2.6.
 - Support Xcode 16 projects with buildable folders.
 

@@ -50,6 +50,8 @@ public enum IdSync {
         var flags: UInt32?
         var relationTarget: String? // dbName or if not explicitly specified, name of Swift class
         var relationTargetUnresolved: String? // Name of Swift class
+        var externalName: String?
+        var externalType: UInt16?
 
         private enum CodingKeys: String, CodingKey {
             case id
@@ -58,15 +60,19 @@ public enum IdSync {
             case type
             case flags
             case relationTarget
+            case externalName
+            case externalType
         }
 
-        init(name: String, id: IdUid, indexId: IdUid?, relationTargetUnresolved: String?, type: UInt16, flags: UInt32) {
+        init(name: String, id: IdUid, indexId: IdUid?, relationTargetUnresolved: String?, type: UInt16, flags: UInt32, externalName: String?, externalType: UInt16?) {
             self.id = id
             self.name = name
             self.indexId = indexId
             self.relationTargetUnresolved = relationTargetUnresolved
             self.type = type != 0 ? type : nil
             self.flags = flags != 0 ? flags : nil
+            self.externalName = externalName
+            self.externalType = externalType
         }
 
         func contains(uid: Int64) -> Bool {
@@ -81,16 +87,22 @@ public enum IdSync {
         var id = IdUid()
         var name = ""
         var targetId: IdUid?
+        var externalName: String?
+        var externalType: UInt16?
 
         private enum CodingKeys: String, CodingKey {
             case id
             case name
             case targetId
+            case externalName
+            case externalType
         }
 
-        init(name: String, id: IdUid) {
+        init(name: String, id: IdUid, externalName: String?, externalType: UInt16?) {
             self.name = name
             self.id = id
+            self.externalName = externalName
+            self.externalType = externalType
         }
 
         func contains(uid: Int64) -> Bool {
@@ -112,6 +124,7 @@ public enum IdSync {
         var properties: [Property]?
         var relations: [Relation]?
         var isEntitySubclass = false
+        var externalName: String?
 
         private enum CodingKeys: String, CodingKey {
             case id
@@ -120,9 +133,10 @@ public enum IdSync {
             case lastPropertyId
             case properties
             case relations
+            case externalName
         }
 
-        init(name: String, id: IdUid, flags: UInt32, properties: [Property], relations: [Relation], lastPropertyId: IdUid, isEntitySubclass: Bool) {
+        init(name: String, id: IdUid, flags: UInt32, properties: [Property], relations: [Relation], lastPropertyId: IdUid, isEntitySubclass: Bool, externalName: String?) {
             self.id = id
             self.name = name
             self.flags = flags
@@ -130,6 +144,7 @@ public enum IdSync {
             self.relations = relations
             self.lastPropertyId = lastPropertyId
             self.isEntitySubclass = isEntitySubclass
+            self.externalName = externalName
         }
 
         func contains(uid: Int64) -> Bool {
@@ -765,7 +780,7 @@ public enum IdSync {
 
             let entity = Entity(name: entityName, id: sourceId, flags: schemaEntity.flags.rawValue,
                     properties: properties, relations: relations, lastPropertyId: lastPropertyId,
-                    isEntitySubclass: schemaEntity.isEntitySubclass)
+                    isEntitySubclass: schemaEntity.isEntitySubclass, externalName: schemaEntity.externalName)
 
             schemaEntity.modelUid = entity.id.uid
             schemaEntity.modelId = entity.id.id
@@ -859,8 +874,8 @@ public enum IdSync {
 
             let property = Property(name: schemaProperty.name, id: sourceId, indexId: sourceIndexId,
                                     relationTargetUnresolved: relationTargetUnresolved,
-                                    type: schemaProperty.propertyType.rawValue, flags: schemaProperty.propertyFlags.rawValue)
-
+                                    type: schemaProperty.propertyType.rawValue, flags: schemaProperty.propertyFlags.rawValue,
+                                    externalName: schemaProperty.externalName, externalType: schemaProperty.externalType)
             schemaProperty.modelId = property.id
             schemaProperty.modelIndexId = property.indexId
 
@@ -921,7 +936,7 @@ public enum IdSync {
                 sourceId = try lastRelationId.incId(uid: newUid(relationUid))
             }
 
-            let relation = Relation(name: name, id: sourceId)
+            let relation = Relation(name: name, id: sourceId, externalName: schemaRelation.externalName, externalType: schemaRelation.externalType)
             if let existingEntity = existingEntity {
                 appendOrUpdate(relation, inPossiblyNilArray: &existingEntity.relations)
             }
