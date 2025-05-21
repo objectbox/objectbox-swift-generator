@@ -69,13 +69,10 @@ public enum PropertyType: UInt16 {
 
 /// External property types for integration with external systems (e.g., other databases).
 /// Numeric values start at 100 to avoid overlaps with ObjectBox's PropertyType.
-public enum ExternalPropertyType: UInt16 {
-    /// Not a real type: represents uninitialized state and can be used for forward compatibility.
-    case unknown = 0
+public enum ExternalPropertyType: UInt16, CaseIterable {
     /// Representing type: ByteVector
     /// Encoding: 1:1 binary representation, little endian (16 bytes)
     case int128 = 100
-    case reserved1 = 101
     /// UUID (Universally Unique Identifier) as defined by RFC 9562.
     /// ObjectBox uses the UUIDv7 scheme (timestamp + random) to create new UUIDs.
     /// UUIDv7 is a good choice for database keys as it's mostly sequential and encodes a timestamp.
@@ -126,18 +123,10 @@ public enum ExternalPropertyType: UInt16 {
     /// For MongoDB, this is very flexible and allows (nested) objects, arrays, primitives, etc.
     /// Representing type: String
     case jsonToNative = 112
-    case reserved6 = 113
-    case reserved7 = 114
-    case reserved8 = 115
     /// A vector (array) of Int128 values.
     case int128Vector = 116
-    case reserved9 = 117
     /// A vector (array) of Uuid values.
     case uuidVector = 118
-    case reserved10 = 119
-    case reserved11 = 120
-    case reserved12 = 121
-    case reserved13 = 122
     /// The 12-byte ObjectId type in MongoDB.
     /// Representing type: ByteVector
     /// Encoding: 1:1 binary representation (12 bytes)
@@ -156,7 +145,7 @@ public enum ExternalPropertyType: UInt16 {
     case mongoRegex = 127
 
     public static var max: ExternalPropertyType { return .mongoRegex }
-    public static var min: ExternalPropertyType { return .unknown }
+    public static var min: ExternalPropertyType { return .int128 }
 }
 
 ///  Bit-flags defining the behavior of properties.

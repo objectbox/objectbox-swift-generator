@@ -329,49 +329,27 @@ public enum ObjectBoxGenerator {
         return .unknown
     }
 
-    private static func mapExternalType(_ externalTypeStr: String) -> ExternalPropertyType? {
-        switch externalTypeStr {
-            case "int238":
-                return ExternalPropertyType.int128
-            case "uuid":
-                return ExternalPropertyType.uuid
-            case "decimal128":
-                return ExternalPropertyType.decimal128
-            case "uuidString":
-                return ExternalPropertyType.uuidString
-            case "uuidV4":
-                return ExternalPropertyType.uuidV4
-            case "uuidV4String":
-                return ExternalPropertyType.uuidV4String
-            case "flexMap":
-                return ExternalPropertyType.flexMap
-            case "flexVector":
-                return ExternalPropertyType.flexVector
-            case "json":
-                return ExternalPropertyType.json
-            case "bson":
-                return ExternalPropertyType.bson
-            case "javaScript":
-                return ExternalPropertyType.javaScript
-            case "jsonToNative":
-                return ExternalPropertyType.jsonToNative
-            case "int128Vector":
-                return ExternalPropertyType.int128Vector
-            case "uuidVector":
-                return ExternalPropertyType.uuidVector
-            case "mongoId":
-                return ExternalPropertyType.mongoId
-            case "mongoIdVector":
-                return ExternalPropertyType.mongoIdVector
-            case "mongoTimestamp":
-                return ExternalPropertyType.mongoTimestamp
-            case "mongoBinary":
-                return ExternalPropertyType.mongoBinary
-            case "mongoRegex":
-                return ExternalPropertyType.mongoRegex
-            default:
-                return nil
+    /// If it exists, returns the value of the externalType annotation mapped to the type constant. Otherwise nil.
+    ///
+    /// If the type is not supported, throws and suggests supported values.
+    private static func parseExternalType(_ propertyVar: SourceryVariable) throws -> ExternalPropertyType? {
+        if let externalTypeStr = propertyVar.annotations["externalType"] as? String {
+            let externalTypeOrNil = ExternalPropertyType.allCases.first { "\($0)" == externalTypeStr }
+            if externalTypeOrNil != nil {
+                return externalTypeOrNil
+            } else {
+                let supportedTypes = ExternalPropertyType.allCases
+                    .map({ "\($0)" })
+                    .joined(separator: ", ")
+                throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "externalType '\(externalTypeStr)' not supported, should be one of \(supportedTypes)")
+            }
         }
+        return nil
+    }
+    
+    /// If it exists, returns the value of the externalName annotation. Otherwise nil.
+    private static func parseExternalName(_ propertyVar: SourceryVariable) -> String? {
+        return propertyVar.annotations["externalName"] as? String
     }
 
     static func extractConvertAnnotation(_ annotation: Any?) -> [String: String]? {
@@ -409,17 +387,8 @@ public enum ObjectBoxGenerator {
             } else {
                 // backlinkProperty is null, meaning, this
                 // ToMany relation is standalone
-                if let externalTypeStr = propertyVar.annotations["externalType"] as? String {
-                    let mappedExternalType = mapExternalType(externalTypeStr)
-                    if let externalType = mappedExternalType {
-                        relation.externalType = externalType.rawValue
-                    } else {
-                        throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "Invalid externalType: \(externalTypeStr)")
-                    }
-                }
-                if let externalName = propertyVar.annotations["externalName"] as? String {
-                    relation.externalName = externalName
-                }
+                relation.externalType = try parseExternalType(propertyVar)?.rawValue
+                relation.externalName = parseExternalName(propertyVar)
             }
             tmRelation = relation
             schemaEntity.toManyRelations.append(relation)
@@ -533,7 +502,9 @@ public enum ObjectBoxGenerator {
 
         try processPropertyHnswIndexAnnotation(propertyVar, schemaProperty)
 
-        try processPropertyExternalTypeAndNameAnnotation(propertyVar, schemaProperty)
+        // External type and name
+        schemaProperty.externalType = try parseExternalType(propertyVar)?.rawValue
+        schemaProperty.externalName = parseExternalName(propertyVar)
 
         if let objectIdAnnotationValue = propertyVar.annotations["id"] {
             if let existingIdProperty = schemaEntity.idProperty {
@@ -704,18 +675,6 @@ public enum ObjectBoxGenerator {
         schemaProperty.propertyFlags.append(.indexed)
 
         schemaProperty.hnswParams = try SchemaHnswParams.fromAnnotation(propertyVar: propertyVar, hnswAnnotation: hnswAnnotation)
-    }
-
-    static func processPropertyExternalTypeAndNameAnnotation(_ propertyVar: SourceryVariable, _ schemaProperty: SchemaProperty) throws {
-        let externalTypeAnnotation = propertyVar.annotations["externalType"]
-        if let externalTypeStr = externalTypeAnnotation as? String {
-            schemaProperty.externalType = mapExternalType(externalTypeStr)?.rawValue
-        }
-
-        let externalNameAnnotation = propertyVar.annotations["externalName"]
-        if let externalName = externalNameAnnotation as? String {
-            schemaProperty.externalName = externalName
-        }
     }
 
     static func processEntityType(_ entityType: Type, entityBased isEntityBased: Bool, enums: [String: TypeName], into schemaData: Schema) throws {
