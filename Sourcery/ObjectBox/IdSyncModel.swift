@@ -522,7 +522,7 @@ public enum IdSync {
 //            let encoder = JSONEncoder()
 //            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 //            let jsonData = try encoder.encode(model)
-            let encoder = PrettyJSON()
+            let encoder = ModelJsonWriter()
             let jsonData = encoder.encode(model)
             if FileManager.default.fileExists(atPath: jsonFile.path) {
                 let backupData = try? Data(contentsOf: jsonFile)

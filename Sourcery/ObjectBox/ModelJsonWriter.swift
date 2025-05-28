@@ -6,7 +6,8 @@ internal func escapeName(_ string: String) -> String {
     return string.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"").replacingOccurrences(of: "\n", with: "\\n").replacingOccurrences(of: "\r", with: "\\r")
 }
 
-class PrettyJSON {
+/// Writes the model to JSON format in the style that ObjectBox uses on other platforms.
+class ModelJsonWriter {
     struct KeyValue {
         var key: String
         var value: String
