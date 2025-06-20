@@ -129,15 +129,15 @@ public class Sourcery {
                 projects.forEach { project in
                     project.targets.forEach { target in
                         guard let projectTarget = project.file.target(named: target.name) else { return }
-                        
-                        var files: [Path] = project.file.sourceFilesPaths(target: projectTarget, sourceRoot: project.root)
+                        let files: Set<Path> = Set(project.file.sourceFilesPaths(target: projectTarget, sourceRoot: project.root))
                         // For ObjectBox: for Xcode 16 projects with buildable folders sourceFilesPaths returns no
                         // source files, in that case use the new fileSystemSynchronizedGroups of a target to get them
                         // (see sourceFilesPathsForXcodeFolder helper method).
-                        if files.isEmpty {
-                            files = project.file.sourceFilesPathsForXcodeFolder(target: projectTarget, sourceRoot: project.root)
-                        }
-                        files.forEach { file in
+                        let filesInXcodeFolders: Set<Path> = Set(project.file.sourceFilesPathsForXcodeFolder(target: projectTarget, sourceRoot: project.root))
+                        // Combine files from groups and buildable folders: an Xcode project may use both at the same
+                        // time (for example the setup.rb for CocoaPods adds generated files to the "generated" group).
+                        let sourceFiles: [Path] = Array(files.union(filesInXcodeFolders))
+                        sourceFiles.forEach { file in
                             guard !project.exclude.contains(file) else { return }
                             paths.append(file)
                             modules.append(target.module)
