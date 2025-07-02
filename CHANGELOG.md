@@ -1,5 +1,9 @@
 # ObjectBox Swift Generator changelog
 
+## 2.1.2
+
+- To prepare for Swift 6 language mode and data race safety, make generated entity info and binding immutable.
+
 ## 2.1.1
 
 - Support Xcode 16 projects that use groups as well as buildable folders.
