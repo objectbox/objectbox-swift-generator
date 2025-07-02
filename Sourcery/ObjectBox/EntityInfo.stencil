@@ -20,9 +20,9 @@ extension {{ entity.className }}: ObjectBox.EntityInspectable {
     {{ visibility }} typealias EntityBindingType = {{ entity.className }}Binding
 
     /// Generated metadata used by ObjectBox to persist the entity.
-    {{ visibility }} static var entityInfo = ObjectBox.EntityInfo(name: "{{ entity.name }}", id: {{ entity.modelId }})
+    {{ visibility }} static let entityInfo = ObjectBox.EntityInfo(name: "{{ entity.name }}", id: {{ entity.modelId }})
 
-    {{ visibility }} static var entityBinding = EntityBindingType()
+    {{ visibility }} static let entityBinding = EntityBindingType()
 
     fileprivate static func buildEntity(modelBuilder: ObjectBox.ModelBuilder) throws {
         let entityBuilder = try modelBuilder.entityBuilder(for: {{ entity.className }}.self, id: {{ entity.modelId }}, uid: {{ entity.modelUid }})
@@ -115,7 +115,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
 
 
 /// Generated service type to handle persisting and reading entity data. Exposed through `{{ entity.className }}.EntityBindingType`.
-{{ visibility }} class {{ entity.className }}Binding: ObjectBox.EntityBinding {
+{{ visibility }} final class {{ entity.className }}Binding: ObjectBox.EntityBinding, Sendable {
     {{ visibility }} typealias EntityType = {{ entity.className }}
     {{ visibility }} typealias IdType = {{ entity.idProperty.swiftType }}
 
