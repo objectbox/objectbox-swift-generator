@@ -57,11 +57,11 @@ class ModelJsonWriter {
                     output.append("\n      \"lastPropertyId\": \"\(lastPropertyId.toString())\",")
                 }
                 output.append("\n      \"name\": \"\(escapeName(entity.name))\",")
-                if entity.flags ?? 0 != 0 {
-                    output.append("\n      \"flags\": \(entity.flags!),")
-                }
                 if let externalName = entity.externalName {
                     output.append("\n      \"externalName\": \"\(externalName)\",")
+                }
+                if entity.flags ?? 0 != 0 {
+                    output.append("\n      \"flags\": \(entity.flags!),")
                 }
                 output.append("\n      \"properties\": [")
 
@@ -73,16 +73,10 @@ class ModelJsonWriter {
                     for property in entityProperties {
                         var keyValues = [KeyValue]()
                         output.append("\n        {\n")
-                        if let flags = property.flags {
-                            keyValues.append(KeyValue(key: "flags", value: "\(flags)", quoteValue: false))
-                        }
                         keyValues.append(KeyValue(key: "id", value: property.id.toString(), quoteValue: true))
+                        keyValues.append(KeyValue(key: "name", value: property.name, quoteValue: true))
                         if let indexId = property.indexId {
                             keyValues.append(KeyValue(key: "indexId", value: indexId.toString(), quoteValue: true))
-                        }
-                        keyValues.append(KeyValue(key: "name", value: property.name, quoteValue: true))
-                        if let relationTarget = property.relationTarget {
-                            keyValues.append(KeyValue(key: "relationTarget", value: relationTarget, quoteValue: true))
                         }
                         if let type = property.type {
                             keyValues.append(KeyValue(key: "type", value: "\(type)", quoteValue: false))
@@ -92,6 +86,12 @@ class ModelJsonWriter {
                         }
                         if let externalName = property.externalName {
                             keyValues.append(KeyValue(key: "externalName", value: externalName, quoteValue: true))
+                        }
+                        if let flags = property.flags {
+                            keyValues.append(KeyValue(key: "flags", value: "\(flags)", quoteValue: false))
+                        }
+                        if let relationTarget = property.relationTarget {
+                            keyValues.append(KeyValue(key: "relationTarget", value: relationTarget, quoteValue: true))
                         }
                         propertiesToGo -= 1
                         output.append("\(keyValueString(keyValues, indent: 10))\n        }\(propertiesToGo > 0 ? "," : "")")
@@ -109,14 +109,14 @@ class ModelJsonWriter {
                         output.append("\n        {")
                         keyValues.append(KeyValue(key: "id", value: relation.id.toString(), quoteValue: true))
                         keyValues.append(KeyValue(key: "name", value: relation.name, quoteValue: true))
-                        if let targetId = relation.targetId {
-                            keyValues.append(KeyValue(key: "targetId", value: targetId.toString(), quoteValue: true))
-                        }
                         if let externalType = relation.externalType {
                             keyValues.append(KeyValue(key: "externalType", value: "\(externalType)", quoteValue: false))
                         }
                         if let externalName = relation.externalName {
                             keyValues.append(KeyValue(key: "externalName", value: externalName, quoteValue: true))
+                        }
+                        if let targetId = relation.targetId {
+                            keyValues.append(KeyValue(key: "targetId", value: targetId.toString(), quoteValue: true))
                         }
                         relationsToGo -= 1
                         output.append("\n\(keyValueString(keyValues, indent: 10))\n        }\(relationsToGo > 0 ? "," : "")")
