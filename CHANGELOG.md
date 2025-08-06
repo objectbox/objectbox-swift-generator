@@ -1,5 +1,9 @@
 # ObjectBox Swift Generator changelog
 
+## 2.1.3
+
+- In model JSON files, change key order to match other generators. This will make it easier to compare model files.
+
 ## 2.1.2
 
 - To prepare for Swift 6 language mode and data race safety, make generated entity info and binding immutable.
