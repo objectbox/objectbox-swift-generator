@@ -1,4 +1,4 @@
-//  Copyright © 2018-2019 ObjectBox. All rights reserved.
+//  Copyright © 2018-2025 ObjectBox. All rights reserved.
 
 import Foundation
 
@@ -81,11 +81,11 @@ class ModelJsonWriter {
                         if let type = property.type {
                             keyValues.append(KeyValue(key: "type", value: "\(type)", quoteValue: false))
                         }
-                        if let externalType = property.externalType {
-                            keyValues.append(KeyValue(key: "externalType", value: "\(externalType)", quoteValue: false))
-                        }
                         if let externalName = property.externalName {
                             keyValues.append(KeyValue(key: "externalName", value: externalName, quoteValue: true))
+                        }
+                        if let externalType = property.externalType {
+                            keyValues.append(KeyValue(key: "externalType", value: "\(externalType)", quoteValue: false))
                         }
                         if let flags = property.flags {
                             keyValues.append(KeyValue(key: "flags", value: "\(flags)", quoteValue: false))
@@ -109,11 +109,11 @@ class ModelJsonWriter {
                         output.append("\n        {")
                         keyValues.append(KeyValue(key: "id", value: relation.id.toString(), quoteValue: true))
                         keyValues.append(KeyValue(key: "name", value: relation.name, quoteValue: true))
-                        if let externalType = relation.externalType {
-                            keyValues.append(KeyValue(key: "externalType", value: "\(externalType)", quoteValue: false))
-                        }
                         if let externalName = relation.externalName {
                             keyValues.append(KeyValue(key: "externalName", value: externalName, quoteValue: true))
+                        }
+                        if let externalType = relation.externalType {
+                            keyValues.append(KeyValue(key: "externalType", value: "\(externalType)", quoteValue: false))
                         }
                         if let targetId = relation.targetId {
                             keyValues.append(KeyValue(key: "targetId", value: targetId.toString(), quoteValue: true))
