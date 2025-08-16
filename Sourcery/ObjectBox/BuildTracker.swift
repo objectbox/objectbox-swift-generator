@@ -73,7 +73,14 @@ class BuildTracker {
         }
 
         // Actually send them off:
-        let task = URLSession.shared.dataTask(with: URL(string: urlString)!) { _, response, error in
+        let config = URLSessionConfiguration.default
+        let timeOutSeconds = 5.0
+        config.timeoutIntervalForRequest = timeOutSeconds
+        config.timeoutIntervalForResource = timeOutSeconds
+        let session = URLSession(configuration: config)
+        let semaphore = DispatchSemaphore(value: 0)
+        let task = session.dataTask(with: URL(string: urlString)!) { _, response, error in
+            defer { semaphore.signal() }
             guard error == nil, let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 if self.verbose {
                     print("warning: Couldn't send statistics: \((response as? HTTPURLResponse)?.statusCode ?? 0) "
@@ -92,6 +99,13 @@ class BuildTracker {
             }
         }
         task.resume()
+        let result = semaphore.wait(timeout: .now() + timeOutSeconds + 5)
+        if result == .timedOut {
+            task.cancel()
+            if self.verbose {
+                print("warning: Statistics request timed out after \(timeOutSeconds) seconds.")
+            }
+        }
     }
 
     /// Return a string identifying any CI system we may be running under right now.
