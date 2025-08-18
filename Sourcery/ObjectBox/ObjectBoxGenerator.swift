@@ -793,6 +793,13 @@ public enum ObjectBoxGenerator {
         try buildTracker.startup()
     }
 
+    public static func waitForSendingStatisticsTask() {
+        let waitResult = buildTracker.sendStatisticsSemaphore?.wait(timeout: .now() + 3)
+        if waitResult == .timedOut {
+            printError("Failed to send statistics, request timed out.")
+        }
+    }
+
     /* Process the parsed syntax tree, possibly annotating or otherwise
         extending it. */
     // Called by Sourcery class, which is called by main

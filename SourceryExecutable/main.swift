@@ -156,6 +156,8 @@ func runCLI() {
             let configuration: Configuration
             let yamlPath: Path = configPath.isDirectory ? configPath + ".sourcery.yml" : configPath
 
+            try ObjectBoxGenerator.startup(statistics: !noStatistics, verbose: verboseLogging)
+
             if projectPath.exists {
                 if ObjectBoxGenerator.modelJsonFile == nil {
                     ObjectBoxGenerator.modelJsonFile = projectPath.parent().absolute().url.appendingPathComponent("model.json")
@@ -239,7 +241,7 @@ func runCLI() {
                 Log.info("Done.")
             }
 
-            try ObjectBoxGenerator.startup(statistics: !noStatistics, verbose: verboseLogging)
+            ObjectBoxGenerator.waitForSendingStatisticsTask()
         } catch {
             ObjectBoxGenerator.printError(error)
             exit(.other)
