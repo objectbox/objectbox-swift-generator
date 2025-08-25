@@ -82,7 +82,8 @@ var targets: [Target] = [
             "Templates",
             "ObjectBox/EntityInfo.stencil"
         ],
-        plugins: [.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")]
+        // Broken due to bug in Swift 6.1 tools (https://github.com/swiftlang/swift-package-manager/pull/8440)
+        // plugins: [.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")]
     ),
     .target(
         name: "SourceryRuntime",

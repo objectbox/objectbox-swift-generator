@@ -11,7 +11,11 @@ This is a Swift Package.
 
 Recent changes are documented in the [changelog](/CHANGELOG.md).
 
-[SwiftLint](https://github.com/realm/SwiftLint) is added as a build tool plugin (it runs as part of build).
+[SwiftLint](https://github.com/realm/SwiftLint) is added using the [SwiftLintPlugins repository](https://github.com/SimplyDanny/SwiftLintPlugins).
+
+Run its command plugin manually using Xcode (right-click the package, select "SwiftLintCommandPlugin") or run the command shown below.
+
+(Note: due to a [bug in Swift 6.1](https://github.com/swiftlang/swift-package-manager/pull/8440) can't use the build plugin.)
 
 ```shell
 # Build
