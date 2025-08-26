@@ -152,7 +152,12 @@ class BuildTracker {
             let nowSeconds = Date().timeIntervalSinceReferenceDate
             let timeSinceLastSend = nowSeconds - lastSuccessfulSendTime
             let minTimeBetweenSends = BuildTracker.hourInSeconds * BuildTracker.hoursBetweenBuildMessages
-            guard timeSinceLastSend > minTimeBetweenSends else { return }
+            guard timeSinceLastSend > minTimeBetweenSends else {
+                if verbose {
+                    print("Not sending statistics event, sent one recently")
+                }
+                return
+            }
 
             // Give installation a unique identifier so we can get a rough idea of how many people use this:
             let existingInstallationID = UserDefaults.standard.string(forKey: BuildTracker.installationIDDefaultsKey)
