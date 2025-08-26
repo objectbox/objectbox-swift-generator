@@ -794,10 +794,7 @@ public enum ObjectBoxGenerator {
     }
 
     public static func waitForSendingStatisticsTask() {
-        let sent = buildTracker.waitForSendEvent()
-        if !sent {
-            printError("Failed to send statistics, request timed out.")
-        }
+        buildTracker.waitForSendEvent()
     }
 
     /* Process the parsed syntax tree, possibly annotating or otherwise

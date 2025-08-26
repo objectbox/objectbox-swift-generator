@@ -90,7 +90,6 @@ class BuildTracker {
                     semaphore.signal()
                 }
             }
-            print("Response from sending statistics: \(String(describing: response))")
             guard error == nil, let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 if self.verbose {
                     print("warning: Couldn't send statistics: \((response as? HTTPURLResponse)?.statusCode ?? 0) "
@@ -111,10 +110,15 @@ class BuildTracker {
         task.resume()
     }
     
-    /// Waits on the last sendEvent call, returns false if timed out while waiting.
-    func waitForSendEvent() -> Bool {
-        let waitResult = sendStatisticsSemaphore?.wait(timeout: .now() + .seconds(BuildTracker.timeoutSecondsWaitOnSendEvent))
-        return waitResult != .timedOut
+    /// Waits briefly for the last sendEvent call.
+    func waitForSendEvent() {
+        let waitResult = sendStatisticsSemaphore?
+            .wait(timeout: .now() + .seconds(BuildTracker.timeoutSecondsWaitOnSendEvent))
+        if waitResult == .timedOut {
+            if verbose {
+                print("error: failed to send statistics, request took too long")
+            }
+        }
     }
 
     /// If a CI environment is detected, returns a string identifying it.
