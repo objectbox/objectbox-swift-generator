@@ -117,27 +117,35 @@ class BuildTracker {
         return waitResult != .timedOut
     }
 
-    /// Return a string identifying any CI system we may be running under right now.
+    /// If a CI environment is detected, returns a string identifying it.
     func checkCI() -> String? {
-        // https://docs.travis-ci.com/user/environment-variables/#Default-Environment-Variables
-        if ProcessInfo.processInfo.environment["CI"] == "true" {
+        // https://docs.github.com/en/actions/reference/workflows-and-actions/variables
+        if ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] != nil {
+            return "GH"
+        }
+        // https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+        if ProcessInfo.processInfo.environment["TRAVIS"] != nil {
             return "T"
-            // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-below
-        } else if ProcessInfo.processInfo.environment["JENKINS_URL"] != nil {
+        }
+        // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-below
+        if ProcessInfo.processInfo.environment["JENKINS_URL"] != nil {
             return "J"
-            // https://docs.gitlab.com/ee/ci/variables/
-        } else if ProcessInfo.processInfo.environment["GITLAB_CI"] != nil {
+        }
+        // https://docs.gitlab.com/ee/ci/variables/
+        if ProcessInfo.processInfo.environment["GITLAB_CI"] != nil {
             return "GL"
-            // https://circleci.com/docs/1.0/environment-variables/
-        } else if ProcessInfo.processInfo.environment["CIRCLECI"] != nil {
+        }
+        // https://circleci.com/docs/1.0/environment-variables/
+        if ProcessInfo.processInfo.environment["CIRCLECI"] != nil {
             return "C"
-            // https://documentation.codeship.com/pro/builds-and-configuration/steps/
-        } else if ProcessInfo.processInfo.environment["CI_NAME"]?.lowercased() == "codeship" {
+        }
+        // https://documentation.codeship.com/pro/builds-and-configuration/steps/
+        if ProcessInfo.processInfo.environment["CI_NAME"]?.lowercased() == "codeship" {
             return "CS"
-        } else if ProcessInfo.processInfo.environment["CI"] != nil {
+        }
+        if ProcessInfo.processInfo.environment["CI"] == "true" {
             return "Other"
         }
-
         return nil
     }
 
