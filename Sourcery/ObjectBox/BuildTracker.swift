@@ -7,6 +7,7 @@ import Foundation
 class BuildTracker {
     var verbose: Bool = false
     var statistics: Bool = true
+    private var sendStatisticsSemaphore: DispatchSemaphore?
 
     /// Key under which we save the UUID identifying this installation as a string to preferences.
     private static let installationIDDefaultsKey = "OBXInstallationID"
@@ -24,6 +25,11 @@ class BuildTracker {
     private static let baseURL = "https://api.mixpanel.com/track/?data="
     /// Token to include with all events:
     private static let eventToken = "46d62a7c8def175e66900b3da09d698c"
+    
+    /// How long to wait on the event HTTP call (and delay the generator from finishing). Should be larger than connect and read timeout.
+    private static let timeoutSecondsWaitOnSendEvent = 2
+    /// Note: used for connect and read timeout, should be less than ``timeoutSecondsWaitOnSendEvent``.
+    private static let timeoutSecondsHttpClient = 1.0
 
     /// Build a dictionary containing the information we send to Mixpanel, ready to be serialized to JSON.
     /// https://developer.mixpanel.com/docs/http#section-tracking-events
@@ -73,7 +79,17 @@ class BuildTracker {
         }
 
         // Actually send them off:
-        let task = URLSession.shared.dataTask(with: URL(string: urlString)!) { _, response, error in
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = BuildTracker.timeoutSecondsHttpClient
+        config.timeoutIntervalForResource = BuildTracker.timeoutSecondsHttpClient
+        let session = URLSession(configuration: config)
+        sendStatisticsSemaphore = DispatchSemaphore(value: 0)
+        let task = session.dataTask(with: URL(string: urlString)!) { _, response, error in
+            defer {
+                if let semaphore = self.sendStatisticsSemaphore {
+                    semaphore.signal()
+                }
+            }
             guard error == nil, let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 if self.verbose {
                     print("warning: Couldn't send statistics: \((response as? HTTPURLResponse)?.statusCode ?? 0) "
@@ -93,28 +109,47 @@ class BuildTracker {
         }
         task.resume()
     }
+    
+    /// Waits briefly for the last sendEvent call.
+    func waitForSendEvent() {
+        let waitResult = sendStatisticsSemaphore?
+            .wait(timeout: .now() + .seconds(BuildTracker.timeoutSecondsWaitOnSendEvent))
+        if waitResult == .timedOut {
+            if verbose {
+                print("error: failed to send statistics, request took too long")
+            }
+        }
+    }
 
-    /// Return a string identifying any CI system we may be running under right now.
+    /// If a CI environment is detected, returns a string identifying it.
     func checkCI() -> String? {
-        // https://docs.travis-ci.com/user/environment-variables/#Default-Environment-Variables
-        if ProcessInfo.processInfo.environment["CI"] == "true" {
+        // https://docs.github.com/en/actions/reference/workflows-and-actions/variables
+        if ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] != nil {
+            return "GH"
+        }
+        // https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+        if ProcessInfo.processInfo.environment["TRAVIS"] != nil {
             return "T"
-            // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-below
-        } else if ProcessInfo.processInfo.environment["JENKINS_URL"] != nil {
+        }
+        // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-below
+        if ProcessInfo.processInfo.environment["JENKINS_URL"] != nil {
             return "J"
-            // https://docs.gitlab.com/ee/ci/variables/
-        } else if ProcessInfo.processInfo.environment["GITLAB_CI"] != nil {
+        }
+        // https://docs.gitlab.com/ee/ci/variables/
+        if ProcessInfo.processInfo.environment["GITLAB_CI"] != nil {
             return "GL"
-            // https://circleci.com/docs/1.0/environment-variables/
-        } else if ProcessInfo.processInfo.environment["CIRCLECI"] != nil {
+        }
+        // https://circleci.com/docs/1.0/environment-variables/
+        if ProcessInfo.processInfo.environment["CIRCLECI"] != nil {
             return "C"
-            // https://documentation.codeship.com/pro/builds-and-configuration/steps/
-        } else if ProcessInfo.processInfo.environment["CI_NAME"]?.lowercased() == "codeship" {
+        }
+        // https://documentation.codeship.com/pro/builds-and-configuration/steps/
+        if ProcessInfo.processInfo.environment["CI_NAME"]?.lowercased() == "codeship" {
             return "CS"
-        } else if ProcessInfo.processInfo.environment["CI"] != nil {
+        }
+        if ProcessInfo.processInfo.environment["CI"] == "true" {
             return "Other"
         }
-
         return nil
     }
 
@@ -129,7 +164,12 @@ class BuildTracker {
             let nowSeconds = Date().timeIntervalSinceReferenceDate
             let timeSinceLastSend = nowSeconds - lastSuccessfulSendTime
             let minTimeBetweenSends = BuildTracker.hourInSeconds * BuildTracker.hoursBetweenBuildMessages
-            guard timeSinceLastSend > minTimeBetweenSends else { return }
+            guard timeSinceLastSend > minTimeBetweenSends else {
+                if verbose {
+                    print("Not sending statistics event, sent one recently")
+                }
+                return
+            }
 
             // Give installation a unique identifier so we can get a rough idea of how many people use this:
             let existingInstallationID = UserDefaults.standard.string(forKey: BuildTracker.installationIDDefaultsKey)

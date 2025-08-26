@@ -793,6 +793,10 @@ public enum ObjectBoxGenerator {
         try buildTracker.startup()
     }
 
+    public static func waitForSendingStatisticsTask() {
+        buildTracker.waitForSendEvent()
+    }
+
     /* Process the parsed syntax tree, possibly annotating or otherwise
         extending it. */
     // Called by Sourcery class, which is called by main
