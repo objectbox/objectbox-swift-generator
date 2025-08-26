@@ -5,11 +5,11 @@ set -e
 MY_DIR=$( cd "$(dirname "$0")" ; pwd -P )
 cd "$MY_DIR"
 
-if [ "${1:-}" == "--dirty" ]; then
-    dirty=true
+if [ "${1:-}" == "--debug" ]; then
+    debug=true
     shift
 else
-    dirty=false
+    debug=false
 fi
 
 if [ "$TERM" == "" ] || [ "$TERM" == "dumb" ] ; then
@@ -44,14 +44,17 @@ BUILD_DIR="${MY_DIR}/.build"
 # Directory where Sourcery binary (for testing in Swift repo) and MacOS application archive (for releases) are stored
 OUTPUT_DIR="${MY_DIR}/bin"
 
-if [ "$dirty" != true ] ; then
+if [ "$debug" != true ] ; then
   echo "Cleaning build artifacts"
   swift package clean
-fi
 
-# Build using swift build in release configuration
-swift build --disable-sandbox -c release --arch arm64 --build-path $BUILD_DIR
-swift build --disable-sandbox -c release --arch x86_64 --build-path $BUILD_DIR
+  echo "Build using swift build in release configuration"
+  swift build --disable-sandbox -c release --arch arm64 --build-path $BUILD_DIR
+  swift build --disable-sandbox -c release --arch x86_64 --build-path $BUILD_DIR
+else
+  echo "Warning: not cleaning, building debug binary only for this architecture"
+  swift build --disable-sandbox --build-path $BUILD_DIR
+fi
 
 echo "Create a bare-minimum macOS app for the Swift library"
 # This is included directly in a Carthage and CocoaPods release, and packaged up below in an extra artifact for a
@@ -61,11 +64,17 @@ mkdir -p "${OUTPUT_DIR}/Sourcery.app/Contents/Resources"
 cp "${MY_DIR}/Sourcery/ObjectBox/EntityInfo.stencil" "${OUTPUT_DIR}/Sourcery.app/Contents/Resources/"
 cp "${MY_DIR}/SourceryExecutable/Info.plist" "${OUTPUT_DIR}/Sourcery.app/Contents/"
 
-# Create universal binary using lipo
-lipo -create \
-  "${BUILD_DIR}/arm64-apple-macosx/release/Sourcery" \
-  "${BUILD_DIR}/x86_64-apple-macosx/release/Sourcery" \
-  -output "${OUTPUT_DIR}/Sourcery.app/Contents/MacOS/Sourcery"
+if [ "$debug" != true ] ; then
+  echo "Create universal binary using lipo"
+  lipo -create \
+    "${BUILD_DIR}/arm64-apple-macosx/release/Sourcery" \
+    "${BUILD_DIR}/x86_64-apple-macosx/release/Sourcery" \
+    -output "${OUTPUT_DIR}/Sourcery.app/Contents/MacOS/Sourcery"
+else
+  echo "Just copying the single debug executable"
+  swiftBinPath=$(swift build --show-bin-path --build-path $BUILD_DIR)
+  cp "${swiftBinPath}/Sourcery" "${OUTPUT_DIR}/Sourcery.app/Contents/MacOS/Sourcery"
+fi
 
 echo "Create an artifact bundle for the Swift library Swift package"
 # The Swift Package Manager requires an artifact bundle, not an app.
