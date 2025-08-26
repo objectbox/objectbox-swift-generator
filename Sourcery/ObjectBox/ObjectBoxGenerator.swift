@@ -794,8 +794,8 @@ public enum ObjectBoxGenerator {
     }
 
     public static func waitForSendingStatisticsTask() {
-        let waitResult = buildTracker.sendStatisticsSemaphore?.wait(timeout: .now() + 3)
-        if waitResult == .timedOut {
+        let sent = buildTracker.waitForSendEvent()
+        if !sent {
             printError("Failed to send statistics, request timed out.")
         }
     }

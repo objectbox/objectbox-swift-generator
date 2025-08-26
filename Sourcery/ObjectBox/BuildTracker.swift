@@ -7,7 +7,7 @@ import Foundation
 class BuildTracker {
     var verbose: Bool = false
     var statistics: Bool = true
-    public var sendStatisticsSemaphore: DispatchSemaphore?
+    private var sendStatisticsSemaphore: DispatchSemaphore?
 
     /// Key under which we save the UUID identifying this installation as a string to preferences.
     private static let installationIDDefaultsKey = "OBXInstallationID"
@@ -25,6 +25,11 @@ class BuildTracker {
     private static let baseURL = "https://api.mixpanel.com/track/?data="
     /// Token to include with all events:
     private static let eventToken = "46d62a7c8def175e66900b3da09d698c"
+    
+    /// How long to wait on the event HTTP call (and delay the generator from finishing). Should be larger than connect and read timeout.
+    private static let timeoutSecondsWaitOnSendEvent = 2
+    /// Note: used for connect and read timeout, should be less than ``timeoutSecondsWaitOnSendEvent``.
+    private static let timeoutSecondsHttpClient = 1.0
 
     /// Build a dictionary containing the information we send to Mixpanel, ready to be serialized to JSON.
     /// https://developer.mixpanel.com/docs/http#section-tracking-events
@@ -75,9 +80,8 @@ class BuildTracker {
 
         // Actually send them off:
         let config = URLSessionConfiguration.default
-        let timeOutSeconds = 5.0
-        config.timeoutIntervalForRequest = timeOutSeconds
-        config.timeoutIntervalForResource = timeOutSeconds
+        config.timeoutIntervalForRequest = BuildTracker.timeoutSecondsHttpClient
+        config.timeoutIntervalForResource = BuildTracker.timeoutSecondsHttpClient
         let session = URLSession(configuration: config)
         sendStatisticsSemaphore = DispatchSemaphore(value: 0)
         let task = session.dataTask(with: URL(string: urlString)!) { _, response, error in
@@ -105,6 +109,12 @@ class BuildTracker {
             }
         }
         task.resume()
+    }
+    
+    /// Waits on the last sendEvent call, returns false if timed out while waiting.
+    func waitForSendEvent() -> Bool {
+        let waitResult = sendStatisticsSemaphore?.wait(timeout: .now() + .seconds(BuildTracker.timeoutSecondsWaitOnSendEvent))
+        return waitResult != .timedOut
     }
 
     /// Return a string identifying any CI system we may be running under right now.
