@@ -49,11 +49,12 @@ if [ "$debug" != true ] ; then
   swift package clean
 
   echo "Build using swift build in release configuration"
-  swift build --disable-sandbox -c release --arch arm64 --build-path $BUILD_DIR
-  swift build --disable-sandbox -c release --arch x86_64 --build-path $BUILD_DIR
+  # Note: not using the undocumented --arch option
+  swift build -c release --triple arm64-apple-macosx --build-path $BUILD_DIR
+  swift build -c release --triple x86_64-apple-macosx --build-path $BUILD_DIR
 else
   echo "Warning: not cleaning, building debug binary only for this architecture"
-  swift build --disable-sandbox --build-path $BUILD_DIR
+  swift build --build-path $BUILD_DIR
 fi
 
 echo "Create a bare-minimum macOS app for the Swift library"
