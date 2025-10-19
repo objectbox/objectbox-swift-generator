@@ -145,6 +145,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
     var isStringType: Bool = false
     var isByteVectorType: Bool = false
     var isScalarVectorType: Bool = false
+    var isStringVectorType: Bool = false
     var isDateNanoType: Bool = false
     /// If this is a to-one relation property.
     ///
@@ -216,6 +217,7 @@ class SchemaProperty: Hashable, Equatable, CustomDebugStringConvertible {
         if isUnsignedType { moreData += "\n\t\t\tisUnsignedType = \(isUnsignedType)" }
         if isByteVectorType { moreData += "\n\t\t\tisByteVectorType = \(isByteVectorType)" }
         if isScalarVectorType { moreData += "\n\t\t\tisScalarVectorType = \(isScalarVectorType)" }
+        if isStringVectorType { moreData += "\n\t\t\tisStringVectorType = \(isStringVectorType)" }
         if hnswParams != nil { moreData += "\n\t\t\thnswParams = \(hnswParams!)" }
         if externalType != nil { moreData += "\n\t\t\texternalType = \(externalType!)"}
         if externalName != nil { moreData += "\n\t\t\texternalName = \(externalName!)"}

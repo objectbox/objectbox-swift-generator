@@ -58,7 +58,7 @@ extension {{ entity.className }} {
     ///
     /// You may want to use this in queries to specify fetch conditions, for example:
     ///
-    ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.swiftName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.swiftName }}.startsWith("X"){% elif prop.swiftType == "Bool" %}{{ entity.className }}.{{ prop.swiftName }} == true{% elif prop.isScalarVectorType %}{{ entity.className }}.{{ prop.swiftName }}.isNotNil(){% else %}{{ entity.className }}.{{ prop.swiftName }} > 1234{% endif %} }
+    ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.swiftName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.swiftName }}.startsWith("X"){% elif prop.swiftType == "Bool" %}{{ entity.className }}.{{ prop.swiftName }} == true{% elif prop.isScalarVectorType %}{{ entity.className }}.{{ prop.swiftName }}.isNotNil(){% elif prop.isStringVectorType %}{{ entity.className }}.{{ prop.swiftName }}.containsElement(element: "<value>", caseSensitive: true){% else %}{{ entity.className }}.{{ prop.swiftName }} > 1234{% endif %} }
     
     {{ visibility }} static var {{ prop.swiftName }}: Property<{{entity.className}}, {{prop.swiftType}}, {% if prop.isObjectId %}{{prop.swiftType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.swiftType}}, {% if prop.isObjectId %}{{prop.swiftType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
     
@@ -95,7 +95,7 @@ extension ObjectBox.Property where E == {{ entity.className }} {
     ///
     /// You may want to use this in queries to specify fetch conditions, for example:
     ///
-    ///     box.query { {% if prop.isObjectId %}.{{ prop.swiftName }} == myId{% elif prop.isStringType %}.{{ prop.swiftName }}.startsWith("X"){% elif prop.swiftType == "Bool" %}.{{ prop.swiftName }} == true{% elif prop.isScalarVectorType %}.{{ prop.swiftName }}.isNotNil(){% else %}.{{ prop.swiftName }} > 1234{% endif %} }
+    ///     box.query { {% if prop.isObjectId %}.{{ prop.swiftName }} == myId{% elif prop.isStringType %}.{{ prop.swiftName }}.startsWith("X"){% elif prop.swiftType == "Bool" %}.{{ prop.swiftName }} == true{% elif prop.isScalarVectorType %}.{{ prop.swiftName }}.isNotNil(){% elif prop.isStringVectorType %}.{{ prop.swiftName }}.containsElement(element: "<value>", caseSensitive: true){% else %}.{{ prop.swiftName }} > 1234{% endif %} }
 
     {{ visibility }} static var {{ prop.swiftName }}: Property<{{entity.className}}, {{prop.swiftType}}, {% if prop.isObjectId %}{{prop.swiftType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.swiftType}}, {% if prop.isObjectId %}{{prop.swiftType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
 
@@ -146,18 +146,20 @@ extension ObjectBox.Property where E == {{ entity.className }} {
         let propertyOffset_{{ prop.swiftName }} = propertyCollector.prepare(bytes: {{ prop.unConversionPrefix }}entity.{{ prop.swiftName }}{{ prop.unConversionSuffix }})
         {% elif prop.isScalarVectorType %}
         let propertyOffset_{{ prop.swiftName }} = propertyCollector.prepare(values: {{ prop.unConversionPrefix }}entity.{{ prop.swiftName }}{{ prop.unConversionSuffix }})
+        {% elif prop.isStringVectorType %}
+        let propertyOffset_{{ prop.swiftName }} = propertyCollector.prepare(values: {{ prop.unConversionPrefix }}entity.{{ prop.swiftName }}{{ prop.unConversionSuffix }})
         {% endif %}
         {% endfor %}
 
         propertyCollector.collect(id, at: 2 + 2 * {{ entity.idProperty.modelId.id }})
-        {% for prop in entity.properties where not prop.isStringType and not prop.isByteVectorType and not prop.isScalarVectorType and not prop.isObjectId and not prop.isRelation and not prop.isToManyRelation %}
+        {% for prop in entity.properties where not prop.isStringType and not prop.isByteVectorType and not prop.isStringVectorType and not prop.isScalarVectorType and not prop.isObjectId and not prop.isRelation and not prop.isToManyRelation %}
         propertyCollector.collect{% if prop.isDateNanoType %}Nanos{% endif %}({{ prop.unConversionPrefix }}entity.{{ prop.swiftName }}{{ prop.unConversionSuffix }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endfor %}
         {% for prop in entity.properties where prop.isRelation %}
         try propertyCollector.collect(entity.{{ prop.swiftName }}, at: 2 + 2 * {{ prop.modelId.id }}, store: store)
         {% endfor %}
         {% for prop in entity.properties %}
-        {% if prop.isStringType or prop.isByteVectorType or prop.isScalarVectorType %}
+        {% if prop.isStringType or prop.isByteVectorType or prop.isStringVectorType or prop.isScalarVectorType %}
         propertyCollector.collect(dataOffset: propertyOffset_{{ prop.swiftName }}, at: 2 + 2 * {{ prop.modelId.id }})
         {% endif %}
         {% endfor %}

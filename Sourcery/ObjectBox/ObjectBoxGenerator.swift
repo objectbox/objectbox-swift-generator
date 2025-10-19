@@ -40,6 +40,7 @@ public enum ObjectBoxGenerator {
     static let builtInStringTypes = ["String", "NSString"]
     static let builtInByteVectorTypes = ["Data", "NSData", "[UInt8]", "Array<UInt8>"]
     static let builtInScalarVectorTypes = ["[Float]"]
+    static let builtInStringVectorTypes = ["[String]"]
     static let typeMappings: [String: PropertyType] = [
         "Bool": .bool,
         "UInt8": .byte,
@@ -64,7 +65,8 @@ public enum ObjectBoxGenerator {
         "NSData": .byteVector,
         "Array<UInt8>": .byteVector,
         "[UInt8]": .byteVector,
-        "[Float]": .floatVector
+        "[Float]": .floatVector,
+        "[String]": .stringVector
     ]
     private static let validPropertyAnnotationNames = Set([
         "backlink",
@@ -266,6 +268,18 @@ public enum ObjectBoxGenerator {
         return isScalarVectorType
     }
 
+    static func isStringVectorTypeOrAlias(_ typeName: TypeName?) -> Bool {
+        var isStringVectorType: Bool = false
+        var currPropType = typeName
+
+        while let currPropTypeReadOnly = currPropType, !isStringVectorType {
+            isStringVectorType = builtInStringVectorTypes.firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
+            currPropType = currPropTypeReadOnly.actualTypeName
+        }
+
+        return isStringVectorType
+    }
+
     static func mapPropertyType(_ propertyVar: SourceryVariable) -> PropertyType {
         let defaultType = mapDefaultPropertyType(propertyVar.typeName)
         if !propertyVar.annotations.isEmpty {
@@ -419,6 +433,8 @@ public enum ObjectBoxGenerator {
             } else {
                 propertyType = "FloatArrayPropertyType"
             }
+        } else if typeNameNotNull == "[String]" {
+            propertyType = "StringArrayPropertyType"
         } else {
             // Use Swift type
             propertyType = fullTypeName
@@ -435,6 +451,7 @@ public enum ObjectBoxGenerator {
         schemaProperty.isStringType = isStringTypeOrAlias(propertyVar.typeName)
         schemaProperty.isByteVectorType = isByteVectorTypeOrAlias(propertyVar.typeName)
         schemaProperty.isScalarVectorType = isScalarVectorTypeOrAlias(propertyVar.typeName)
+        schemaProperty.isStringVectorType = isStringVectorTypeOrAlias(propertyVar.typeName)
         schemaProperty.isRelation = isToOneRelation
         schemaProperty.isToManyRelation = isToManyRelation
         schemaProperty.toManyRelation = tmRelation
@@ -495,6 +512,7 @@ public enum ObjectBoxGenerator {
             schemaProperty.isStringType = builtInStringTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isByteVectorType = builtInByteVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
             schemaProperty.isScalarVectorType = builtInScalarVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
+            schemaProperty.isStringVectorType = builtInStringVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
         }
         schemaProperty.initPropertyType() // depends on propertyType (PropertyType) and unwrappedPropertyType
 
