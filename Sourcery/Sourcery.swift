@@ -55,7 +55,7 @@ public class Sourcery {
         cacheBasePath: Path? = nil,
         buildPath: Path? = nil,
         prune: Bool = false,
-        serialParse: Bool = false, 
+        serialParse: Bool = false,
         hideVersionHeader: Bool = true,
         arguments: [String: NSObject] = [:],
         logConfiguration: Log.Configuration? = nil,
@@ -541,9 +541,11 @@ extension Sourcery {
                 let (result, sourceChanges) = try generate(template, forParsingResult: parsingResult, outputPath: output.path, forceParse: forceParse, baseIndentation: baseIndentation)
                 updateRanges(in: &parsingResult, sourceChanges: sourceChanges)
                 let outputPath = output.path + generatedPath(for: template.sourcePath)
-                try self.output(type: .template(template.sourcePath.string), result: result, to: outputPath)
+                let isEmptyFile = result.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                let willSkipResultFile = prune && isEmptyFile
+                try self.output(type: .template(template.sourcePath.string), result: result, to: outputPath, isEmptyFile: isEmptyFile)
 
-                if !isDryRun, let linkTo = output.linkTo {
+                if !isDryRun, !willSkipResultFile, let linkTo = output.linkTo {
                     linkTo.targets.forEach { target in
                         link(outputPath, to: linkTo, target: target)
                     }
@@ -558,9 +560,11 @@ extension Sourcery {
                 return (result, parsingResult)
             }
             parsingResult = result.parsingResult
-            try self.output(type: .allTemplates, result: result.contents, to: output.path)
+            let isEmptyFile = result.contents.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let willSkipResultFile = prune && isEmptyFile
+            try self.output(type: .allTemplates, result: result.contents, to: output.path, isEmptyFile: isEmptyFile)
 
-            if !isDryRun, let linkTo = output.linkTo {
+            if !isDryRun, !willSkipResultFile, let linkTo = output.linkTo {
                 linkTo.targets.forEach { target in
                     link(output.path, to: linkTo, target: target)
                 }
@@ -568,9 +572,12 @@ extension Sourcery {
         }
 
         try fileAnnotatedContent.forEach { (path, contents) in
-            try self.output(type: .path(path.string), result: contents.joined(separator: "\n"), to: path)
+            let result = contents.joined(separator: "\n")
+            let isEmptyFile = result.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let willSkipResultFile = prune && isEmptyFile
+            try self.output(type: .path(path.string), result: result, to: path, isEmptyFile: isEmptyFile)
 
-            if !isDryRun, let linkTo = output.linkTo {
+            if !isDryRun, !willSkipResultFile, let linkTo = output.linkTo {
                 linkTo.targets.forEach { target in
                     link(path, to: linkTo, target: target)
                 }
@@ -649,10 +656,9 @@ extension Sourcery {
         }
     }
 
-    private func output(type: DryOutputType, result: String, to outputPath: Path) throws {
-        let resultIsEmpty = result.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    private func output(type: DryOutputType, result: consuming String, to outputPath: Path, isEmptyFile: Bool) throws {
         var result = result
-        if !resultIsEmpty, outputPath.extension == "swift" {
+        if !isEmptyFile, outputPath.extension == "swift" {
             result = generationHeader + result
         }
 
@@ -663,7 +669,7 @@ extension Sourcery {
             return
         }
 
-        if !resultIsEmpty {
+        if !isEmptyFile {
             if !outputPath.parent().exists {
                 try outputPath.parent().mkpath()
             }
