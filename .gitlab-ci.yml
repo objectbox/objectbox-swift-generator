@@ -9,7 +9,7 @@ stages:
 
 build:
   stage: build
-  tags: [mac, x64, xcode]
+  tags: [mac, arm64, xcode]
   script:
     - swift build
     - swift package plugin --allow-writing-to-package-directory swiftlint
@@ -20,7 +20,7 @@ build:
 build_artifacts:
   stage: build
   needs: [ 'build' ]
-  tags: [mac, x64, xcode]
+  tags: [mac, arm64, xcode]
   rules:
     # Only if explicitly enabled and previous stage did not fail
     - if: $BUILD_ARTIFACTS == "true"
