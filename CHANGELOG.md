@@ -1,5 +1,9 @@
 # ObjectBox Swift Generator changelog
 
+## Next release
+
+- Integrate changes up to Sourcery 2.3.0. Notably supports building the generator with Xcode 26.
+
 ## 2.1.3
 
 - In model JSON files, change key order to match other generators. This will make it easier to compare model files.

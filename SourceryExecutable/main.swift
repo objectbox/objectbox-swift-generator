@@ -236,7 +236,9 @@ func runCLI() {
                 parseDocumentation: configuration.parseDocumentation,
                 baseIndentation: configuration.baseIndentation) {
                 RunLoop.current.run()
-                _ = keepAlive
+                withExtendedLifetime(keepAlive) {
+                    _ = keepAlive
+                }
             } else {
                 Log.info("Done.")
             }
