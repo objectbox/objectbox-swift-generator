@@ -58,7 +58,7 @@ extension {{ entity.className }} {
     ///
     /// You may want to use this in queries to specify fetch conditions, for example:
     ///
-    ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.swiftName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.swiftName }}.startsWith("X"){% elif prop.swiftType == "Bool" %}{{ entity.className }}.{{ prop.swiftName }} == true{% elif prop.isScalarVectorType %}{{ entity.className }}.{{ prop.swiftName }}.isNotNil(){% elif prop.isStringVectorType %}{{ entity.className }}.{{ prop.swiftName }}.containsElement(element: "<value>", caseSensitive: true){% else %}{{ entity.className }}.{{ prop.swiftName }} > 1234{% endif %} }
+    ///     box.query { {% if prop.isObjectId %}{{ entity.className }}.{{ prop.swiftName }} == myId{% elif prop.isStringType %}{{ entity.className }}.{{ prop.swiftName }}.startsWith("X"){% elif prop.swiftType == "Bool" %}{{ entity.className }}.{{ prop.swiftName }} == true{% elif prop.isScalarVectorType %}{{ entity.className }}.{{ prop.swiftName }}.isGreaterThan(value){% elif prop.isStringVectorType %}{{ entity.className }}.{{ prop.swiftName }}.containsElement(element: "<value>", caseSensitive: true){% else %}{{ entity.className }}.{{ prop.swiftName }} > 1234{% endif %} }
     
     {{ visibility }} static var {{ prop.swiftName }}: Property<{{entity.className}}, {{prop.swiftType}}, {% if prop.isObjectId %}{{prop.swiftType}}{% else %}Void{% endif %}> { return Property<{{entity.className}}, {{prop.swiftType}}, {% if prop.isObjectId %}{{prop.swiftType}}{% else %}Void{% endif %}>(propertyId: {{ prop.modelId.id }}, isPrimaryKey: {{ prop.isObjectId }}) }
     

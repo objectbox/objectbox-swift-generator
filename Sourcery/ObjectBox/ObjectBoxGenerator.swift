@@ -39,8 +39,8 @@ public enum ObjectBoxGenerator {
     static let builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
     static let builtInStringTypes = ["String", "NSString"]
     static let builtInByteVectorTypes = ["Data", "NSData", "[UInt8]", "Array<UInt8>"]
-    static let builtInScalarVectorTypes = ["[Float]"]
     static let builtInStringVectorTypes = ["[String]"]
+    static let builtInScalarVectorTypes = ["[Float]", "[Int32]", "[Int64]"]
     static let typeMappings: [String: PropertyType] = [
         "Bool": .bool,
         "UInt8": .byte,
@@ -66,7 +66,9 @@ public enum ObjectBoxGenerator {
         "Array<UInt8>": .byteVector,
         "[UInt8]": .byteVector,
         "[Float]": .floatVector,
-        "[String]": .stringVector
+        "[String]": .stringVector,
+        "[Int32]": .intVector,
+        "[Int64]": .longVector,
     ]
     private static let validPropertyAnnotationNames = Set([
         "backlink",
@@ -435,6 +437,10 @@ public enum ObjectBoxGenerator {
             }
         } else if typeNameNotNull == "[String]" {
             propertyType = "StringArrayPropertyType"
+        } else if typeNameNotNull == "[Int32]" {
+            propertyType = "Int32ArrayPropertyType"
+        } else if typeNameNotNull == "[Int64]" {
+            propertyType = "Int64ArrayPropertyType"
         } else {
             // Use Swift type
             propertyType = fullTypeName

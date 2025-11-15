@@ -3,6 +3,7 @@
 ## Next release
 
 - Support string vectors (`[String]`).
+- Support integer vectors (`[Int32]` and `[Int64]`).
 - Integrate changes up to Sourcery 2.3.0. Notably supports building the generator with Xcode 26.
 
 ## 2.1.3
