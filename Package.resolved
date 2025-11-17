@@ -95,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-argument-parser.git",
       "state" : {
-        "revision" : "8f4d2753f0e4778c76d5f05ad16c74f707390531",
-        "version" : "1.2.3"
+        "revision" : "cdd0ef3755280949551dc26dee5de9ddeda89f54",
+        "version" : "1.6.2"
       }
     },
     {
@@ -138,28 +138,28 @@
     {
       "identity" : "swift-driver",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/art-divin/swift-driver.git",
+      "location" : "https://github.com/swiftlang/swift-driver.git",
       "state" : {
-        "revision" : "1c07ced84c1dfc1f9c3253dcbaa216fc9c76ee25",
-        "version" : "1.0.1"
+        "branch" : "release/6.2",
+        "revision" : "4f9ac6084672815d409fe518d64f534474d0db92"
       }
     },
     {
       "identity" : "swift-llbuild",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/art-divin/swift-llbuild.git",
+      "location" : "https://github.com/swiftlang/swift-llbuild.git",
       "state" : {
-        "revision" : "783aec21649a6c47d1a8314db4144bdceb11df30",
-        "version" : "1.0.0"
+        "branch" : "release/6.2",
+        "revision" : "073dff55529d7c4ecbd615ab5f5ac52ae5b380da"
       }
     },
     {
       "identity" : "swift-package-manager",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/art-divin/swift-package-manager.git",
+      "location" : "https://github.com/swiftlang/swift-package-manager.git",
       "state" : {
-        "revision" : "7df9321541e544d711dd93f5b97dd4e8bf7e100e",
-        "version" : "1.0.8"
+        "branch" : "swift-6.2-RELEASE",
+        "revision" : "3cf1cb66ebde00dab737dcebad96218e2017530d"
       }
     },
     {
@@ -167,8 +167,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlang/swift-syntax.git",
       "state" : {
-        "revision" : "0687f71944021d616d34d922343dcef086855920",
-        "version" : "600.0.1"
+        "branch" : "release/6.2",
+        "revision" : "5a87516fc3dddbd23cb76358eb489915ee86b444"
       }
     },
     {
@@ -181,12 +181,21 @@
       }
     },
     {
+      "identity" : "swift-toolchain-sqlite",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-toolchain-sqlite",
+      "state" : {
+        "revision" : "b45b80b943e88db3cb8ddea798fa3fa9912375ff",
+        "version" : "1.0.7"
+      }
+    },
+    {
       "identity" : "swift-tools-support-core",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/art-divin/swift-tools-support-core.git",
+      "location" : "https://github.com/swiftlang/swift-tools-support-core.git",
       "state" : {
-        "revision" : "930e82e5ae2432c71fe05f440b5d778285270bdb",
-        "version" : "1.0.0"
+        "branch" : "release/6.2",
+        "revision" : "5a993c8848487c934d53ffceef8e1cad0a241dc1"
       }
     },
     {
