@@ -1,6 +1,6 @@
 # ObjectBox Swift Generator changelog
 
-## Next release
+## 2.2.0
 
 - Support string vectors (`[String]`).
 - Support integer vectors (`[Int32]` and `[Int64]`).
