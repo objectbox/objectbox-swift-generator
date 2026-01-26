@@ -25,6 +25,9 @@ build_artifacts:
     # Only if explicitly enabled and previous stage did not fail
     - if: $BUILD_ARTIFACTS == "true"
       when: on_success
+    # Always build for dev and main branches
+    - if: $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main"
+      when: on_success
     - when: never # Otherwise, never
   script:
     - ./_build.command
