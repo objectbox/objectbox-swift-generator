@@ -123,6 +123,8 @@ public enum ObjectBoxGenerator {
         annotationType,
         annotationUid,
         annotationUnique,
+        "syncClock",
+        "syncPrecedence"
     ])
     private static let validTypeAnnotationNames = Set([
         annotationEntity,
@@ -779,6 +781,8 @@ public enum ObjectBoxGenerator {
 
         try processPropertyHnswIndexAnnotation(propertyVar, schemaProperty)
 
+        try processPropertySyncAnnotations(propertyVar, schemaProperty, entityType, schemaProperties)
+
         // External type and name
         schemaProperty.externalType = try parseExternalType(propertyVar)?
             .rawValue
@@ -1028,6 +1032,42 @@ public enum ObjectBoxGenerator {
         )
     }
 
+    static func processPropertySyncAnnotations(_ propertyVar: SourceryVariable, _ schemaProperty: SchemaProperty, _ entityType: Type, _ schemaProperties: [SchemaProperty]) throws {
+        let hasSyncClockAnnotation = propertyVar.annotations["syncClock"] != nil
+        let hasSyncPrecedenceAnnotation = propertyVar.annotations["syncPrecedence"] != nil
+
+        if !hasSyncClockAnnotation && !hasSyncPrecedenceAnnotation {
+            return
+        }
+
+        // only one of the annotations is allowed
+        if hasSyncClockAnnotation && hasSyncPrecedenceAnnotation {
+            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "syncClock and syncPrecedence annotations cannot be used on the same property.")
+        }
+
+        let annotationName = hasSyncClockAnnotation ? "syncClock" : "syncPrecedence"
+
+        // annotations are only allowed on 'sync' entities
+        if entityType.annotations["sync"] == nil {
+            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "@\(annotationName) annotation can only be used on a property of a synced entity (annotated with 'sync')")
+        }
+
+        // must be a 64-bit integer property
+        if schemaProperty.propertyType != PropertyType.long {
+            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "@\(annotationName) annotation can only be used on int (OBXPropertyType.Long) properties")
+        }
+
+        let flag = hasSyncClockAnnotation ? PropertyFlags.syncClock : PropertyFlags.syncPrecedence
+        var existingProps = schemaProperties.filter({ prop in prop.propertyFlags.contains(flag) })
+        if !existingProps.isEmpty {
+            existingProps.append(schemaProperty)
+            let names = existingProps.map({ prop in prop.name })
+            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "Only one property can be annotated with @\(annotationName), but found multiple: \(names)")
+        }
+
+        schemaProperty.propertyFlags.append(flag)
+    }
+
     static func processEntityType(
         _ entityType: Type,
         entityBased isEntityBased: Bool,
@@ -1183,6 +1223,8 @@ public enum ObjectBoxGenerator {
             if schemaProperty.propertyFlags.contains(.unsigned) {
                 flagsList.append(".unsigned")
             }
+            if schemaProperty.propertyFlags.contains(.syncClock) { flagsList.append(".syncClock") }
+            if schemaProperty.propertyFlags.contains(.syncPrecedence) { flagsList.append(".syncPrecedence") }
             if !flagsList.isEmpty {
                 schemaProperty.flagsList =
                     ", flags: [\(flagsList.joined(separator: ", "))]"
