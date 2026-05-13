@@ -102,6 +102,8 @@ public enum ObjectBoxGenerator {
     private static let annotationIndex = "index"
     private static let annotationName = "name"
     private static let annotationSync = "sync"
+    private static let annotationSyncClock = "syncClock"
+    private static let annotationSyncPrecedence = "syncPrecedence"
     private static let annotationTransient = "transient"
     private static let annotationType = "type"
     private static let annotationUid = "uid"
@@ -119,12 +121,12 @@ public enum ObjectBoxGenerator {
         annotationIdCompanion,
         annotationIndex,
         annotationName,
+        annotationSyncClock,
+        annotationSyncPrecedence,
         annotationTransient,
         annotationType,
         annotationUid,
         annotationUnique,
-        "syncClock",
-        "syncPrecedence"
     ])
     private static let validTypeAnnotationNames = Set([
         annotationEntity,
@@ -781,7 +783,12 @@ public enum ObjectBoxGenerator {
 
         try processPropertyHnswIndexAnnotation(propertyVar, schemaProperty)
 
-        try processPropertySyncAnnotations(propertyVar, schemaProperty, entityType, schemaProperties)
+        try processPropertySyncAnnotations(
+            propertyVar,
+            schemaProperty,
+            schemaEntity,
+            schemaProperties
+        )
 
         // External type and name
         schemaProperty.externalType = try parseExternalType(propertyVar)?
@@ -1032,37 +1039,68 @@ public enum ObjectBoxGenerator {
         )
     }
 
-    static func processPropertySyncAnnotations(_ propertyVar: SourceryVariable, _ schemaProperty: SchemaProperty, _ entityType: Type, _ schemaProperties: [SchemaProperty]) throws {
-        let hasSyncClockAnnotation = propertyVar.annotations["syncClock"] != nil
-        let hasSyncPrecedenceAnnotation = propertyVar.annotations["syncPrecedence"] != nil
+    static func processPropertySyncAnnotations(
+        _ propertyVar: SourceryVariable,
+        _ schemaProperty: SchemaProperty,
+        _ schemaEntity: SchemaEntity,
+        _ schemaProperties: [SchemaProperty]
+    ) throws {
+        let hasSyncClock = propertyVar.annotations[annotationSyncClock] != nil
+        let hasSyncPrecedence =
+            propertyVar.annotations[annotationSyncPrecedence] != nil
 
-        if !hasSyncClockAnnotation && !hasSyncPrecedenceAnnotation {
+        if !hasSyncClock && !hasSyncPrecedence {
             return
         }
 
-        // only one of the annotations is allowed
-        if hasSyncClockAnnotation && hasSyncPrecedenceAnnotation {
-            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "syncClock and syncPrecedence annotations cannot be used on the same property.")
+        // Cannot have both on the same property
+        if hasSyncClock && hasSyncPrecedence {
+            throw Error.BadPropertyAnnotation(
+                property: propertyVar.description,
+                message:
+                    "\(annotationSyncClock) and \(annotationSyncPrecedence) cannot be used on the same property"
+            )
         }
 
-        let annotationName = hasSyncClockAnnotation ? "syncClock" : "syncPrecedence"
+        let annotationName =
+            hasSyncClock ? annotationSyncClock : annotationSyncPrecedence
 
-        // annotations are only allowed on 'sync' entities
-        if entityType.annotations["sync"] == nil {
-            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "@\(annotationName) annotation can only be used on a property of a synced entity (annotated with 'sync')")
+        // Must be on a synced entity
+        if !schemaEntity.flags.contains(.syncEnabled) {
+            throw Error.BadPropertyAnnotation(
+                property: propertyVar.description,
+                message:
+                    "\(annotationName) can only be used on a property of a synced entity (annotated with '\(annotationSync)')"
+            )
         }
 
-        // must be a 64-bit integer property
+        // Must be a 64-bit integer property
         if schemaProperty.propertyType != PropertyType.long {
-            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "@\(annotationName) annotation can only be used on int (OBXPropertyType.Long) properties")
+            throw Error.BadPropertyAnnotation(
+                property: propertyVar.description,
+                message:
+                    "\(annotationName) can only be used on Int64 (PropertyType.long) properties"
+            )
         }
 
-        let flag = hasSyncClockAnnotation ? PropertyFlags.syncClock : PropertyFlags.syncPrecedence
-        var existingProps = schemaProperties.filter({ prop in prop.propertyFlags.contains(flag) })
+        // Only one per entity
+        let flag =
+            hasSyncClock
+            ? PropertyFlags.syncClock : PropertyFlags.syncPrecedence
+        var existingProps = schemaProperties.filter({ prop in
+            prop.propertyFlags.contains(flag)
+        })
         if !existingProps.isEmpty {
             existingProps.append(schemaProperty)
-            let names = existingProps.map({ prop in prop.name })
-            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "Only one property can be annotated with @\(annotationName), but found multiple: \(names)")
+            let names =
+                existingProps
+                .map({ prop in prop.swiftName })
+                .joined(separator: ", ")
+            throw Error.BadPropertyAnnotation(
+                property: propertyVar.description,
+                message:
+                    "Entity '\(schemaEntity.className)': only one property can be annotated with \(annotationName), but found multiple: \(names)"
+            )
         }
 
         schemaProperty.propertyFlags.append(flag)
@@ -1214,6 +1252,12 @@ public enum ObjectBoxGenerator {
             if schemaProperty.propertyFlags.contains(.indexPartialSkipZero) {
                 flagsList.append(".indexPartialSkipZero")
             }
+            if schemaProperty.propertyFlags.contains(.syncClock) {
+                flagsList.append(".syncClock")
+            }
+            if schemaProperty.propertyFlags.contains(.syncPrecedence) {
+                flagsList.append(".syncPrecedence")
+            }
             if schemaProperty.propertyFlags.contains(.unique) {
                 flagsList.append(".unique")
             }
@@ -1223,8 +1267,6 @@ public enum ObjectBoxGenerator {
             if schemaProperty.propertyFlags.contains(.unsigned) {
                 flagsList.append(".unsigned")
             }
-            if schemaProperty.propertyFlags.contains(.syncClock) { flagsList.append(".syncClock") }
-            if schemaProperty.propertyFlags.contains(.syncPrecedence) { flagsList.append(".syncPrecedence") }
             if !flagsList.isEmpty {
                 schemaProperty.flagsList =
                     ", flags: [\(flagsList.joined(separator: ", "))]"
