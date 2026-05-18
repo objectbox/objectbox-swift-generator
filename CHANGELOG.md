@@ -1,6 +1,6 @@
 # ObjectBox Swift Generator changelog
 
-## Next release
+## 2.3.0
 
 - Support `syncClock` and `syncPrecedence` annotations.
 
