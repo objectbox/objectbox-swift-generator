@@ -89,46 +89,46 @@ public enum ObjectBoxGenerator {
     private static let annotationBacklink = "backlink"
     private static let annotationConvert = "convert"
     private static let annotationDateNano = "date-nano"
-    private static let annotationHnswIndex = "hnswIndex"
+    private static let annotationEntity = "entity"
+    private static let annotationEntityUppercase = "Entity"
+    private static let annotationExternalName = "externalName"
+    private static let annotationExternalType = "externalType"
     private static let annotationFlex = "flex"
-    private static let annotationName = "name"
+    private static let annotationHnswIndex = "hnswIndex"
     private static let annotationId = "id"
     private static let annotationIdCompanion = "id-companion"
     private static let annotationIndex = "index"
+    private static let annotationName = "name"
+    private static let annotationSync = "sync"
     private static let annotationTransient = "transient"
     private static let annotationType = "type"
     private static let annotationUid = "uid"
     private static let annotationUnique = "unique"
-    private static let annotationEntity = "entity"
-    private static let annotationEntityUppercase = "Entity"
-    private static let annotationSync = "sync"
-    private static let annotationExternalName = "externalName"
-    private static let annotationExternalType = "externalType"
 
     private static let validPropertyAnnotationNames = Set([
         annotationBacklink,
         annotationConvert,
         annotationDateNano,
-        annotationHnswIndex,
+        annotationExternalName,
+        annotationExternalType,
         annotationFlex,
-        annotationName,
+        annotationHnswIndex,
         annotationId,
         annotationIdCompanion,
         annotationIndex,
+        annotationName,
         annotationTransient,
         annotationType,
         annotationUid,
         annotationUnique,
-        annotationExternalName,
-        annotationExternalType,
     ])
     private static let validTypeAnnotationNames = Set([
         annotationEntity,
         annotationEntityUppercase,
+        annotationExternalName,
         annotationName,
         annotationSync,
         annotationUid,
-        annotationExternalName,
     ])
 
     // TODO why static?
