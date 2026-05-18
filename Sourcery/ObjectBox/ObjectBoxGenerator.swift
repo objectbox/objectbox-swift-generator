@@ -2,9 +2,9 @@
 
 import Foundation
 import PathKit
+import SourceryRuntime
 import Stencil
 import StencilSwiftKit
-import SourceryRuntime
 
 extension SourceryVariable {
     public override var description: String {
@@ -19,12 +19,19 @@ extension SourceryVariable {
 public enum ObjectBoxGenerator {
 
     enum Error: Swift.Error {
-        case DuplicateIdAnnotation(entity: String, found: String, existing: String)
+        case DuplicateIdAnnotation(
+            entity: String,
+            found: String,
+            existing: String
+        )
         case MissingIdOnEntity(entity: String)
         case AmbiguousIdOnEntity(entity: String, properties: [String])
         case MissingBacklinkOnToManyRelation(entity: String, relation: String)
         case convertAnnotationMissingType(name: String, entity: String)
-        case convertAnnotationMissingConverterOrDefault(name: String, entity: String)
+        case convertAnnotationMissingConverterOrDefault(
+            name: String,
+            entity: String
+        )
         case IllegalDictionaryElements(entity: String, message: String)
         case BadPropertyAnnotation(property: String, message: String)
     }
@@ -34,11 +41,19 @@ public enum ObjectBoxGenerator {
     public static var debugDataURL: URL?
     static var buildTracker = BuildTracker()
 
-    static let builtInTypes = ["Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double", "Date", "NSDate",
-                               "TimeInterval", "NSTimeInterval", "Data", "NSData", "Array<UInt8>", "[UInt8]"]
-    static let builtInUnsignedTypes = ["UInt8", "UInt16", "UInt32", "UInt64", "UInt"]
+    static let builtInTypes = [
+        "Bool", "Int8", "Int16", "Int32", "Int64", "Int", "Float", "Double",
+        "Date", "NSDate",
+        "TimeInterval", "NSTimeInterval", "Data", "NSData", "Array<UInt8>",
+        "[UInt8]",
+    ]
+    static let builtInUnsignedTypes = [
+        "UInt8", "UInt16", "UInt32", "UInt64", "UInt",
+    ]
     static let builtInStringTypes = ["String", "NSString"]
-    static let builtInByteVectorTypes = ["Data", "NSData", "[UInt8]", "Array<UInt8>"]
+    static let builtInByteVectorTypes = [
+        "Data", "NSData", "[UInt8]", "Array<UInt8>",
+    ]
     static let builtInStringVectorTypes = ["[String]"]
     static let builtInScalarVectorTypes = ["[Float]", "[Int32]", "[Int64]"]
     static let typeMappings: [String: PropertyType] = [
@@ -85,7 +100,7 @@ public enum ObjectBoxGenerator {
         "uid",
         "unique",
         "externalName",
-        "externalType"
+        "externalType",
     ])
     private static let validTypeAnnotationNames = Set([
         "entity",
@@ -93,7 +108,7 @@ public enum ObjectBoxGenerator {
         "name",
         "sync",
         "uid",
-        "externalName"
+        "externalName",
     ])
 
     // TODO why static?
@@ -106,97 +121,184 @@ public enum ObjectBoxGenerator {
         if let obxError = error as? IdSync.Error {
             switch obxError {
             case .IncompatibleVersion(let found, let expected):
-                Log.error("Model version \(expected) expected, but \(found) found.")
+                Log.error(
+                    "Model version \(expected) expected, but \(found) found."
+                )
             case .DuplicateEntityName(let name):
                 Log.error("More than one entity with name \(name) found.")
             case .DuplicateEntityID(let name, let id):
-                Log.error("More than one entity with ID \(id) found (\"\(name)\").")
+                Log.error(
+                    "More than one entity with ID \(id) found (\"\(name)\")."
+                )
             case .MissingLastEntityID:
                 Log.error("No lastEntityId entry in model JSON file.")
-            case .LastEntityIdUIDMismatch(let name, let id, let found, let expected):
-                Log.error("lastEntityId UID \(found) in model JSON does not actually match the highest entity ID found, \(expected). (\(name)/\(id))")
+            case .LastEntityIdUIDMismatch(
+                let name,
+                let id,
+                let found,
+                let expected
+            ):
+                Log.error(
+                    "lastEntityId UID \(found) in model JSON does not actually match the highest entity ID found, \(expected). (\(name)/\(id))"
+                )
             case .EntityIdGreaterThanLast(let name, let found, let last):
-                Log.error("Entity \(name) has an ID of \(found), which is higher than the model JSON's entry for the lastEntityId, \(last)")
+                Log.error(
+                    "Entity \(name) has an ID of \(found), which is higher than the model JSON's entry for the lastEntityId, \(last)"
+                )
             case .MissingLastPropertyID(let name):
-                Log.error("Entity \(name) has no lastPropertyId entry in the model JSON.")
+                Log.error(
+                    "Entity \(name) has no lastPropertyId entry in the model JSON."
+                )
             case .DuplicatePropertyID(let entity, let name, let id):
-                Log.error("The ID \(id) of property \(name) in entity \(entity) is already in use for another property.")
-            case .LastPropertyIdUIDMismatch(let entity, let name, let id, let found, let expected):
-                Log.error("The ID \(id) of last property \(name) in entity \(entity) should have UID \(expected), but actually has \(found).")
-            case .PropertyIdGreaterThanLast(let entity, let name, let found, let last):
-                Log.error("Property \(name) of entity \(entity) has an ID of \(found), which is higher than the model JSON's entry for that class's lastPropertyId, \(last)")
+                Log.error(
+                    "The ID \(id) of property \(name) in entity \(entity) is already in use for another property."
+                )
+            case .LastPropertyIdUIDMismatch(
+                let entity,
+                let name,
+                let id,
+                let found,
+                let expected
+            ):
+                Log.error(
+                    "The ID \(id) of last property \(name) in entity \(entity) should have UID \(expected), but actually has \(found)."
+                )
+            case .PropertyIdGreaterThanLast(
+                let entity,
+                let name,
+                let found,
+                let last
+            ):
+                Log.error(
+                    "Property \(name) of entity \(entity) has an ID of \(found), which is higher than the model JSON's entry for that class's lastPropertyId, \(last)"
+                )
             case .DuplicateUID(let uid):
-                Log.error("UID \(uid) exists twice in this model. Possibly as a code annotation and in the model JSON on different classes.")
+                Log.error(
+                    "UID \(uid) exists twice in this model. Possibly as a code annotation and in the model JSON on different classes."
+                )
             case .UIDOutOfRange(let uid):
-                Log.error("UID \(uid) is not within the valid range for UIDs (>= 0).")
+                Log.error(
+                    "UID \(uid) is not within the valid range for UIDs (>= 0)."
+                )
             case .OutOfUIDs:
                 Log.error("Could not generate a unique UID in reasonable time.")
             case .SyncMayOnlyBeCalledOnce:
                 Log.error("sync() may only be called once.")
             case .NonUniqueModelUID(let uid, let entity):
-                Log.error("UID \(uid) that entity \(entity) has is already in use for another entity.")
+                Log.error(
+                    "UID \(uid) that entity \(entity) has is already in use for another entity."
+                )
             case .NoSuchEntity(let entity):
                 Log.error("No entity with UID \(entity) exists.")
             case .PrintUid(let entity, let found, let unique):
-                Log.error("No UID given for entity \(entity). You can do the following:\n" +
-                        "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n" +
-                        "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)")
+                Log.error(
+                    "No UID given for entity \(entity). You can do the following:\n"
+                        + "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n"
+                        + "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)"
+                )
             case .UIDTagNeedsValue(let entity):
                 Log.error("No UID given for entity \(entity).")
             case .CandidateUIDNotInPool(let uid):
                 Log.error("Candidate UID \(uid) was not in new UID pool.")
             case .NonUniqueModelPropertyUID(let uid, let entity, let property):
-                Log.error("UID \(uid) of property \(property) of entity \(entity) is already in use.")
+                Log.error(
+                    "UID \(uid) of property \(property) of entity \(entity) is already in use."
+                )
             case .NoSuchProperty(let entity, let uid):
                 Log.error("No property with UID \(uid) in entity \(entity).")
             case .MultiplePropertiesForUID(let uids, let names):
-                Log.error("Multiple matches between UIDs: \(uids.map { String($0) }.joined(separator: ", ")) and properties: \(names.joined(separator: ", ")).")
-            case .PrintPropertyUid(let entity, let property, let found, let unique):
-                Log.error("No UID given for property \(property) of entity \(entity). You can do the following:\n" +
-                        "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n" +
-                        "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)")
+                Log.error(
+                    "Multiple matches between UIDs: \(uids.map { String($0) }.joined(separator: ", ")) and properties: \(names.joined(separator: ", "))."
+                )
+            case .PrintPropertyUid(
+                let entity,
+                let property,
+                let found,
+                let unique
+            ):
+                Log.error(
+                    "No UID given for property \(property) of entity \(entity). You can do the following:\n"
+                        + "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n"
+                        + "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)"
+                )
             case .PropertyUIDTagNeedsValue(let entity, let property):
-                Log.error("Property \(property) of entity \(entity) has an \"// objectbox: uid n\" annotation missing the number n.")
+                Log.error(
+                    "Property \(property) of entity \(entity) has an \"// objectbox: uid n\" annotation missing the number n."
+                )
             case .PropertyCollision(let entity, let new, let old):
-                Log.error("Properties \(new) and \(old) of entity \(entity) both map to the same property of the same class.")
+                Log.error(
+                    "Properties \(new) and \(old) of entity \(entity) both map to the same property of the same class."
+                )
             case .NonUniqueModelRelationUID(let uid, let entity, let relation):
-                Log.error("UID \(uid) of relation \(relation) of entity \(entity) is already being used by another relation.")
+                Log.error(
+                    "UID \(uid) of relation \(relation) of entity \(entity) is already being used by another relation."
+                )
             case .NoSuchRelation(let entity, let uid):
                 Log.error("No relation with UID \(uid) in entity \(entity).")
             case .MultipleRelationsForUID(let uids, let names):
-                Log.error("Multiple matches between UIDs: \(uids.map { String($0) }.joined(separator: ", ")) and relations: \(names.joined(separator: ", ")).")
-            case .PrintRelationUid(let entity, let relation, let found, let unique):
-                Log.error("No UID given for relation \(relation) of entity \(entity). You can do the following:\n" +
-                        "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n" +
-                        "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)")
+                Log.error(
+                    "Multiple matches between UIDs: \(uids.map { String($0) }.joined(separator: ", ")) and relations: \(names.joined(separator: ", "))."
+                )
+            case .PrintRelationUid(
+                let entity,
+                let relation,
+                let found,
+                let unique
+            ):
+                Log.error(
+                    "No UID given for relation \(relation) of entity \(entity). You can do the following:\n"
+                        + "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n"
+                        + "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)"
+                )
             case .RelationUIDTagNeedsValue(let entity, let relation):
-                Log.error("Relation \(relation) of entity \(entity) has an \"// objectbox: uid n\" annotation missing the number n.")
+                Log.error(
+                    "Relation \(relation) of entity \(entity) has an \"// objectbox: uid n\" annotation missing the number n."
+                )
             case .DuplicatePropertyName(let entity, let property):
-                Log.error("Property \(property) of entity \(entity) exists twice.")
+                Log.error(
+                    "Property \(property) of entity \(entity) exists twice."
+                )
             }
         } else if let filterError = error as? ObjectBoxGenerator.Error {
             switch filterError {
             case .DuplicateIdAnnotation(let entity, let found, let existing):
-                Log.error("Entity \(entity) has both \(found) and \(existing) annotated as '// objectbox: id'. "
-                        + "There can only be one.")
+                Log.error(
+                    "Entity \(entity) has both \(found) and \(existing) annotated as '// objectbox: id'. "
+                        + "There can only be one."
+                )
             case .MissingIdOnEntity(let entity):
-                Log.error("Entity \(entity) needs an ID property of type Id or EntityId<\(entity)>, "
-                        + "or an annotated ID property of type Int64 or UInt64.")
+                Log.error(
+                    "Entity \(entity) needs an ID property of type Id or EntityId<\(entity)>, "
+                        + "or an annotated ID property of type Int64 or UInt64."
+                )
             case .AmbiguousIdOnEntity(let entity, let properties):
-                Log.error("Entity \(entity) has several properties of type EntityId<\(entity)>, but no entity ID. "
+                Log.error(
+                    "Entity \(entity) has several properties of type EntityId<\(entity)>, but no entity ID. "
                         + "Please designate one as this entity's ID using an '// objectbox: id' annotation. "
-                        + "Candidates are: \(properties.joined(separator: ", "))")
+                        + "Candidates are: \(properties.joined(separator: ", "))"
+                )
             case .MissingBacklinkOnToManyRelation(let entity, let relation):
-                Log.error("Missing backlink on to-many relation \(relation) of entity \(entity)")
+                Log.error(
+                    "Missing backlink on to-many relation \(relation) of entity \(entity)"
+                )
             case .convertAnnotationMissingType(let name, let entity):
-                Log.error("Must specify a dbType in '// objectbox: convert = { \"dbType\": \"TYPE HERE\" }' annotation"
-                        + " of property \(name) of entity \(entity), or put it on a RawRepresentable enum.")
-            case .convertAnnotationMissingConverterOrDefault(let name, let entity):
-                Log.error("Must specify a converter or default in '// objectbox: convert = { "
+                Log.error(
+                    "Must specify a dbType in '// objectbox: convert = { \"dbType\": \"TYPE HERE\" }' annotation"
+                        + " of property \(name) of entity \(entity), or put it on a RawRepresentable enum."
+                )
+            case .convertAnnotationMissingConverterOrDefault(
+                let name,
+                let entity
+            ):
+                Log.error(
+                    "Must specify a converter or default in '// objectbox: convert = { "
                         + "\"dbType\": \"TYPE HERE\", \"default\": \"DEFAULT HERE\" }' annotation of "
-                        + "property \(name) of entity \(entity)")
+                        + "property \(name) of entity \(entity)"
+                )
             case .IllegalDictionaryElements(let entity, let message):
-                Log.error("Illegal dictionary elements found in entity \(entity): \(message)")
+                Log.error(
+                    "Illegal dictionary elements found in entity \(entity): \(message)"
+                )
             default:  // Hmm, maybe this is enough for some errors?
                 Log.error("\(error)")
             }
@@ -211,8 +313,13 @@ public enum ObjectBoxGenerator {
         var currPropType = typeName
 
         while let currPropTypeReadOnly = currPropType, !isBuiltIn {
-            isBuiltIn = (builtInTypes + builtInUnsignedTypes).firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
-            if !isBuiltIn && currPropTypeReadOnly.unwrappedTypeName.hasPrefix("EntityId<") {
+            isBuiltIn =
+                (builtInTypes + builtInUnsignedTypes).firstIndex(
+                    of: currPropTypeReadOnly.unwrappedTypeName
+                ) != nil
+            if !isBuiltIn
+                && currPropTypeReadOnly.unwrappedTypeName.hasPrefix("EntityId<")
+            {
                 isBuiltIn = true
             }
             currPropType = currPropTypeReadOnly.actualTypeName
@@ -226,7 +333,9 @@ public enum ObjectBoxGenerator {
         var currPropType = typeName
 
         while let currPropTypeReadOnly = currPropType, !isUnsigned {
-            isUnsigned = builtInUnsignedTypes.firstIndex(of: currPropTypeReadOnly.name) != nil
+            isUnsigned =
+                builtInUnsignedTypes.firstIndex(of: currPropTypeReadOnly.name)
+                != nil
             currPropType = currPropTypeReadOnly.actualTypeName
         }
 
@@ -239,7 +348,10 @@ public enum ObjectBoxGenerator {
         var currPropType = typeName
 
         while let currPropTypeReadOnly = currPropType, !isStringType {
-            isStringType = builtInStringTypes.firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
+            isStringType =
+                builtInStringTypes.firstIndex(
+                    of: currPropTypeReadOnly.unwrappedTypeName
+                ) != nil
             currPropType = currPropTypeReadOnly.actualTypeName
         }
 
@@ -251,7 +363,10 @@ public enum ObjectBoxGenerator {
         var currPropType = typeName
 
         while let currPropTypeReadOnly = currPropType, !isByteVectorType {
-            isByteVectorType = builtInByteVectorTypes.firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
+            isByteVectorType =
+                builtInByteVectorTypes.firstIndex(
+                    of: currPropTypeReadOnly.unwrappedTypeName
+                ) != nil
             currPropType = currPropTypeReadOnly.actualTypeName
         }
 
@@ -263,7 +378,10 @@ public enum ObjectBoxGenerator {
         var currPropType = typeName
 
         while let currPropTypeReadOnly = currPropType, !isScalarVectorType {
-            isScalarVectorType = builtInScalarVectorTypes.firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
+            isScalarVectorType =
+                builtInScalarVectorTypes.firstIndex(
+                    of: currPropTypeReadOnly.unwrappedTypeName
+                ) != nil
             currPropType = currPropTypeReadOnly.actualTypeName
         }
 
@@ -275,21 +393,28 @@ public enum ObjectBoxGenerator {
         var currPropType = typeName
 
         while let currPropTypeReadOnly = currPropType, !isStringVectorType {
-            isStringVectorType = builtInStringVectorTypes.firstIndex(of: currPropTypeReadOnly.unwrappedTypeName) != nil
+            isStringVectorType =
+                builtInStringVectorTypes.firstIndex(
+                    of: currPropTypeReadOnly.unwrappedTypeName
+                ) != nil
             currPropType = currPropTypeReadOnly.actualTypeName
         }
 
         return isStringVectorType
     }
 
-    static func mapPropertyType(_ propertyVar: SourceryVariable) -> PropertyType {
+    static func mapPropertyType(_ propertyVar: SourceryVariable) -> PropertyType
+    {
         let defaultType = mapDefaultPropertyType(propertyVar.typeName)
         if !propertyVar.annotations.isEmpty {
             var typeStr: String? = propertyVar.annotations["type"] as? String
-            if propertyVar.annotations.contains(where: { $0.key == "date-nano" }) {
+            if propertyVar.annotations.contains(where: { $0.key == "date-nano" }
+            ) {
                 guard typeStr == nil else {
                     // TODO log location info and abort
-                    Log.error("Annotation \"data-nano\" cannot coexist with \"type\" annotation")
+                    Log.error(
+                        "Annotation \"data-nano\" cannot coexist with \"type\" annotation"
+                    )
                     return defaultType
                 }
                 typeStr = "date-nano"
@@ -297,7 +422,9 @@ public enum ObjectBoxGenerator {
             if propertyVar.annotations.contains(where: { $0.key == "flex" }) {
                 guard typeStr == nil else {
                     // TODO log location info and abort
-                    Log.error("Annotation \"flex\" cannot coexist with \"type\" annotation")
+                    Log.error(
+                        "Annotation \"flex\" cannot coexist with \"type\" annotation"
+                    )
                     return defaultType
                 }
                 typeStr = "flex"
@@ -308,16 +435,22 @@ public enum ObjectBoxGenerator {
                         return PropertyType.dateNano
                     } else {
                         // TODO log location info and abort
-                        Log.error("Annotation \"data-nano\" may only be placed only at types compatible with date")
+                        Log.error(
+                            "Annotation \"data-nano\" may only be placed only at types compatible with date"
+                        )
                     }
                 } else if typeStr == "flex" {
                     if defaultType == PropertyType.byteVector {
                         return PropertyType.flex
                     } else {
-                        Log.error("Annotation \"flex\" may be placed only at bytes (for now)")
+                        Log.error(
+                            "Annotation \"flex\" may be placed only at bytes (for now)"
+                        )
                     }
                 } else {
-                    Log.error("Annotation \"type\" has an invalid value: \(typeStr!)")
+                    Log.error(
+                        "Annotation \"type\" has an invalid value: \(typeStr!)"
+                    )
                 }
             }
         }
@@ -338,8 +471,13 @@ public enum ObjectBoxGenerator {
             } else if typeCandidate.name.hasPrefix("ToOne<") {
                 return .relation
             }
-            print("Mapping not found: ", typeName as Any, typeCandidate, typeCandidate.name,
-                    typeCandidate.actualTypeName as Any)
+            print(
+                "Mapping not found: ",
+                typeName as Any,
+                typeCandidate,
+                typeCandidate.name,
+                typeCandidate.actualTypeName as Any
+            )
             typeCandidateNullable = typeCandidate.actualTypeName  // TODO does not seem to work; update Sourcery
         }
         return .unknown
@@ -348,27 +486,41 @@ public enum ObjectBoxGenerator {
     /// If it exists, returns the value of the externalType annotation mapped to the type constant. Otherwise nil.
     ///
     /// If the type is not supported, throws and suggests supported values.
-    private static func parseExternalType(_ propertyVar: SourceryVariable) throws -> ExternalPropertyType? {
-        if let externalTypeStr = propertyVar.annotations["externalType"] as? String {
-            let externalTypeOrNil = ExternalPropertyType.allCases.first { "\($0)" == externalTypeStr }
+    private static func parseExternalType(_ propertyVar: SourceryVariable)
+        throws -> ExternalPropertyType?
+    {
+        if let externalTypeStr = propertyVar.annotations["externalType"]
+            as? String
+        {
+            let externalTypeOrNil = ExternalPropertyType.allCases.first {
+                "\($0)" == externalTypeStr
+            }
             if externalTypeOrNil != nil {
                 return externalTypeOrNil
             } else {
                 let supportedTypes = ExternalPropertyType.allCases
                     .map({ "\($0)" })
                     .joined(separator: ", ")
-                throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "externalType '\(externalTypeStr)' not supported, should be one of \(supportedTypes)")
+                throw Error.BadPropertyAnnotation(
+                    property: propertyVar.description,
+                    message:
+                        "externalType '\(externalTypeStr)' not supported, should be one of \(supportedTypes)"
+                )
             }
         }
         return nil
     }
-    
+
     /// If it exists, returns the value of the externalName annotation. Otherwise nil.
-    private static func parseExternalName(_ propertyVar: SourceryVariable) -> String? {
+    private static func parseExternalName(_ propertyVar: SourceryVariable)
+        -> String?
+    {
         return propertyVar.annotations["externalName"] as? String
     }
 
-    static func extractConvertAnnotation(_ annotation: Any?) -> [String: String]? {
+    static func extractConvertAnnotation(_ annotation: Any?) -> [String:
+        String]?
+    {
         if let dict = annotation as? [String: String] {
             return dict
         }
@@ -380,30 +532,49 @@ public enum ObjectBoxGenerator {
     }
 
     // swiftlint:disable:next function_body_length
-    static func processProperty(_ propertyVar: SourceryVariable, in entityType: Type,
-                                into schemaProperties: inout [SchemaProperty],
-                                entity schemaEntity: SchemaEntity, schema schemaData: Schema,
-                                enums: [String: TypeName]) throws {
+    static func processProperty(
+        _ propertyVar: SourceryVariable,
+        in entityType: Type,
+        into schemaProperties: inout [SchemaProperty],
+        entity schemaEntity: SchemaEntity,
+        schema schemaData: Schema,
+        enums: [String: TypeName]
+    ) throws {
         let fullTypeName = propertyVar.typeName.name
-        let isToOneRelation = fullTypeName.hasPrefix("ToOne<") && fullTypeName.hasSuffix(">")
-        let isToManyRelation = fullTypeName.hasPrefix("ToMany<") && fullTypeName.hasSuffix(">")
+        let isToOneRelation =
+            fullTypeName.hasPrefix("ToOne<") && fullTypeName.hasSuffix(">")
+        let isToManyRelation =
+            fullTypeName.hasPrefix("ToMany<") && fullTypeName.hasSuffix(">")
         var tmRelation: SchemaToManyRelation?
         if isToManyRelation {
-            let templateTypesString = fullTypeName.drop(first: "ToMany<".count, last: 1)
+            let templateTypesString = fullTypeName.drop(
+                first: "ToMany<".count,
+                last: 1
+            )
             let templateTypes = templateTypesString.split(separator: ",")
-            let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+            let destinationType = templateTypes[0].trimmingCharacters(
+                in: CharacterSet.whitespacesAndNewlines
+            )
             let myType = entityType.name
 
-            let relation = SchemaToManyRelation(name: propertyVar.name, type: fullTypeName, targetType: String(destinationType), ownerType: String(myType))
+            let relation = SchemaToManyRelation(
+                name: propertyVar.name,
+                type: fullTypeName,
+                targetType: String(destinationType),
+                ownerType: String(myType)
+            )
             if let propertyUid = propertyVar.annotations["uid"] as? Int64 {
                 relation.modelId = IdUid(id: 0, uid: propertyUid)
             }
-            if let backlinkProperty = propertyVar.annotations["backlink"] as? String {
+            if let backlinkProperty = propertyVar.annotations["backlink"]
+                as? String
+            {
                 relation.backlinkProperty = backlinkProperty
             } else {
                 // backlinkProperty is null, meaning, this
                 // ToMany relation is standalone
-                relation.externalType = try parseExternalType(propertyVar)?.rawValue
+                relation.externalType = try parseExternalType(propertyVar)?
+                    .rawValue
                 relation.externalName = parseExternalName(propertyVar)
             }
             tmRelation = relation
@@ -429,7 +600,9 @@ public enum ObjectBoxGenerator {
         let propertyType: String
         if typeNameNotNull == "[Float]" {
             // Float array: may be a special HNSW index property (annotation is parsed later)
-            let hasHnswIndex = propertyVar.annotations.contains(where: { $0.key == "hnswIndex" })
+            let hasHnswIndex = propertyVar.annotations.contains(where: {
+                $0.key == "hnswIndex"
+            })
             if hasHnswIndex {
                 propertyType = "HnswIndexPropertyType"
             } else {
@@ -452,12 +625,22 @@ public enum ObjectBoxGenerator {
             schemaProperty.propertyType = mapPropertyType(propertyVar)
         }
         // TODO check if "is...Type" can be unified with converter checks below (add tests)
-        schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(propertyVar.typeName)
-        schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(propertyVar.typeName)
+        schemaProperty.isBuiltInType = isBuiltInTypeOrAlias(
+            propertyVar.typeName
+        )
+        schemaProperty.isUnsignedType = isUnsignedTypeOrAlias(
+            propertyVar.typeName
+        )
         schemaProperty.isStringType = isStringTypeOrAlias(propertyVar.typeName)
-        schemaProperty.isByteVectorType = isByteVectorTypeOrAlias(propertyVar.typeName)
-        schemaProperty.isScalarVectorType = isScalarVectorTypeOrAlias(propertyVar.typeName)
-        schemaProperty.isStringVectorType = isStringVectorTypeOrAlias(propertyVar.typeName)
+        schemaProperty.isByteVectorType = isByteVectorTypeOrAlias(
+            propertyVar.typeName
+        )
+        schemaProperty.isScalarVectorType = isScalarVectorTypeOrAlias(
+            propertyVar.typeName
+        )
+        schemaProperty.isStringVectorType = isStringVectorTypeOrAlias(
+            propertyVar.typeName
+        )
         schemaProperty.isRelation = isToOneRelation
         schemaProperty.isToManyRelation = isToManyRelation
         schemaProperty.toManyRelation = tmRelation
@@ -470,22 +653,33 @@ public enum ObjectBoxGenerator {
         }
         schemaProperty.unwrappedPropertyType = propertyVar.unwrappedTypeName
         schemaProperty.dbName = propertyVar.annotations["name"] as? String
-        if let dbNameIsEmpty = schemaProperty.dbName?.isEmpty, dbNameIsEmpty { schemaProperty.dbName = nil }
+        if let dbNameIsEmpty = schemaProperty.dbName?.isEmpty, dbNameIsEmpty {
+            schemaProperty.dbName = nil
+        }
         schemaProperty.name = schemaProperty.dbName ?? schemaProperty.swiftName
-        if let propertyUidObject = propertyVar.annotations["uid"], let propertyUid = (propertyUidObject as? NSNumber)?.int64Value {
+        if let propertyUidObject = propertyVar.annotations["uid"],
+            let propertyUid = (propertyUidObject as? NSNumber)?.int64Value
+        {
             var propId = IdUid()
             propId.uid = propertyUid
             schemaProperty.modelId = propId
         }
 
-        if let convertDict = extractConvertAnnotation(propertyVar.annotations["convert"]) {
+        if let convertDict = extractConvertAnnotation(
+            propertyVar.annotations["convert"]
+        ) {
             let dbType: String
             if let firstDbType = convertDict["dbType"] {
                 dbType = firstDbType
-            } else if let secondDbType = enums[schemaProperty.unwrappedPropertyType]?.name {
+            } else if let secondDbType = enums[
+                schemaProperty.unwrappedPropertyType
+            ]?.name {
                 dbType = secondDbType
             } else {
-                throw Error.convertAnnotationMissingType(name: schemaProperty.swiftName, entity: schemaProperty.entityName)
+                throw Error.convertAnnotationMissingType(
+                    name: schemaProperty.swiftName,
+                    entity: schemaProperty.entityName
+                )
             }
             if let typeName = convertDict["converter"] {
                 schemaProperty.converterName = typeName
@@ -494,8 +688,10 @@ public enum ObjectBoxGenerator {
                 schemaProperty.unConversionPrefix = "\(typeName).convert("
                 schemaProperty.unConversionSuffix = ")"
             } else {
-                schemaProperty.converterName = schemaProperty.unwrappedPropertyType
-                schemaProperty.conversionPrefix = "optConstruct(\(schemaProperty.unwrappedPropertyType).self, rawValue: "
+                schemaProperty.converterName =
+                    schemaProperty.unwrappedPropertyType
+                schemaProperty.conversionPrefix =
+                    "optConstruct(\(schemaProperty.unwrappedPropertyType).self, rawValue: "
                 schemaProperty.unConversionPrefix = ""
                 schemaProperty.unConversionSuffix = ".rawValue"
                 if let defaultValue = convertDict["default"] {
@@ -503,50 +699,88 @@ public enum ObjectBoxGenerator {
                 } else if schemaProperty.swiftType.hasSuffix("?") {
                     schemaProperty.conversionSuffix = ")"
                 } else {
-                    throw Error.convertAnnotationMissingConverterOrDefault(name: schemaProperty.swiftName, entity: schemaProperty.entityName)
+                    throw Error.convertAnnotationMissingConverterOrDefault(
+                        name: schemaProperty.swiftName,
+                        entity: schemaProperty.entityName
+                    )
                 }
             }
 
             schemaProperty.typeBeforeConversion = schemaProperty.swiftType
             schemaProperty.swiftType = dbType
-            schemaProperty.unwrappedPropertyType = dbType.trimmingCharacters(in: CharacterSet(charactersIn: "?"))
+            schemaProperty.unwrappedPropertyType = dbType.trimmingCharacters(
+                in: CharacterSet(charactersIn: "?")
+            )
 
-            if let unwrappedPropertyType = typeMappings[schemaProperty.unwrappedPropertyType] {
+            if let unwrappedPropertyType = typeMappings[
+                schemaProperty.unwrappedPropertyType
+            ] {
                 schemaProperty.propertyType = unwrappedPropertyType
             }
-            schemaProperty.isUnsignedType = builtInUnsignedTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
-            schemaProperty.isStringType = builtInStringTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
-            schemaProperty.isByteVectorType = builtInByteVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
-            schemaProperty.isScalarVectorType = builtInScalarVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
-            schemaProperty.isStringVectorType = builtInStringVectorTypes.firstIndex(of: schemaProperty.unwrappedPropertyType) != nil
+            schemaProperty.isUnsignedType =
+                builtInUnsignedTypes.firstIndex(
+                    of: schemaProperty.unwrappedPropertyType
+                ) != nil
+            schemaProperty.isStringType =
+                builtInStringTypes.firstIndex(
+                    of: schemaProperty.unwrappedPropertyType
+                ) != nil
+            schemaProperty.isByteVectorType =
+                builtInByteVectorTypes.firstIndex(
+                    of: schemaProperty.unwrappedPropertyType
+                ) != nil
+            schemaProperty.isScalarVectorType =
+                builtInScalarVectorTypes.firstIndex(
+                    of: schemaProperty.unwrappedPropertyType
+                ) != nil
+            schemaProperty.isStringVectorType =
+                builtInStringVectorTypes.firstIndex(
+                    of: schemaProperty.unwrappedPropertyType
+                ) != nil
         }
-        schemaProperty.initPropertyType() // depends on propertyType (PropertyType) and unwrappedPropertyType
+        schemaProperty.initPropertyType()  // depends on propertyType (PropertyType) and unwrappedPropertyType
 
-        try processPropertyIndexAndUniqueAnnotations(propertyVar, schemaProperty)
+        try processPropertyIndexAndUniqueAnnotations(
+            propertyVar,
+            schemaProperty
+        )
 
         try processPropertyHnswIndexAnnotation(propertyVar, schemaProperty)
 
         // External type and name
-        schemaProperty.externalType = try parseExternalType(propertyVar)?.rawValue
+        schemaProperty.externalType = try parseExternalType(propertyVar)?
+            .rawValue
         schemaProperty.externalName = parseExternalName(propertyVar)
 
         if let objectIdAnnotationValue = propertyVar.annotations["id"] {
             if let existingIdProperty = schemaEntity.idProperty {
-                throw Error.DuplicateIdAnnotation(entity: schemaEntity.className, found: propertyVar.name,
-                        existing: existingIdProperty.swiftName)
+                throw Error.DuplicateIdAnnotation(
+                    entity: schemaEntity.className,
+                    found: propertyVar.name,
+                    existing: existingIdProperty.swiftName
+                )
             }
             schemaProperty.isObjectId = true
             schemaEntity.idProperty = schemaProperty
-            if let objectAnnotationDict = objectIdAnnotationValue as? NSDictionary {
-                if let assignableBool = objectAnnotationDict["assignable"] as? Bool, assignableBool == true {
+            if let objectAnnotationDict = objectIdAnnotationValue
+                as? NSDictionary
+            {
+                if let assignableBool = objectAnnotationDict["assignable"]
+                    as? Bool, assignableBool == true
+                {
                     schemaProperty.propertyFlags.append(.idSelfAssignable)
                 }
             }
         } else {
             if fullTypeName == "Id" {
                 schemaEntity.idCandidates.append(schemaProperty)
-            } else if fullTypeName.hasPrefix("EntityId<") && fullTypeName.hasSuffix(">") {
-                let templateTypesString = fullTypeName.drop(first: "EntityId<".count, last: 1)
+            } else if fullTypeName.hasPrefix("EntityId<")
+                && fullTypeName.hasSuffix(">")
+            {
+                let templateTypesString = fullTypeName.drop(
+                    first: "EntityId<".count,
+                    last: 1
+                )
                 let templateTypes = templateTypesString.split(separator: ",")
                 let idType = templateTypes[0]
                 if idType == entityType.localName {
@@ -558,10 +792,16 @@ public enum ObjectBoxGenerator {
         if schemaProperty.isObjectId {
             schemaProperty.propertyFlags.append(.id)
         }
-        if propertyVar.annotations.contains(where: { $0.key == "id-companion" }) {
-            if schemaProperty.propertyType != .date && schemaProperty.propertyType != .dateNano {
-                throw Error.BadPropertyAnnotation(property: propertyVar.description,
-                        message: "The id-companion annotation is only supported for date and dateNano types but found: \(schemaProperty.propertyType)")
+        if propertyVar.annotations.contains(where: { $0.key == "id-companion" })
+        {
+            if schemaProperty.propertyType != .date
+                && schemaProperty.propertyType != .dateNano
+            {
+                throw Error.BadPropertyAnnotation(
+                    property: propertyVar.description,
+                    message:
+                        "The id-companion annotation is only supported for date and dateNano types but found: \(schemaProperty.propertyType)"
+                )
             }
             schemaProperty.propertyFlags.append(.idCompanion)
         }
@@ -573,18 +813,28 @@ public enum ObjectBoxGenerator {
             schemaProperty.propertyFlags.append(.indexed)
             schemaProperty.propertyFlags.append(.indexPartialSkipZero)
 
-            let templateTypesString = fullTypeName.drop(first: "ToOne<".count, last: 1)
+            let templateTypesString = fullTypeName.drop(
+                first: "ToOne<".count,
+                last: 1
+            )
             let templateTypes = templateTypesString.split(separator: ",")
-            let destinationType = templateTypes[0].trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-            let relation = SchemaRelation(name: schemaProperty.swiftName, type: schemaProperty.swiftType,
-                    targetType: destinationType)
+            let destinationType = templateTypes[0].trimmingCharacters(
+                in: CharacterSet.whitespacesAndNewlines
+            )
+            let relation = SchemaRelation(
+                name: schemaProperty.swiftName,
+                type: schemaProperty.swiftType,
+                targetType: destinationType
+            )
             relation.property = schemaProperty
             schemaEntity.relations.append(relation)
             if let backlink = propertyVar.annotations["backlink"] as? String {
-                print("warning: Found an // objectbox: backlink annotation on ToOne relation "
+                print(
+                    "warning: Found an // objectbox: backlink annotation on ToOne relation "
                         + "\"\(schemaProperty.swiftName)\". Did you mean to put "
                         + "// objectbox: backlink = \"\(propertyVar.name)\"  on the ToMany relation \"\(backlink)\" "
-                        + "in \"\(destinationType)\"?")
+                        + "in \"\(destinationType)\"?"
+                )
             }
         }
 
@@ -602,33 +852,46 @@ public enum ObjectBoxGenerator {
         case hash64Index
     }
 
-    static func processPropertyIndexAndUniqueAnnotations(_ propertyVar: SourceryVariable, _ schemaProperty: SchemaProperty) throws {
-        let hasIndexAnnotation = propertyVar.annotations.contains(where: { $0.key == "index" })
-        let hasUniqueAnnotation = propertyVar.annotations.contains(where: { $0.key == "unique" })
+    static func processPropertyIndexAndUniqueAnnotations(
+        _ propertyVar: SourceryVariable,
+        _ schemaProperty: SchemaProperty
+    ) throws {
+        let hasIndexAnnotation = propertyVar.annotations.contains(where: {
+            $0.key == "index"
+        })
+        let hasUniqueAnnotation = propertyVar.annotations.contains(where: {
+            $0.key == "unique"
+        })
         if !hasIndexAnnotation && !hasUniqueAnnotation {
-            return // does not have regular index annotations
+            return  // does not have regular index annotations
         }
 
         // Error if used on unsupported type
         let doesNotSupportIndex =
-        schemaProperty.propertyType == PropertyType.float
-        || schemaProperty.propertyType == PropertyType.double
-        || schemaProperty.propertyType == PropertyType.byteVector
-        || schemaProperty.propertyType == PropertyType.shortVector
-        || schemaProperty.propertyType == PropertyType.charVector
-        || schemaProperty.propertyType == PropertyType.intVector
-        || schemaProperty.propertyType == PropertyType.longVector
-        || schemaProperty.propertyType == PropertyType.floatVector
-        || schemaProperty.propertyType == PropertyType.doubleVector
-        || schemaProperty.propertyType == PropertyType.stringVector
+            schemaProperty.propertyType == PropertyType.float
+            || schemaProperty.propertyType == PropertyType.double
+            || schemaProperty.propertyType == PropertyType.byteVector
+            || schemaProperty.propertyType == PropertyType.shortVector
+            || schemaProperty.propertyType == PropertyType.charVector
+            || schemaProperty.propertyType == PropertyType.intVector
+            || schemaProperty.propertyType == PropertyType.longVector
+            || schemaProperty.propertyType == PropertyType.floatVector
+            || schemaProperty.propertyType == PropertyType.doubleVector
+            || schemaProperty.propertyType == PropertyType.stringVector
         if doesNotSupportIndex {
-            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "index or unique is not supported for this type of property.")
+            throw Error.BadPropertyAnnotation(
+                property: propertyVar.description,
+                message:
+                    "index or unique is not supported for this type of property."
+            )
         }
 
         // Parse any index configuration options...
         var indexType = IndexType.none
         if hasIndexAnnotation {
-            if let indexAnnotationType = propertyVar.annotations["index"] as? String {
+            if let indexAnnotationType = propertyVar.annotations["index"]
+                as? String
+            {
                 if indexAnnotationType == "hash" {
                     indexType = .hashIndex
                 } else if indexAnnotationType == "hash64" {
@@ -639,14 +902,20 @@ public enum ObjectBoxGenerator {
             }
         }
         // ...or use the default index configuration
-        let supportsHashIndex = schemaProperty.propertyType == PropertyType.string
+        let supportsHashIndex =
+            schemaProperty.propertyType == PropertyType.string
         if indexType == .none {
             indexType = supportsHashIndex ? .hashIndex : .valueIndex
         }
 
         // Error if hash index used on unsupported type
-        if !supportsHashIndex && (indexType == .hashIndex || indexType == .hash64Index) {
-            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "A hash index is only supported for string properties.")
+        if !supportsHashIndex
+            && (indexType == .hashIndex || indexType == .hash64Index)
+        {
+            throw Error.BadPropertyAnnotation(
+                property: propertyVar.description,
+                message: "A hash index is only supported for string properties."
+            )
         }
 
         if hasUniqueAnnotation {
@@ -657,21 +926,32 @@ public enum ObjectBoxGenerator {
                 for (key, value) in uniqueDict {
                     if key as? String == "onConflict" {
                         if value as? String == "replace" {
-                            schemaProperty.propertyFlags.append(.uniqueOnConflictReplace)
+                            schemaProperty.propertyFlags.append(
+                                .uniqueOnConflictReplace
+                            )
                         } else {
-                            throw Error.BadPropertyAnnotation(property: propertyVar.description,
-                                    message: "Illegal onConflict value (only \"replace\" is currently supported): \(value)")
+                            throw Error.BadPropertyAnnotation(
+                                property: propertyVar.description,
+                                message:
+                                    "Illegal onConflict value (only \"replace\" is currently supported): \(value)"
+                            )
                         }
                     } else {
-                        throw Error.BadPropertyAnnotation(property: propertyVar.description,
-                                message: "Illegal key in unique annotation (only \"onConflict\" is currently supported: \(key)")
+                        throw Error.BadPropertyAnnotation(
+                            property: propertyVar.description,
+                            message:
+                                "Illegal key in unique annotation (only \"onConflict\" is currently supported: \(key)"
+                        )
                     }
                 }
             }
             // Note: is just 1 if no value is specified (like "objectbox: unique"), error if there is a value
             else if uniqueConfiguration as? Int != 1 {  // not plain?
-                throw Error.BadPropertyAnnotation(property: propertyVar.description,
-                                                  message: "Illegal unique annotation syntax: \(String(describing: uniqueConfiguration))")
+                throw Error.BadPropertyAnnotation(
+                    property: propertyVar.description,
+                    message:
+                        "Illegal unique annotation syntax: \(String(describing: uniqueConfiguration))"
+                )
             }
         }
 
@@ -684,7 +964,10 @@ public enum ObjectBoxGenerator {
         }
     }
 
-    static func processPropertyHnswIndexAnnotation(_ propertyVar: SourceryVariable, _ schemaProperty: SchemaProperty) throws {
+    static func processPropertyHnswIndexAnnotation(
+        _ propertyVar: SourceryVariable,
+        _ schemaProperty: SchemaProperty
+    ) throws {
         let hnswAnnotation = propertyVar.annotations["hnswIndex"]
         if hnswAnnotation == nil {
             return
@@ -692,22 +975,35 @@ public enum ObjectBoxGenerator {
 
         // Error if not used on float vector
         if schemaProperty.propertyType != PropertyType.floatVector {
-            throw Error.BadPropertyAnnotation(property: propertyVar.description, message: "hnswIndex is only supported for float vector properties.")
+            throw Error.BadPropertyAnnotation(
+                property: propertyVar.description,
+                message:
+                    "hnswIndex is only supported for float vector properties."
+            )
         }
 
         // Implicitly create an index
         schemaProperty.propertyFlags.append(.indexed)
 
-        schemaProperty.hnswParams = try SchemaHnswParams.fromAnnotation(propertyVar: propertyVar, hnswAnnotation: hnswAnnotation)
+        schemaProperty.hnswParams = try SchemaHnswParams.fromAnnotation(
+            propertyVar: propertyVar,
+            hnswAnnotation: hnswAnnotation
+        )
     }
 
-    static func processEntityType(_ entityType: Type, entityBased isEntityBased: Bool, enums: [String: TypeName], into schemaData: Schema) throws {
+    static func processEntityType(
+        _ entityType: Type,
+        entityBased isEntityBased: Bool,
+        enums: [String: TypeName],
+        into schemaData: Schema
+    ) throws {
         let schemaEntity = SchemaEntity()
         schemaEntity.className = entityType.localName
         schemaEntity.isValueType = entityType.kind == "struct"
         schemaEntity.modelUid = entityType.annotations["uid"] as? Int64
         schemaEntity.dbName = entityType.annotations["name"] as? String
-        schemaEntity.externalName = entityType.annotations["externalName"] as? String
+        schemaEntity.externalName =
+            entityType.annotations["externalName"] as? String
         let syncAnnotation = entityType.annotations["sync"]
         if syncAnnotation != nil {
             schemaEntity.flags.append(.syncEnabled)
@@ -716,84 +1012,143 @@ public enum ObjectBoxGenerator {
                 // These are critical: do strict checks to ensure nothing goes bad because of an typo
                 for (key, value) in syncDict {
                     guard let keyString = key as? String else {
-                        throw Error.IllegalDictionaryElements(entity: schemaEntity.className,
-                                message: "the sync annotation contains a non-string key")
+                        throw Error.IllegalDictionaryElements(
+                            entity: schemaEntity.className,
+                            message:
+                                "the sync annotation contains a non-string key"
+                        )
                     }
                     if keyString == "sharedGlobalIds" {
                         guard let valueBool = value as? Bool else {
-                            throw Error.IllegalDictionaryElements(entity: schemaEntity.className,
-                                    message: "the sync annotation has a non-boolean value for key: \(keyString)")
+                            throw Error.IllegalDictionaryElements(
+                                entity: schemaEntity.className,
+                                message:
+                                    "the sync annotation has a non-boolean value for key: \(keyString)"
+                            )
                         }
                         if valueBool {
                             schemaEntity.flags.append(.sharedGlobalIds)
                         }
                     } else {
-                        throw Error.IllegalDictionaryElements(entity: schemaEntity.className,
-                                message: "the sync annotation contains an unknown key: \(keyString)")
+                        throw Error.IllegalDictionaryElements(
+                            entity: schemaEntity.className,
+                            message:
+                                "the sync annotation contains an unknown key: \(keyString)"
+                        )
                     }
                 }
-            } // else TODO verify syncAnnotation is expected
+            }  // else TODO verify syncAnnotation is expected
         }
 
         // Not sure why, but Sourcery has trouble with "computed" properties,
         // help it by "materializing" to a plain String property
         schemaEntity.flagsStringList = schemaEntity.flagsStringListDynamic
 
-        if let dbNameIsEmpty = schemaEntity.dbName?.isEmpty, dbNameIsEmpty { schemaEntity.dbName = nil }
+        if let dbNameIsEmpty = schemaEntity.dbName?.isEmpty, dbNameIsEmpty {
+            schemaEntity.dbName = nil
+        }
         schemaEntity.name = schemaEntity.dbName ?? schemaEntity.className
         schemaEntity.isEntitySubclass = isEntityBased
 
         var schemaProperties = [SchemaProperty]()
         try entityType.variables.forEach { propertyVar in
-            warnIfAnnotations(otherThan: ObjectBoxGenerator.validPropertyAnnotationNames,
-                    in: Set(propertyVar.annotations.keys), of: propertyVar.name)
-            guard !propertyVar.annotations.contains(where: { $0.key == "transient" }) else { return } // Exits only this iteration of the foreach block
-            guard !propertyVar.isStatic else { return } // Exits only this iteration of the foreach block
-            guard !propertyVar.isComputed else { return } // Exits only this iteration of the foreach block
+            warnIfAnnotations(
+                otherThan: ObjectBoxGenerator.validPropertyAnnotationNames,
+                in: Set(propertyVar.annotations.keys),
+                of: propertyVar.name
+            )
+            guard
+                !propertyVar.annotations.contains(where: {
+                    $0.key == "transient"
+                })
+            else { return }  // Exits only this iteration of the foreach block
+            guard !propertyVar.isStatic else { return }  // Exits only this iteration of the foreach block
+            guard !propertyVar.isComputed else { return }  // Exits only this iteration of the foreach block
 
-            try processProperty(propertyVar, in: entityType, into: &schemaProperties, entity: schemaEntity, schema: schemaData, enums: enums)
+            try processProperty(
+                propertyVar,
+                in: entityType,
+                into: &schemaProperties,
+                entity: schemaEntity,
+                schema: schemaData,
+                enums: enums
+            )
         }
         schemaProperties.last?.isLast = true
         schemaEntity.properties = schemaProperties
 
-        if schemaEntity.idProperty == nil { // No explicit annotation?
+        if schemaEntity.idProperty == nil {  // No explicit annotation?
             if schemaEntity.idCandidates.isEmpty {
                 throw Error.MissingIdOnEntity(entity: schemaEntity.className)
             } else if schemaEntity.idCandidates.count == 1 {
                 schemaEntity.idProperty = schemaEntity.idCandidates[0]
             } else {
-                schemaEntity.idProperty = schemaEntity.idCandidates.first { $0.swiftName.lowercased() == "id" }
-                if schemaEntity.idProperty == nil {
-                    schemaEntity.idProperty = schemaEntity.idCandidates.first { $0.swiftName.lowercased() == "objectid" }
+                schemaEntity.idProperty = schemaEntity.idCandidates.first {
+                    $0.swiftName.lowercased() == "id"
                 }
                 if schemaEntity.idProperty == nil {
-                    schemaEntity.idProperty = schemaEntity.idCandidates.first { $0.swiftName.lowercased() == "uniqueid" }
+                    schemaEntity.idProperty = schemaEntity.idCandidates.first {
+                        $0.swiftName.lowercased() == "objectid"
+                    }
+                }
+                if schemaEntity.idProperty == nil {
+                    schemaEntity.idProperty = schemaEntity.idCandidates.first {
+                        $0.swiftName.lowercased() == "uniqueid"
+                    }
                 }
                 guard schemaEntity.idProperty != nil else {
-                    throw Error.AmbiguousIdOnEntity(entity: schemaEntity.className, properties: schemaEntity.idCandidates.map { $0.swiftName })
+                    throw Error.AmbiguousIdOnEntity(
+                        entity: schemaEntity.className,
+                        properties: schemaEntity.idCandidates.map {
+                            $0.swiftName
+                        }
+                    )
                 }
             }
             schemaEntity.idProperty?.isObjectId = true
             schemaEntity.idProperty?.propertyFlags.append(.id)
             // No other binding marks IDs as unsigned, so don't break compatibility.
-            schemaEntity.idProperty?.propertyFlags.removeAll(where: { $0 == .unsigned })
+            schemaEntity.idProperty?.propertyFlags.removeAll(where: {
+                $0 == .unsigned
+            })
         }
 
         // Collect flags (to be passed to store initializer) string for generated code.
         schemaProperties.forEach { schemaProperty in
             var flagsList: [String] = []
-            if schemaProperty.propertyFlags.contains(.id) { flagsList.append(".id") }
-            if schemaProperty.propertyFlags.contains(.unsigned) { flagsList.append(".unsigned") }
-            if schemaProperty.propertyFlags.contains(.unique) { flagsList.append(".unique") }
-            if schemaProperty.propertyFlags.contains(.indexHash) { flagsList.append(".indexHash") }
-            if schemaProperty.propertyFlags.contains(.indexHash64) { flagsList.append(".indexHash64") }
-            if schemaProperty.propertyFlags.contains(.indexed) { flagsList.append(".indexed") }
-            if schemaProperty.propertyFlags.contains(.indexPartialSkipZero) { flagsList.append(".indexPartialSkipZero") }
-            if schemaProperty.propertyFlags.contains(.idSelfAssignable) { flagsList.append(".idSelfAssignable") }
-            if schemaProperty.propertyFlags.contains(.idCompanion) { flagsList.append(".idCompanion") }
-            if schemaProperty.propertyFlags.contains(.uniqueOnConflictReplace) { flagsList.append(".uniqueOnConflictReplace") }
+            if schemaProperty.propertyFlags.contains(.id) {
+                flagsList.append(".id")
+            }
+            if schemaProperty.propertyFlags.contains(.unsigned) {
+                flagsList.append(".unsigned")
+            }
+            if schemaProperty.propertyFlags.contains(.unique) {
+                flagsList.append(".unique")
+            }
+            if schemaProperty.propertyFlags.contains(.indexHash) {
+                flagsList.append(".indexHash")
+            }
+            if schemaProperty.propertyFlags.contains(.indexHash64) {
+                flagsList.append(".indexHash64")
+            }
+            if schemaProperty.propertyFlags.contains(.indexed) {
+                flagsList.append(".indexed")
+            }
+            if schemaProperty.propertyFlags.contains(.indexPartialSkipZero) {
+                flagsList.append(".indexPartialSkipZero")
+            }
+            if schemaProperty.propertyFlags.contains(.idSelfAssignable) {
+                flagsList.append(".idSelfAssignable")
+            }
+            if schemaProperty.propertyFlags.contains(.idCompanion) {
+                flagsList.append(".idCompanion")
+            }
+            if schemaProperty.propertyFlags.contains(.uniqueOnConflictReplace) {
+                flagsList.append(".uniqueOnConflictReplace")
+            }
             if !flagsList.isEmpty {
-                schemaProperty.flagsList = ", flags: [\(flagsList.joined(separator: ", "))]"
+                schemaProperty.flagsList =
+                    ", flags: [\(flagsList.joined(separator: ", "))]"
             }
         }
 
@@ -801,13 +1156,18 @@ public enum ObjectBoxGenerator {
         schemaData.entitiesByName[schemaEntity.className] = schemaEntity
     }
 
-    static func warnIfAnnotations(otherThan validAnnotations: Set<String>,
-                                  in annotations: Set<String>, of name: String) {
+    static func warnIfAnnotations(
+        otherThan validAnnotations: Set<String>,
+        in annotations: Set<String>,
+        of name: String
+    ) {
         let unknownAnnotations = annotations.filter {
             !validAnnotations.contains($0)
         }
         if !unknownAnnotations.isEmpty {
-            print("error: \(name) has unknown annotations \(unknownAnnotations.joined(separator: ",")).")
+            print(
+                "error: \(name) has unknown annotations \(unknownAnnotations.joined(separator: ","))."
+            )
         }
     }
 
@@ -824,34 +1184,55 @@ public enum ObjectBoxGenerator {
     /* Process the parsed syntax tree, possibly annotating or otherwise
         extending it. */
     // Called by Sourcery class, which is called by main
-    static func process(parsingResult result: inout Sourcery.ParsingResult) throws {
+    static func process(parsingResult result: inout Sourcery.ParsingResult)
+        throws
+    {
         let schemaData = Schema()
 
         var enums = [String: TypeName]()
         result.types.all.forEach { currType in
-            if let enumType = currType as? Enum, let rawTypeName = enumType.rawTypeName {
+            if let enumType = currType as? Enum,
+                let rawTypeName = enumType.rawTypeName
+            {
                 enums[currType.name] = rawTypeName
             }
         }
 
         try result.types.all.forEach { entityType in
-            warnIfAnnotations(otherThan: ObjectBoxGenerator.validTypeAnnotationNames,
-                    in: Set(entityType.annotations.keys), of: entityType.name)
+            warnIfAnnotations(
+                otherThan: ObjectBoxGenerator.validTypeAnnotationNames,
+                in: Set(entityType.annotations.keys),
+                of: entityType.name
+            )
             let isEntityBased = entityType.inheritedTypes.contains("Entity")
             // The annotation should be lowercase "entity", but given the protocol is uppercase, we allow that too,
             // as a convenience for users who use both and get their case mixed up:
-            if isEntityBased || entityType.annotations["entity"] != nil || entityType.annotations["Entity"] != nil {
-                try processEntityType(entityType, entityBased: isEntityBased, enums: enums, into: schemaData)
+            if isEntityBased || entityType.annotations["entity"] != nil
+                || entityType.annotations["Entity"] != nil
+            {
+                try processEntityType(
+                    entityType,
+                    entityBased: isEntityBased,
+                    enums: enums,
+                    into: schemaData
+                )
             }
         }
 
-        let jsonFile = ObjectBoxGenerator.modelJsonFile ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("model.json")
+        let jsonFile =
+            ObjectBoxGenerator.modelJsonFile
+            ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent("model.json")
         let idSync = try IdSync.IdSync(jsonFile: jsonFile)
         try idSync.sync(schema: schemaData)
         try idSync.write()
 
         if let debugDataURL = ObjectBoxGenerator.debugDataURL {
-            try "\(schemaData)".write(to: debugDataURL, atomically: true, encoding: .utf8)
+            try "\(schemaData)".write(
+                to: debugDataURL,
+                atomically: true,
+                encoding: .utf8
+            )
         }
 
         ObjectBoxGenerator.entities = schemaData.entities
