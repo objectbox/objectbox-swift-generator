@@ -1,5 +1,9 @@
 # ObjectBox Swift Generator changelog
 
+## Next release
+
+- Support `syncClock` and `syncPrecedence` annotations.
+
 ## 2.2.0
 
 - Support string vectors (`[String]`).
