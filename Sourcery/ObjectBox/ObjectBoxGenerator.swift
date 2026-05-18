@@ -1156,11 +1156,14 @@ public enum ObjectBoxGenerator {
             if schemaProperty.propertyFlags.contains(.id) {
                 flagsList.append(".id")
             }
-            if schemaProperty.propertyFlags.contains(.unsigned) {
-                flagsList.append(".unsigned")
+            if schemaProperty.propertyFlags.contains(.idCompanion) {
+                flagsList.append(".idCompanion")
             }
-            if schemaProperty.propertyFlags.contains(.unique) {
-                flagsList.append(".unique")
+            if schemaProperty.propertyFlags.contains(.idSelfAssignable) {
+                flagsList.append(".idSelfAssignable")
+            }
+            if schemaProperty.propertyFlags.contains(.indexed) {
+                flagsList.append(".indexed")
             }
             if schemaProperty.propertyFlags.contains(.indexHash) {
                 flagsList.append(".indexHash")
@@ -1168,20 +1171,17 @@ public enum ObjectBoxGenerator {
             if schemaProperty.propertyFlags.contains(.indexHash64) {
                 flagsList.append(".indexHash64")
             }
-            if schemaProperty.propertyFlags.contains(.indexed) {
-                flagsList.append(".indexed")
-            }
             if schemaProperty.propertyFlags.contains(.indexPartialSkipZero) {
                 flagsList.append(".indexPartialSkipZero")
             }
-            if schemaProperty.propertyFlags.contains(.idSelfAssignable) {
-                flagsList.append(".idSelfAssignable")
-            }
-            if schemaProperty.propertyFlags.contains(.idCompanion) {
-                flagsList.append(".idCompanion")
+            if schemaProperty.propertyFlags.contains(.unique) {
+                flagsList.append(".unique")
             }
             if schemaProperty.propertyFlags.contains(.uniqueOnConflictReplace) {
                 flagsList.append(".uniqueOnConflictReplace")
+            }
+            if schemaProperty.propertyFlags.contains(.unsigned) {
+                flagsList.append(".unsigned")
             }
             if !flagsList.isEmpty {
                 schemaProperty.flagsList =
