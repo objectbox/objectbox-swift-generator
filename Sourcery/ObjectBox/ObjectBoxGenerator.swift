@@ -1,5 +1,7 @@
 //  Copyright © 2018-2024 ObjectBox. All rights reserved.
 
+// swiftlint:disable file_length type_body_length
+
 import Foundation
 import PathKit
 import SourceryRuntime
