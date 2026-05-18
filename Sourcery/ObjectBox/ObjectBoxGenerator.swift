@@ -85,30 +85,50 @@ public enum ObjectBoxGenerator {
         "[Int32]": .intVector,
         "[Int64]": .longVector,
     ]
+
+    private static let annotationBacklink = "backlink"
+    private static let annotationConvert = "convert"
+    private static let annotationDateNano = "date-nano"
+    private static let annotationHnswIndex = "hnswIndex"
+    private static let annotationFlex = "flex"
+    private static let annotationName = "name"
+    private static let annotationId = "id"
+    private static let annotationIdCompanion = "id-companion"
+    private static let annotationIndex = "index"
+    private static let annotationTransient = "transient"
+    private static let annotationType = "type"
+    private static let annotationUid = "uid"
+    private static let annotationUnique = "unique"
+    private static let annotationEntity = "entity"
+    private static let annotationEntityUppercase = "Entity"
+    private static let annotationSync = "sync"
+    private static let annotationExternalName = "externalName"
+    private static let annotationExternalType = "externalType"
+
     private static let validPropertyAnnotationNames = Set([
-        "backlink",
-        "convert",
-        "date-nano",
-        "hnswIndex",
-        "flex",
-        "name",
-        "id",
-        "id-companion",
-        "index",
-        "transient",
-        "type",
-        "uid",
-        "unique",
-        "externalName",
-        "externalType",
+        annotationBacklink,
+        annotationConvert,
+        annotationDateNano,
+        annotationHnswIndex,
+        annotationFlex,
+        annotationName,
+        annotationId,
+        annotationIdCompanion,
+        annotationIndex,
+        annotationTransient,
+        annotationType,
+        annotationUid,
+        annotationUnique,
+        annotationExternalName,
+        annotationExternalType,
     ])
     private static let validTypeAnnotationNames = Set([
-        "entity",
-        "Entity",
-        "name",
-        "sync",
-        "uid",
-        "externalName",
+        annotationEntity,
+        annotationEntityUppercase,
+        annotationName,
+        annotationSync,
+        annotationUid,
+        annotationExternalName,
     ])
 
     // TODO why static?
@@ -193,8 +213,8 @@ public enum ObjectBoxGenerator {
             case .PrintUid(let entity, let found, let unique):
                 Log.error(
                     "No UID given for entity \(entity). You can do the following:\n"
-                        + "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n"
-                        + "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)"
+                        + "\t[Rename] Apply the current UID using // objectbox: \(annotationUid) = \(found)\n"
+                        + "\t[Change/Reset] Apply a new UID using // objectbox: \(annotationUid) = \(unique)"
                 )
             case .UIDTagNeedsValue(let entity):
                 Log.error("No UID given for entity \(entity).")
@@ -218,12 +238,12 @@ public enum ObjectBoxGenerator {
             ):
                 Log.error(
                     "No UID given for property \(property) of entity \(entity). You can do the following:\n"
-                        + "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n"
-                        + "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)"
+                        + "\t[Rename] Apply the current UID using // objectbox: \(annotationUid) = \(found)\n"
+                        + "\t[Change/Reset] Apply a new UID using // objectbox: \(annotationUid) = \(unique)"
                 )
             case .PropertyUIDTagNeedsValue(let entity, let property):
                 Log.error(
-                    "Property \(property) of entity \(entity) has an \"// objectbox: uid n\" annotation missing the number n."
+                    "Property \(property) of entity \(entity) has an \"// objectbox: \(annotationUid) n\" annotation missing the number n."
                 )
             case .PropertyCollision(let entity, let new, let old):
                 Log.error(
@@ -247,12 +267,12 @@ public enum ObjectBoxGenerator {
             ):
                 Log.error(
                     "No UID given for relation \(relation) of entity \(entity). You can do the following:\n"
-                        + "\t[Rename] Apply the current UID using // objectbox: uid = \(found)\n"
-                        + "\t[Change/Reset] Apply a new UID using // objectbox: uid = \(unique)"
+                        + "\t[Rename] Apply the current UID using // objectbox: \(annotationUid) = \(found)\n"
+                        + "\t[Change/Reset] Apply a new UID using // objectbox: \(annotationUid) = \(unique)"
                 )
             case .RelationUIDTagNeedsValue(let entity, let relation):
                 Log.error(
-                    "Relation \(relation) of entity \(entity) has an \"// objectbox: uid n\" annotation missing the number n."
+                    "Relation \(relation) of entity \(entity) has an \"// objectbox: \(annotationUid) n\" annotation missing the number n."
                 )
             case .DuplicatePropertyName(let entity, let property):
                 Log.error(
@@ -263,7 +283,7 @@ public enum ObjectBoxGenerator {
             switch filterError {
             case .DuplicateIdAnnotation(let entity, let found, let existing):
                 Log.error(
-                    "Entity \(entity) has both \(found) and \(existing) annotated as '// objectbox: id'. "
+                    "Entity \(entity) has both \(found) and \(existing) annotated as '// objectbox: \(annotationId)'. "
                         + "There can only be one."
                 )
             case .MissingIdOnEntity(let entity):
@@ -274,7 +294,7 @@ public enum ObjectBoxGenerator {
             case .AmbiguousIdOnEntity(let entity, let properties):
                 Log.error(
                     "Entity \(entity) has several properties of type EntityId<\(entity)>, but no entity ID. "
-                        + "Please designate one as this entity's ID using an '// objectbox: id' annotation. "
+                        + "Please designate one as this entity's ID using an '// objectbox: \(annotationId)' annotation. "
                         + "Candidates are: \(properties.joined(separator: ", "))"
                 )
             case .MissingBacklinkOnToManyRelation(let entity, let relation):
@@ -283,7 +303,7 @@ public enum ObjectBoxGenerator {
                 )
             case .convertAnnotationMissingType(let name, let entity):
                 Log.error(
-                    "Must specify a dbType in '// objectbox: convert = { \"dbType\": \"TYPE HERE\" }' annotation"
+                    "Must specify a dbType in '// objectbox: \(annotationConvert) = { \"dbType\": \"TYPE HERE\" }' annotation"
                         + " of property \(name) of entity \(entity), or put it on a RawRepresentable enum."
                 )
             case .convertAnnotationMissingConverterOrDefault(
@@ -291,7 +311,7 @@ public enum ObjectBoxGenerator {
                 let entity
             ):
                 Log.error(
-                    "Must specify a converter or default in '// objectbox: convert = { "
+                    "Must specify a converter or default in '// objectbox: \(annotationConvert) = { "
                         + "\"dbType\": \"TYPE HERE\", \"default\": \"DEFAULT HERE\" }' annotation of "
                         + "property \(name) of entity \(entity)"
                 )
@@ -407,49 +427,54 @@ public enum ObjectBoxGenerator {
     {
         let defaultType = mapDefaultPropertyType(propertyVar.typeName)
         if !propertyVar.annotations.isEmpty {
-            var typeStr: String? = propertyVar.annotations["type"] as? String
-            if propertyVar.annotations.contains(where: { $0.key == "date-nano" }
+            var typeStr: String? =
+                propertyVar.annotations[annotationType] as? String
+            if propertyVar.annotations.contains(where: {
+                $0.key == annotationDateNano
+            }
             ) {
                 guard typeStr == nil else {
                     // TODO log location info and abort
                     Log.error(
-                        "Annotation \"data-nano\" cannot coexist with \"type\" annotation"
+                        "Annotation \"\(annotationDateNano)\" cannot coexist with \"\(annotationType)\" annotation"
                     )
                     return defaultType
                 }
-                typeStr = "date-nano"
+                typeStr = annotationDateNano
             }
-            if propertyVar.annotations.contains(where: { $0.key == "flex" }) {
+            if propertyVar.annotations.contains(where: {
+                $0.key == annotationFlex
+            }) {
                 guard typeStr == nil else {
                     // TODO log location info and abort
                     Log.error(
-                        "Annotation \"flex\" cannot coexist with \"type\" annotation"
+                        "Annotation \"\(annotationFlex)\" cannot coexist with \"\(annotationType)\" annotation"
                     )
                     return defaultType
                 }
-                typeStr = "flex"
+                typeStr = annotationFlex
             }
             if typeStr != nil {
-                if typeStr == "date-nano" {
+                if typeStr == annotationDateNano {
                     if defaultType == PropertyType.date {  // TODO double-check
                         return PropertyType.dateNano
                     } else {
                         // TODO log location info and abort
                         Log.error(
-                            "Annotation \"data-nano\" may only be placed only at types compatible with date"
+                            "Annotation \"\(annotationDateNano)\" may only be placed only at types compatible with date"
                         )
                     }
-                } else if typeStr == "flex" {
+                } else if typeStr == annotationFlex {
                     if defaultType == PropertyType.byteVector {
                         return PropertyType.flex
                     } else {
                         Log.error(
-                            "Annotation \"flex\" may be placed only at bytes (for now)"
+                            "Annotation \"\(annotationFlex)\" may be placed only at bytes (for now)"
                         )
                     }
                 } else {
                     Log.error(
-                        "Annotation \"type\" has an invalid value: \(typeStr!)"
+                        "Annotation \"\(annotationType)\" has an invalid value: \(typeStr!)"
                     )
                 }
             }
@@ -489,7 +514,7 @@ public enum ObjectBoxGenerator {
     private static func parseExternalType(_ propertyVar: SourceryVariable)
         throws -> ExternalPropertyType?
     {
-        if let externalTypeStr = propertyVar.annotations["externalType"]
+        if let externalTypeStr = propertyVar.annotations[annotationExternalType]
             as? String
         {
             let externalTypeOrNil = ExternalPropertyType.allCases.first {
@@ -504,7 +529,7 @@ public enum ObjectBoxGenerator {
                 throw Error.BadPropertyAnnotation(
                     property: propertyVar.description,
                     message:
-                        "externalType '\(externalTypeStr)' not supported, should be one of \(supportedTypes)"
+                        "\(annotationExternalType) '\(externalTypeStr)' not supported, should be one of \(supportedTypes)"
                 )
             }
         }
@@ -515,7 +540,7 @@ public enum ObjectBoxGenerator {
     private static func parseExternalName(_ propertyVar: SourceryVariable)
         -> String?
     {
-        return propertyVar.annotations["externalName"] as? String
+        return propertyVar.annotations[annotationExternalName] as? String
     }
 
     static func extractConvertAnnotation(_ annotation: Any?) -> [String:
@@ -563,10 +588,14 @@ public enum ObjectBoxGenerator {
                 targetType: String(destinationType),
                 ownerType: String(myType)
             )
-            if let propertyUid = propertyVar.annotations["uid"] as? Int64 {
+            if let propertyUid = propertyVar.annotations[annotationUid]
+                as? Int64
+            {
                 relation.modelId = IdUid(id: 0, uid: propertyUid)
             }
-            if let backlinkProperty = propertyVar.annotations["backlink"]
+            if let backlinkProperty = propertyVar.annotations[
+                annotationBacklink
+            ]
                 as? String
             {
                 relation.backlinkProperty = backlinkProperty
@@ -601,7 +630,7 @@ public enum ObjectBoxGenerator {
         if typeNameNotNull == "[Float]" {
             // Float array: may be a special HNSW index property (annotation is parsed later)
             let hasHnswIndex = propertyVar.annotations.contains(where: {
-                $0.key == "hnswIndex"
+                $0.key == annotationHnswIndex
             })
             if hasHnswIndex {
                 propertyType = "HnswIndexPropertyType"
@@ -652,12 +681,13 @@ public enum ObjectBoxGenerator {
             schemaEntity.hasByteVectorProperties = true
         }
         schemaProperty.unwrappedPropertyType = propertyVar.unwrappedTypeName
-        schemaProperty.dbName = propertyVar.annotations["name"] as? String
+        schemaProperty.dbName =
+            propertyVar.annotations[annotationName] as? String
         if let dbNameIsEmpty = schemaProperty.dbName?.isEmpty, dbNameIsEmpty {
             schemaProperty.dbName = nil
         }
         schemaProperty.name = schemaProperty.dbName ?? schemaProperty.swiftName
-        if let propertyUidObject = propertyVar.annotations["uid"],
+        if let propertyUidObject = propertyVar.annotations[annotationUid],
             let propertyUid = (propertyUidObject as? NSNumber)?.int64Value
         {
             var propId = IdUid()
@@ -666,7 +696,7 @@ public enum ObjectBoxGenerator {
         }
 
         if let convertDict = extractConvertAnnotation(
-            propertyVar.annotations["convert"]
+            propertyVar.annotations[annotationConvert]
         ) {
             let dbType: String
             if let firstDbType = convertDict["dbType"] {
@@ -752,7 +782,7 @@ public enum ObjectBoxGenerator {
             .rawValue
         schemaProperty.externalName = parseExternalName(propertyVar)
 
-        if let objectIdAnnotationValue = propertyVar.annotations["id"] {
+        if let objectIdAnnotationValue = propertyVar.annotations[annotationId] {
             if let existingIdProperty = schemaEntity.idProperty {
                 throw Error.DuplicateIdAnnotation(
                     entity: schemaEntity.className,
@@ -792,15 +822,16 @@ public enum ObjectBoxGenerator {
         if schemaProperty.isObjectId {
             schemaProperty.propertyFlags.append(.id)
         }
-        if propertyVar.annotations.contains(where: { $0.key == "id-companion" })
-        {
+        if propertyVar.annotations.contains(where: {
+            $0.key == annotationIdCompanion
+        }) {
             if schemaProperty.propertyType != .date
                 && schemaProperty.propertyType != .dateNano
             {
                 throw Error.BadPropertyAnnotation(
                     property: propertyVar.description,
                     message:
-                        "The id-companion annotation is only supported for date and dateNano types but found: \(schemaProperty.propertyType)"
+                        "The \(annotationIdCompanion) annotation is only supported for date and dateNano types but found: \(schemaProperty.propertyType)"
                 )
             }
             schemaProperty.propertyFlags.append(.idCompanion)
@@ -828,11 +859,13 @@ public enum ObjectBoxGenerator {
             )
             relation.property = schemaProperty
             schemaEntity.relations.append(relation)
-            if let backlink = propertyVar.annotations["backlink"] as? String {
+            if let backlink = propertyVar.annotations[annotationBacklink]
+                as? String
+            {
                 print(
-                    "warning: Found an // objectbox: backlink annotation on ToOne relation "
+                    "warning: Found an // objectbox: \(annotationBacklink) annotation on ToOne relation "
                         + "\"\(schemaProperty.swiftName)\". Did you mean to put "
-                        + "// objectbox: backlink = \"\(propertyVar.name)\"  on the ToMany relation \"\(backlink)\" "
+                        + "// objectbox: \(annotationBacklink) = \"\(propertyVar.name)\"  on the ToMany relation \"\(backlink)\" "
                         + "in \"\(destinationType)\"?"
                 )
             }
@@ -857,10 +890,10 @@ public enum ObjectBoxGenerator {
         _ schemaProperty: SchemaProperty
     ) throws {
         let hasIndexAnnotation = propertyVar.annotations.contains(where: {
-            $0.key == "index"
+            $0.key == annotationIndex
         })
         let hasUniqueAnnotation = propertyVar.annotations.contains(where: {
-            $0.key == "unique"
+            $0.key == annotationUnique
         })
         if !hasIndexAnnotation && !hasUniqueAnnotation {
             return  // does not have regular index annotations
@@ -882,14 +915,16 @@ public enum ObjectBoxGenerator {
             throw Error.BadPropertyAnnotation(
                 property: propertyVar.description,
                 message:
-                    "index or unique is not supported for this type of property."
+                    "\(annotationIndex) or \(annotationUnique) is not supported for this type of property."
             )
         }
 
         // Parse any index configuration options...
         var indexType = IndexType.none
         if hasIndexAnnotation {
-            if let indexAnnotationType = propertyVar.annotations["index"]
+            if let indexAnnotationType = propertyVar.annotations[
+                annotationIndex
+            ]
                 as? String
             {
                 if indexAnnotationType == "hash" {
@@ -921,7 +956,7 @@ public enum ObjectBoxGenerator {
         if hasUniqueAnnotation {
             schemaProperty.propertyFlags.append(.unique)
 
-            let uniqueConfiguration = propertyVar.annotations["unique"]
+            let uniqueConfiguration = propertyVar.annotations[annotationUnique]
             if let uniqueDict = uniqueConfiguration as? NSDictionary {
                 for (key, value) in uniqueDict {
                     if key as? String == "onConflict" {
@@ -940,7 +975,7 @@ public enum ObjectBoxGenerator {
                         throw Error.BadPropertyAnnotation(
                             property: propertyVar.description,
                             message:
-                                "Illegal key in unique annotation (only \"onConflict\" is currently supported: \(key)"
+                                "Illegal key in \(annotationUnique) annotation (only \"onConflict\" is currently supported: \(key)"
                         )
                     }
                 }
@@ -950,7 +985,7 @@ public enum ObjectBoxGenerator {
                 throw Error.BadPropertyAnnotation(
                     property: propertyVar.description,
                     message:
-                        "Illegal unique annotation syntax: \(String(describing: uniqueConfiguration))"
+                        "Illegal \(annotationUnique) annotation syntax: \(String(describing: uniqueConfiguration))"
                 )
             }
         }
@@ -968,7 +1003,7 @@ public enum ObjectBoxGenerator {
         _ propertyVar: SourceryVariable,
         _ schemaProperty: SchemaProperty
     ) throws {
-        let hnswAnnotation = propertyVar.annotations["hnswIndex"]
+        let hnswAnnotation = propertyVar.annotations[annotationHnswIndex]
         if hnswAnnotation == nil {
             return
         }
@@ -978,7 +1013,7 @@ public enum ObjectBoxGenerator {
             throw Error.BadPropertyAnnotation(
                 property: propertyVar.description,
                 message:
-                    "hnswIndex is only supported for float vector properties."
+                    "\(annotationHnswIndex) is only supported for float vector properties."
             )
         }
 
@@ -1000,11 +1035,11 @@ public enum ObjectBoxGenerator {
         let schemaEntity = SchemaEntity()
         schemaEntity.className = entityType.localName
         schemaEntity.isValueType = entityType.kind == "struct"
-        schemaEntity.modelUid = entityType.annotations["uid"] as? Int64
-        schemaEntity.dbName = entityType.annotations["name"] as? String
+        schemaEntity.modelUid = entityType.annotations[annotationUid] as? Int64
+        schemaEntity.dbName = entityType.annotations[annotationName] as? String
         schemaEntity.externalName =
-            entityType.annotations["externalName"] as? String
-        let syncAnnotation = entityType.annotations["sync"]
+            entityType.annotations[annotationExternalName] as? String
+        let syncAnnotation = entityType.annotations[annotationSync]
         if syncAnnotation != nil {
             schemaEntity.flags.append(.syncEnabled)
 
@@ -1015,7 +1050,7 @@ public enum ObjectBoxGenerator {
                         throw Error.IllegalDictionaryElements(
                             entity: schemaEntity.className,
                             message:
-                                "the sync annotation contains a non-string key"
+                                "the \(annotationSync) annotation contains a non-string key"
                         )
                     }
                     if keyString == "sharedGlobalIds" {
@@ -1023,7 +1058,7 @@ public enum ObjectBoxGenerator {
                             throw Error.IllegalDictionaryElements(
                                 entity: schemaEntity.className,
                                 message:
-                                    "the sync annotation has a non-boolean value for key: \(keyString)"
+                                    "the \(annotationSync) annotation has a non-boolean value for key: \(keyString)"
                             )
                         }
                         if valueBool {
@@ -1033,7 +1068,7 @@ public enum ObjectBoxGenerator {
                         throw Error.IllegalDictionaryElements(
                             entity: schemaEntity.className,
                             message:
-                                "the sync annotation contains an unknown key: \(keyString)"
+                                "the \(annotationSync) annotation contains an unknown key: \(keyString)"
                         )
                     }
                 }
@@ -1059,7 +1094,7 @@ public enum ObjectBoxGenerator {
             )
             guard
                 !propertyVar.annotations.contains(where: {
-                    $0.key == "transient"
+                    $0.key == annotationTransient
                 })
             else { return }  // Exits only this iteration of the foreach block
             guard !propertyVar.isStatic else { return }  // Exits only this iteration of the foreach block
@@ -1207,8 +1242,8 @@ public enum ObjectBoxGenerator {
             let isEntityBased = entityType.inheritedTypes.contains("Entity")
             // The annotation should be lowercase "entity", but given the protocol is uppercase, we allow that too,
             // as a convenience for users who use both and get their case mixed up:
-            if isEntityBased || entityType.annotations["entity"] != nil
-                || entityType.annotations["Entity"] != nil
+            if isEntityBased || entityType.annotations[annotationEntity] != nil
+                || entityType.annotations[annotationEntityUppercase] != nil
             {
                 try processEntityType(
                     entityType,
